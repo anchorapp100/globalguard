@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Local AI Cameras — DECS Home Systems</title>
+<meta name="description" content="Two Ring doorbells turned into a proper local NVR — 24/7 recording, GPU-accelerated AI object detection, rewind, zones and phone alerts — with no Ring Protect subscription. Frigate on an RTX 5070, streamed into Home Assistant.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+/* ---------- cameras page: local additions ---------- */
+.shot{border-radius:14px;overflow:hidden;border:1px solid var(--line);background:#05080d;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;position:relative}
+.shot img{width:100%;height:100%;object-fit:cover;display:block}
+.shot .ph{display:none;position:absolute;inset:0;align-items:center;justify-content:center;text-align:center;padding:1rem;font-family:"IBM Plex Mono",monospace;font-size:.78rem;color:var(--muted)}
+.shot.missing{background:repeating-linear-gradient(45deg,#05080d,#05080d 12px,#0a1017 12px,#0a1017 24px)}
+.shot.missing .ph{display:flex}
+.shot.missing img{display:none}
+figure.cam{margin:0}
+figure.cam figcaption{margin-top:.6rem;font-size:.9rem;color:var(--muted)}
+figure.cam figcaption b{color:var(--ink);font-weight:600}
+/* pipeline flow */
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:.55rem;margin-top:1.4rem}
+.flow .node{flex:1 1 150px;min-width:150px;border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:.95rem 1rem}
+.flow .node .stg{font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.flow .node h4{margin:.3rem 0 .25rem;font-size:1rem}
+.flow .node p{margin:0;font-size:.85rem;color:var(--muted);line-height:1.45}
+.flow .arw{display:flex;align-items:center;color:var(--accent);font-size:1.3rem;opacity:.7}
+@media(max-width:820px){.flow{flex-direction:column}.flow .arw{transform:rotate(90deg);justify-content:center}}
+.pill-row{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem}
+.tag{font-family:"IBM Plex Mono",monospace;font-size:.72rem;border-radius:999px;padding:.4rem .8rem;border:1px solid var(--line);background:var(--surface);color:var(--muted)}
+.tag.on{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+.gal2{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin-top:1.3rem}
+@media(max-width:760px){.gal2{grid-template-columns:1fr}}
+.phoneproof{display:flex;gap:1.6rem;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:1.8rem;padding:1.4rem;border:1px solid var(--line);border-radius:18px;background:var(--surface-2)}
+.phoneproof img{width:230px;max-width:60vw;border-radius:24px;border:1px solid var(--line);box-shadow:0 24px 60px -24px rgba(0,0,0,.75);display:block}
+.phoneproof .cap{max-width:28rem}
+.phoneproof .cap h3{margin:0 0 .5rem}
+.phoneproof .cap p{margin:0;color:var(--muted)}
+.soon{border-left:2px solid var(--accent);padding-left:1rem}
+</style>
+</head>
+<body class="p-sub">
+
+<header class="nav"><div class="wrap">
+  <a class="brand" href="index.html"><span class="dot"></span> DECS&nbsp;Home&nbsp;Systems</a>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="globalguard.html">GlobalGuard</a>
+    <a href="homeassistant.html">Home&nbsp;Assistant</a>
+    <a href="wallpanel.html">Wall&nbsp;panel</a>
+    <a href="cameras.html" class="active">Cameras</a>
+    <a href="presence.html">Presence</a>
+    <a href="roomscribe.html">Roomscribe</a>
+    <a href="traccar.html">Traccar</a>
+    <a href="finance.html">Finance</a>
+    <a href="fan.html">Fan</a>
+    <a href="rada.html">Rada&nbsp;shower</a>
+    <a href="theme.html">HA&nbsp;Theme</a>
+    <a href="technical.html">Technical</a>
+    <a href="roadmap.html">Roadmap</a>
+    <a href="claude.html">Claude&nbsp;Code</a>
+    <button class="themebtn" id="tt" aria-label="Toggle colour theme"><span id="ttic">◐</span> theme</button>
+  </nav>
+</div></header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">Local NVR · GPU AI · no Ring subscription</span>
+        <h1 class="title">The Ring subscription,<br><em>bypassed</em> — locally.</h1>
+        <p class="lede">Two existing Ring doorbells, turned into a full local security system: continuous 24/7 recording, GPU-accelerated AI object detection, event rewind, driveway zones and phone alerts with a bounding box on whoever tripped it — all running at home on a spare GPU, streamed straight into the wall panel. Ring wants a monthly fee for recording and snapshots. This pays it nothing.</p>
+        <div class="meta-row">
+          <span class="chip">Frigate NVR</span>
+          <span class="chip">RTX 5070 · NVDEC</span>
+          <span class="chip">YOLO detection</span>
+          <span class="chip">£0 / month</span>
+        </div>
+      </div>
+      <div class="panel" role="img" aria-label="Camera system status: front door recording 24/7, AI detection live on the GPU, events flowing to Home Assistant, no Ring subscription.">
+        <div class="head"><span>Camera status</span><span>Frigate · Server</span></div>
+        <div class="rows">
+          <div class="prow"><span class="led on"></span><span class="k">Front door</span><span class="v">live · recording 24/7</span></div>
+          <div class="prow"><span class="led info"></span><span class="k">AI detect</span><span class="v">person / car / dog · ~9&nbsp;ms</span></div>
+          <div class="prow"><span class="led info"></span><span class="k">GPU decode</span><span class="v">RTX 5070 · ~1% load</span></div>
+          <div class="prow"><span class="led warn"></span><span class="k">Back door</span><span class="v">offline · to reconnect</span></div>
+          <div class="prow gone"><span class="led dead"></span><span class="k">Ring Protect</span><span class="v">not subscribed</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- STATS -->
+<section style="padding-block:clamp(2.2rem,5vw,3.2rem)">
+  <div class="wrap reveal">
+    <div class="stats">
+      <div class="stat"><span class="big num-strong">24/7</span><span class="lab">continuous recording</span></div>
+      <div class="stat"><span class="big num-strong">5&nbsp;day</span><span class="lab">rolling retention</span></div>
+      <div class="stat"><span class="big num-strong">~9&nbsp;ms</span><span class="lab">AI inference / frame</span></div>
+      <div class="stat"><span class="big num-strong">£0</span><span class="lab">subscription / month</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 01 THE PROBLEM -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">01 · The problem</span><h2>Ring locks the good bits behind a monthly fee</h2></div>
+    <p class="lede">Without Ring Protect, a Ring doorbell will show you a <em>live</em> view — and nothing else. No recording, no snapshots, no rewind, no history. The moment something happens, it's gone. The community wisdom is "you can't get around it." We took that as a challenge.</p>
+    <div class="grid-3" style="margin-top:1.4rem">
+      <div class="card feat"><h3>Recording — paywalled</h3><p>The <code>camera.snapshot</code> and record services return "Ring Protect subscription required." No cloud clips unless you pay.</p></div>
+      <div class="card feat"><h3>The free live view is peer-to-peer</h3><p>It streams browser-to-Ring-cloud directly and never touches your server, so there's nothing local to grab — normally.</p></div>
+      <div class="card feat"><h3>The goal</h3><p>Offline 24/7 recording, event rewind and our <em>own</em> AI detection — on the doorbells we already own, paying nothing.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 02 HOW IT WORKS -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">02 · How it works</span><h2>From a locked-down doorbell to a local NVR</h2></div>
+    <p class="lede">A bridge pulls the free live view into a standard video stream; a GPU NVR records it around the clock and runs AI object detection on every frame; the results flow into Home Assistant. Each stage runs on the LAN — nothing depends on Ring's cloud beyond the doorbell's own connection.</p>
+    <div class="flow">
+      <div class="node"><span class="stg">Source</span><h4>Ring doorbell</h4><p>The free live view — no subscription, no snapshots.</p></div>
+      <div class="arw">→</div>
+      <div class="node"><span class="stg">Bridge · Pi</span><h4>ring-mqtt</h4><p>Logs in with your token and republishes the live view as a local RTSP stream, plus motion &amp; ding over MQTT.</p></div>
+      <div class="arw">→</div>
+      <div class="node"><span class="stg">NVR · Server</span><h4>Frigate + RTX 5070</h4><p>GPU hardware-decodes the stream (NVDEC), records 24/7, and runs AI object detection with bounding boxes.</p></div>
+      <div class="arw">→</div>
+      <div class="node"><span class="stg">Front end</span><h4>Home Assistant</h4><p>Live view, event player, timeline, zones and phone notifications — right on the wall panel.</p></div>
+    </div>
+    <div class="pill-row">
+      <span class="tag on">GPU hardware decode</span>
+      <span class="tag">go2rtc restream</span>
+      <span class="tag">object detection</span>
+      <span class="tag">motion zones</span>
+      <span class="tag">MQTT events</span>
+      <span class="tag">isolated from dev work</span>
+    </div>
+    <p class="lede" style="margin-top:1.5rem">The NVR lives on a spare workstation (Ryzen 7 7700, RTX 5070) inside its own Docker stack and its own folder — it never touches the machine's development work, its other containers, or its second drive. The GPU does the heavy lifting (decode + scaling) at around <b>1% load</b>, leaving enormous headroom for more cameras.</p>
+  </div>
+</section>
+
+<!-- 03 WHAT YOU GET -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">03 · What you get</span><h2>Everything a video security system should do</h2></div>
+    <div class="grid-3">
+      <div class="card feat"><h3>24/7 recording + rewind</h3><p>Continuous footage with a scrubbable timeline — jump back to any moment, not just to events.</p></div>
+      <div class="card feat"><h3>AI object detection</h3><p>Person, car, bike, motorbike, dog and cat — each boxed and scored, motion-triggered so it's quiet when the scene is.</p></div>
+      <div class="card feat"><h3>Event player</h3><p>A gallery of event clips with time and date; tap one and it plays scaled, with fullscreen and download.</p></div>
+      <div class="card feat"><h3>Phone alerts with a box</h3><p>A push notification the instant a person is detected — with the annotated snapshot attached.</p></div>
+      <div class="card feat"><h3>Driveway zones</h3><p>Mark your property vs. the public street so a busy road doesn't alert you every few seconds.</p></div>
+      <div class="card feat"><h3>Quick controls</h3><p>Toggle detection, recording, snapshots and motion straight from the dashboard.</p></div>
+      <div class="card feat"><h3>Self-healing feed</h3><p>Ring resets its devices once a day, which used to freeze the live stream. A watchdog now spots it and auto-recovers the feed within minutes — no dead mornings.</p></div>
+      <div class="card feat"><h3>Storage &amp; NVR overview</h3><p>Drive used, free space and NVR uptime at a glance, live from the recorder.</p></div>
+      <div class="card feat"><h3>Counts &amp; history</h3><p>Every object type is counted and logged — tap any tile for its full timeline, or see how many cars passed all day.</p></div>
+    </div>
+
+    <div class="gal2">
+      <figure class="cam">
+        <div class="shot"><img src="images/cam-dashboard.jpg" alt="The Cameras tab: a four-camera quad with the live front door, an AI-detection panel, camera controls, an NVR/storage strip and an event-clip player" loading="lazy"></div>
+        <figcaption><b>The Cameras tab.</b> A four-camera quad, live AI-detection panel, quick controls, an NVR/storage overview and the event-clip player — all on one screen, no scrolling.</figcaption>
+      </figure>
+      <figure class="cam">
+        <div class="shot"><img src="images/cam-detection.jpg" alt="An AI detection: a person outlined by a bounding box on the night-time driveway, scored at 84% confidence"></div>
+        <figcaption><b>A real detection.</b> A person, boxed and scored at 84% — this is what lands on your phone.</figcaption>
+      </figure>
+      <figure class="cam">
+        <div class="shot"><img src="images/cam-car-history.jpg" alt="The car-occupancy detail: a history timeline of Clear/Detected and a timestamped activity log" loading="lazy"></div>
+        <figcaption><b>Every object has a history.</b> Tap a tile and HA opens the full timeline and activity log — here, car occupancy.</figcaption>
+      </figure>
+      <figure class="cam">
+        <div class="shot"><img src="images/cam-motion-history.jpg" alt="The motion detail: a dense history timeline of motion and a timestamped activity log" loading="lazy"></div>
+        <figcaption><b>Motion, logged.</b> Every trip recorded to the second — timeline and activity for the motion sensor.</figcaption>
+      </figure>
+      <figure class="cam">
+        <div class="shot"><img src="images/cam-car-count.jpg" alt="A graph of the number of cars detected across the day, rising from zero to six" loading="lazy"></div>
+        <figcaption><b>Counting, all day.</b> The AI tracks how many cars it sees over time — the doorbell becomes a data source, not just a camera.</figcaption>
+      </figure>
+    </div>
+    <div class="phoneproof">
+      <img src="images/cam-notification.jpg" alt="A Home Assistant phone notification reading 'Front door: Person — A person was detected at the front door', with the daytime snapshot of a person walking up the driveway between the parked cars">
+      <div class="cap">
+        <h3>…and it lands on your phone</h3>
+        <p>The instant the AI sees a person, Home Assistant pushes a notification with the annotated snapshot — no Ring subscription, no cloud. The whole system, working end to end.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 04 NO SERVER? -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">04 · No spare GPU?</span><h2>The same thing without a server</h2></div>
+    <p class="lede">A GPU makes continuous AI on a busy, street-facing camera effortless — but it isn't the only way. The bridge-and-record half runs happily on the Raspberry Pi itself; only heavy <em>continuous</em> detection needs more muscle. Pick the tier that fits.</p>
+    <div class="grid-3" style="margin-top:1.4rem">
+      <div class="card feat"><h3>Pi only — record now</h3><p>ring-mqtt + Frigate run on the Pi and record 24/7 with rewind, today, for free. Continuous AI on a busy road, though, pins a 4-core Pi — so run detection <b>event-triggered</b>, or pause it and keep the DVR.</p></div>
+      <div class="card feat"><h3>Pi + Coral TPU · ~£25–60</h3><p>A Google Coral stick does real-time object detection in a few milliseconds and offloads it entirely from the Pi's CPU. The cheapest route to always-on AI on modest hardware.</p></div>
+      <div class="card feat"><h3>Cheap mini-PC · ~£120–170</h3><p>An Intel N100 box with Frigate's OpenVINO detector handles several cameras with AI, sips power, and needs no dedicated GPU. A tidy always-on NVR.</p></div>
+    </div>
+    <p class="lede" style="margin-top:1.5rem">The trick that unlocks all of it — turning Ring's free, subscription-less live view into a real local stream — is identical on every tier. The only question is where the AI runs.</p>
+  </div>
+</section>
+
+<!-- 05 COMING NEXT -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">05 · Coming next</span><h2>Where it goes from here</h2></div>
+    <p class="lede">The GPU NVR opens the door to the genuinely clever stuff. On the list:</p>
+    <div class="grid-2" style="margin-top:1.4rem">
+      <div class="card feat soon"><h3>Face recognition</h3><p>Name the people it knows — you, family — and flag strangers at the door. The GPU makes it fast.</p></div>
+      <div class="card feat soon"><h3>Licence-plate recognition</h3><p>Read and log plates on the drive; alert on an unfamiliar vehicle.</p></div>
+      <div class="card feat soon"><h3>Live AI overlay</h3><p>Bounding boxes drawn on the live dashboard view in real time, not just on saved events.</p></div>
+      <div class="card feat soon"><h3>Two-way talk</h3><p>Speak through the doorbell straight from the wall panel.</p></div>
+      <div class="card feat soon"><h3>Actionable alerts</h3><p>A "watch the clip" button right on the phone notification.</p></div>
+      <div class="card feat soon"><h3>Back door, reconnected</h3><p>The second doorbell back online, recording and detecting alongside the first.</p></div>
+    </div>
+  </div>
+</section>
+
+<footer>Local AI cameras · Ring doorbells · Frigate NVR on an RTX 5070 · no subscription · <a href="index.html">DECS Home Systems</a> · <a href="homeassistant.html">Home Assistant</a> · <a href="wallpanel.html">Wall panel</a></footer>
+
+<script src="app.js"></script>
+</body>
+</html>

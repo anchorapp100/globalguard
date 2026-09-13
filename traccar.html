@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Traccar GPS — DECS Home Systems</title>
+<meta name="description" content="A live GPS fleet tab on the wall panel: two phones and a van tracked through a self-hosted Traccar server on a keyless dark map, with addresses named down to the actual house by a self-hosted property API, and a Day mode that draws the whole day's route and stops straight from Traccar. All local, no map key, no Google.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* ---- traccar page: local additions ---- */
+  .pl-wire{fill:none;stroke:#243040;stroke-width:3;stroke-linecap:round;opacity:.35}
+  .pl-flow{fill:none;stroke-width:4;stroke-linecap:round;stroke-dasharray:2 12;opacity:.95;animation:plmove .9s linear infinite}
+  @keyframes plmove{to{stroke-dashoffset:-14}}
+  .pl-node{fill:#0e151f;stroke:#26333f;stroke-width:1.4}
+  .pl-node.hi{fill:#101b28;stroke:#39d98a;stroke-width:1.6}
+  .pl-t{font-family:"IBM Plex Mono",ui-monospace,monospace;fill:#9aa7b3}
+  .pl-title{fill:#e7edf3;font-weight:600}
+  .pl-cap{fill:#7c8a97}
+  .pl-badge{fill:#39d98a;font-weight:600}
+  @media (prefers-reduced-motion:reduce){.pl-flow{animation:none}}
+  /* device legend */
+  .fleet{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin-top:1.3rem}
+  @media(max-width:720px){.fleet{grid-template-columns:1fr}}
+  .fcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:1rem 1.1rem;position:relative;overflow:hidden}
+  .fcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--dc)}
+  .fcard .fh{display:flex;align-items:center;gap:.55rem;font-weight:700;color:var(--ink);font-family:"Archivo",sans-serif}
+  .fcard .fdot{width:10px;height:10px;border-radius:50%;background:var(--dc);box-shadow:0 0 8px var(--dc)}
+  .fcard .fk{font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin-top:.5rem}
+  .fcard .fv{color:var(--muted);font-size:.92rem;margin-top:.15rem;line-height:1.45}
+  /* the map's three homes */
+  .homes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.8rem;margin-top:1.3rem}
+  @media(max-width:720px){.homes{grid-template-columns:1fr}}
+  .home{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:1rem 1.1rem}
+  .home .ht{font-family:"Archivo",sans-serif;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:.5rem}
+  .home .hs{font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.05em;text-transform:uppercase;margin-top:.3rem}
+  .home .hv{color:var(--muted);font-size:.9rem;margin-top:.5rem;line-height:1.45}
+  .home.dead{opacity:.72}.home.dead .hs{color:#e06a5f}.home.live .hs{color:#39d98a}
+</style>
+</head>
+<body class="p-traccar">
+
+<header class="nav"><div class="wrap">
+  <a class="brand" href="index.html"><span class="dot"></span> DECS&nbsp;Home&nbsp;Systems</a>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="globalguard.html">GlobalGuard</a>
+    <a href="homeassistant.html">Home&nbsp;Assistant</a>
+    <a href="wallpanel.html">Wall&nbsp;panel</a>
+    <a href="cameras.html">Cameras</a>
+    <a href="presence.html">Presence</a>
+    <a href="roomscribe.html">Roomscribe</a>
+    <a href="traccar.html" class="active">Traccar</a>
+    <a href="finance.html">Finance</a>
+    <a href="fan.html">Fan</a>
+    <a href="rada.html">Rada&nbsp;shower</a>
+    <a href="theme.html">HA&nbsp;Theme</a>
+    <a href="technical.html">Technical</a>
+    <a href="roadmap.html">Roadmap</a>
+    <a href="claude.html">Claude&nbsp;Code</a>
+    <button class="themebtn" id="tt" aria-label="Toggle colour theme"><span id="ttic">◐</span> theme</button>
+  </nav>
+</div></header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">GPS fleet tracking · Traccar + a keyless dark map</span>
+        <h1 class="title">Two phones and a van,<br><em>on one live map</em>.</h1>
+        <p class="lede">A self-hosted <b>Traccar</b> server already tracked the family's phones and the work van. This tab pulls those three onto the wall panel as a live, colour-matched dark map with per-device cards — its addresses named down to the actual house by a <b>self-hosted property API</b>, and a <b>Day</b> mode that draws the whole day's route and every stop straight from Traccar. No Google Maps, no paid tile key, nothing leaving the house.</p>
+        <div class="meta-row">
+          <span class="chip">Traccar server</span>
+          <span class="chip">Esri dark · no key</span>
+          <span class="chip">The Grid addresses</span>
+          <span class="chip">day routes + stops</span>
+        </div>
+      </div>
+      <div class="panel" role="img" aria-label="Traccar status: three devices tracked via a self-hosted Traccar server on a keyless Esri dark map; addresses resolved by Kevin's self-hosted Grid property API; a Day mode pulls routes and stops from Traccar. No paid map key.">
+        <div class="head"><span>GPS · live</span><span>3 devices</span></div>
+        <div class="rows">
+          <div class="prow"><span class="led on"></span><span class="k">Server</span><span class="v">Traccar · self-hosted</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">Devices</span><span class="v">2 phones · 1 van</span></div>
+          <div class="prow"><span class="led info"></span><span class="k">Map</span><span class="v">Esri dark · keyless</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">Addresses</span><span class="v">The Grid · to the house</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">Day mode</span><span class="v">routes + stops · Traccar</span></div>
+        </div>
+        <div class="beacon">
+          <span class="lbl">position</span>
+          <svg viewBox="0 0 220 30" preserveAspectRatio="none" aria-hidden="true">
+            <line x1="0" y1="15" x2="220" y2="15" stroke="#26313d" stroke-width="1"/>
+            <polyline class="trace" points="0,22 40,20 70,14 100,16 130,8 160,11 190,6 220,9" fill="none" stroke="#39d98a" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+            <circle class="pulse-dot" cx="190" cy="6" r="2.6" style="fill:#39d98a"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- STATS -->
+<section style="padding-block:clamp(2.2rem,5vw,3.2rem)">
+  <div class="wrap reveal">
+    <div class="stats">
+      <div class="stat"><span class="big num-strong">3</span><span class="lab">devices tracked</span></div>
+      <div class="stat"><span class="big num-strong">£0</span><span class="lab">map API cost</span></div>
+      <div class="stat"><span class="big num-strong">1&nbsp;m</span><span class="lab">address precision</span></div>
+      <div class="stat"><span class="big num-strong">1</span><span class="lab">tab, one web-app</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 01 THE FLEET -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">01 · The fleet</span><h2>Three trackers, three jobs</h2><p class="lede">Traccar is an open-source GPS server — the phones run its app, the van has a hard-wired tracker, and all three report to Kevin's own server rather than a manufacturer's cloud. Home Assistant's Traccar-Server integration turns each into a device with position, speed, battery and motion.</p></div>
+    <div class="fleet">
+      <div class="fcard" style="--dc:#ffb638"><div class="fh"><span class="fdot"></span>Kev's Phone</div><div class="fk">Android app</div><div class="fv">Battery, speed and motion from the Traccar client; home/away from HA's own zone.</div></div>
+      <div class="fcard" style="--dc:#7986ff"><div class="fh"><span class="fdot"></span>Kev's Transit</div><div class="fk">FMC003 · hard-wired</div><div class="fv">A vehicle tracker wired to the van's battery — so the card shows real <b>supply voltage</b> (a live check on the vehicle battery) instead of a phone %.</div></div>
+      <div class="fcard" style="--dc:#39d98a"><div class="fh"><span class="fdot"></span>Mom's Phone</div><div class="fk">Android app</div><div class="fv">Same live position and battery — so a glance at the panel says whether she's home.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 02 THE MAP'S THREE HOMES -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">02 · The map</span><h2>The base map had to move house — twice</h2><p class="lede">Free dark map tiles turned out to be a moving target. Home Assistant's stock map wanted a paid key; the obvious free fallback got the app <em>blocked</em>; the answer in the end was a proper keyless dark basemap from Esri. The tab is one small self-contained web-app in an iframe, so swapping the tile source was a one-line change.</p></div>
+    <div class="homes">
+      <div class="home dead"><div class="ht">CartoDB</div><div class="hs">✗ wants a credit card</div><div class="hv">HA's built-in map card draws from CartoDB, which now stamps every tile <b>"API KEY REQUIRED"</b> until you register and pay.</div></div>
+      <div class="home dead"><div class="ht">Raw OpenStreetMap</div><div class="hs">✗ blocks apps</div><div class="hv">The free fallback — OSM's own tiles, CSS-darkened — works in a browser but <b>violates OSM's tile policy for apps</b>: their volunteer servers returned an "access blocked" tile (osm.wiki/blocked).</div></div>
+      <div class="home live"><div class="ht">Esri Dark Gray</div><div class="hs">✓ keyless · permitted</div><div class="hv">Esri's <b>"Dark Gray Canvas"</b> — a genuine dark cartographic style, keyless and allowed for embedding. Its base is deepened to match the panel while the street labels stay bright.</div></div>
+    </div>
+    <div class="demo-note" style="margin-top:1.4rem"><b>The trap worth remembering.</b> CartoDB's blocked tiles return an HTTP <b>200</b> with the words baked into the image — so an automated "did it load?" check passes while a human sees "API KEY REQUIRED" splashed across the map. The only reliable test was to actually look at it.</div>
+  </div>
+</section>
+
+<!-- 03 THE GRID ADDRESSES -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">03 · Addresses</span><h2>Not a nearby street — <em>the actual building</em></h2><p class="lede">A bare coordinate is useless on a wall. Turning it into an address normally means a geocoder, and free ones are coarse — often just a street or a postcode. So the tab asks Kevin's own <b>Grid</b> first: a self-hosted property API built on OpenStreetMap and enriched with UK property data, covering the local area. It resolves a fix to the actual building — house number, street, postcode, even the property type and energy rating.</p></div>
+    <div class="grid-3">
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></div><h3>The Grid, first</h3><p>Tap a device and the detail panel shows a <b>property card</b> — the resolved address, the building's UPRN, type and EPC band, and the nearest neighbours — with a green <b>GRID</b> badge on the address to say it came from home.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.7-7-11a7 7 0 0 1 14 0c0 5.3-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></div><h3>OSM outside the fence</h3><p>The Grid only covers the local area so far. Anywhere else, the tab falls back to OpenStreetMap's free Nominatim service and labels the result <b>coarse</b> honestly — a street or postcode, not a house.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l6-6-6-6"/><path d="M12 19h8"/></svg></div><h3>Grows on its own</h3><p>Because it always tries the Grid first, every time the Grid's coverage extends, those areas quietly upgrade from a coarse OSM guess to a precise property — with no change to the tab.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 04 DAY MODE (diagram) -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">04 · Day mode</span><h2>The whole day's movements, from the source</h2><p class="lede">The live map shows now. Hit <b>Day</b> and it shows the story of the day — every route and every stop — pulled <em>directly from the Traccar server's reports</em>, not from Home Assistant's history (which only keeps sparse snapshots). Traccar has every raw GPS fix and works out the trips and stops itself.</p></div>
+    <figure>
+      <div class="demo-stage" role="img" aria-label="Day mode data path: the panel calls the Traccar server's route and stops reports directly with a bearer token over the LAN; Traccar returns the dense day route and the computed stops; the tab draws each device's route as a coloured line and each stop as a clickable pin, and resolves each stop's address through the Grid.">
+        <svg viewBox="0 0 960 300" aria-hidden="true">
+          <path class="pl-wire" d="M236 150 C 300 150 320 150 386 150"/><path class="pl-flow" d="M236 150 C 300 150 320 150 386 150" stroke="#39d98a"/>
+          <path class="pl-wire" d="M646 150 C 700 150 720 150 806 150"/><path class="pl-flow" d="M646 150 C 700 150 720 150 806 150" stroke="#39d98a"/>
+          <rect class="pl-node hi" x="26" y="104" width="210" height="92" rx="12"/>
+          <text class="pl-t pl-title" x="131" y="132" text-anchor="middle" font-size="12">Panel · Day mode</text>
+          <text class="pl-t pl-cap" x="131" y="151" text-anchor="middle" font-size="10">device chips · multi-select</text>
+          <text class="pl-t pl-cap" x="131" y="167" text-anchor="middle" font-size="10">bearer token · LAN</text>
+          <text class="pl-t pl-badge" x="311" y="138" text-anchor="middle" font-size="10">/api/reports</text>
+          <text class="pl-t pl-cap" x="311" y="172" text-anchor="middle" font-size="10">route · stops</text>
+          <rect class="pl-node" x="386" y="104" width="260" height="92" rx="12"/>
+          <text class="pl-t pl-title" x="516" y="132" text-anchor="middle" font-size="12">Traccar server</text>
+          <text class="pl-t pl-cap" x="516" y="151" text-anchor="middle" font-size="10">every raw GPS fix</text>
+          <text class="pl-t pl-cap" x="516" y="167" text-anchor="middle" font-size="10">computes trips &amp; stops</text>
+          <text class="pl-t pl-badge" x="726" y="138" text-anchor="middle" font-size="10">draw</text>
+          <text class="pl-t pl-cap" x="726" y="172" text-anchor="middle" font-size="10">route + pins</text>
+          <rect class="pl-node hi" x="806" y="104" width="128" height="92" rx="12"/>
+          <text class="pl-t pl-title" x="870" y="138" text-anchor="middle" font-size="12">Map</text>
+          <text class="pl-t pl-cap" x="870" y="156" text-anchor="middle" font-size="10">lines + stops</text>
+        </svg>
+      </div>
+      <figcaption>The token is Home Assistant's own Traccar credential, kept in a device-local file on the Pi and never committed. The tab talks to Traccar on the LAN — the public address is bot-blocked at the edge, so the wall panel takes the direct route.</figcaption>
+    </figure>
+    <div class="grid-3" style="margin-top:1.6rem">
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div><h3>Pick who to show</h3><p>Colour-matched chips let you draw one device's day or several at once — the van alone, or the whole family overlaid — and a <b>Now</b> button drops straight back to the live view.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><h3>Tap a stop</h3><p>Every stopped place is a clickable pin. Tap one and the device panel tells you when it <b>arrived</b>, when it <b>left</b>, how long it was parked — with the address resolved through the Grid to the exact building.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6M12 16v6M2 12h6M16 12h6"/><circle cx="12" cy="12" r="3"/></svg></div><h3>Dense, not sparse</h3><p>Because it reads Traccar's own report, the van's day comes back as <b>hundreds</b> of points — a real driven line, not the handful of snapshots Home Assistant happens to have logged.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 05 WHAT'S ON THE TAB -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">05 · On the tab</span><h2>A map you can drive, cards you can drill into</h2><p class="lede">The big dark map fills two-thirds of the screen; three device cards sit alongside, each colour-keyed to its marker — the amber dot on the map is the amber card in the list.</p></div>
+    <div class="grid-3">
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 21s-7-5.7-7-11a7 7 0 0 1 14 0c0 5.3-7 11-7 11z"/></svg></div><h3>Live map + trails</h3><p>Colour-matched markers, a ring around home, and each device's recent trail. A "moving" marker pulses; a "Fit all" button frames everyone at once.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></div><h3>Cards with a badge</h3><p>Each card shows <b>Home / Away / Moving</b>, the Grid address, speed in mph, a battery bar (or the van's voltage), distance from home, GPS accuracy and last-seen — with a <b>Go&nbsp;to</b> button that flies the map to that device.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M21 3l-9 9M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5"/></svg></div><h3>Tap for the detail</h3><p>Tap a card and it opens a focused view: that device on its own map, the Grid property card, plus distance from home, geofence and link status — the full picture, then back out.</p></div>
+    </div>
+    <div class="demo-note" style="margin-top:1.4rem"><b>Fleet at a glance.</b> A strip across the top counts how many are home, how many are moving, and the van's battery voltage — flagged red if it drops below 12.0 V, so a van left with something draining the battery shows up before it's flat.</div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- CLOSING -->
+<section>
+  <div class="wrap reveal">
+    <div class="close">
+      <span class="eyebrow" style="color:#39d98a">Where everyone is</span>
+      <h2 style="margin-top:1rem">The van, the phones, the family — one glance at the wall.</h2>
+      <p>Self-hosted GPS, a map that costs nothing to draw, addresses named to the actual doorstep, and a day-replay pulled straight from the source — all reading the same local stack that runs everything else in the house. Next: geofence arrival routines off the day's stop patterns.</p>
+      <div class="sig"><span class="dot" style="background:#39d98a;box-shadow:0 0 8px #39d98a"></span><span>Traccar · self-hosted</span><span>·</span><span>Esri dark · no key</span><span>·</span><span>see it on the <a href="wallpanel.html" style="color:#39d98a">Wall panel</a></span></div>
+    </div>
+  </div>
+</section>
+
+<footer>Traccar GPS · self-hosted server · keyless Esri dark map · Grid property addresses · day routes &amp; stops · <a href="wallpanel.html">Wall panel</a> · <a href="index.html">DECS Home Systems</a></footer>
+
+<script src="app.js"></script>
+</body>
+</html>

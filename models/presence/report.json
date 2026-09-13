@@ -1,0 +1,68 @@
+{
+ "enclosure-base": {
+  "size_mm": [
+   92.0,
+   62.0,
+   20.0
+  ],
+  "min_z": 0.0,
+  "volume_cm3": 21.3,
+  "grams_pla_15pct": 12.0,
+  "tris": 2212
+ },
+ "enclosure-lid": {
+  "size_mm": [
+   92.0,
+   62.0,
+   13.0
+  ],
+  "min_z": 0.0,
+  "volume_cm3": 17.2,
+  "grams_pla_15pct": 10.0,
+  "tris": 2520
+ },
+ "wedge-15": {
+  "size_mm": [
+   84.0,
+   54.0,
+   17.47
+  ],
+  "min_z": 0.0,
+  "volume_cm3": 45.9,
+  "grams_pla_15pct": 26.0,
+  "tris": 1460
+ },
+ "wedge-25": {
+  "size_mm": [
+   84.0,
+   54.0,
+   28.18
+  ],
+  "min_z": 0.0,
+  "volume_cm3": 70.0,
+  "grams_pla_15pct": 39.0,
+  "tris": 1460
+ },
+ "corner-bracket": {
+  "size_mm": [
+   106.97,
+   106.97,
+   50.0
+  ],
+  "min_z": 0.0,
+  "volume_cm3": 96.0,
+  "grams_pla_15pct": 54.0,
+  "tris": 3256
+ },
+ "peg": {
+  "size_mm": [
+   6.6,
+   6.6,
+   10.9
+  ],
+  "min_z": 0.0,
+  "volume_cm3": 0.1,
+  "grams_pla_15pct": 0.0,
+  "tris": 860
+ }
+}

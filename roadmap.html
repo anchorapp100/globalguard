@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Roadmap &amp; Ideas — DECS Home Systems</title>
+<meta name="description" content="Where the self-hosted smart home goes next: switchable dashboards, an LCARS bridge console, presence &amp; geofencing, solar-aware automation, cameras and a planned tone-ACK confirmation ear for the alarm — rated by effort, nothing committed.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Antonio:wght@400;600&family=Archivo:wght@500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+/* ============================================================
+   Roadmap page — local additions.
+   Theme-aware pieces use the shared CSS variables only.
+   The LCARS console is a committed-dark stage → fixed hex.
+   ============================================================ */
+
+/* effort pills (theme-aware) */
+.epill{font-family:"IBM Plex Mono",monospace;font-size:.66rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;border-radius:999px;padding:.32rem .62rem;display:inline-flex;align-items:center;gap:.42rem;border:1px solid;white-space:nowrap;line-height:1}
+.epill::before{content:"";width:.46rem;height:.46rem;border-radius:50%;background:currentColor;box-shadow:0 0 7px currentColor;flex:none}
+.epill.quick{color:var(--live);border-color:color-mix(in srgb,var(--live) 42%,transparent);background:var(--live-soft)}
+.epill.weekend{color:var(--amber-bright);border-color:color-mix(in srgb,var(--amber-bright) 42%,transparent);background:var(--amber-soft)}
+.epill.ambitious{color:var(--alert);border-color:color-mix(in srgb,var(--alert) 42%,transparent);background:var(--alert-soft)}
+
+/* hero legend panel */
+.road-legend{align-self:stretch}
+.road-legend-h{font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:0 0 .2rem}
+.rl-row{display:flex;gap:.85rem;align-items:flex-start;padding:.85rem 0;border-top:1px solid var(--line);font-size:.9rem;color:var(--muted)}
+.rl-row:first-of-type{border-top:0}
+.rl-row .epill{flex:none;margin-top:.02rem}
+
+/* card header rows */
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.7rem}
+.card-top h3{font-size:1.12rem;font-weight:700}
+.feat-top{display:flex;justify-content:space-between;align-items:center;gap:1rem}
+
+/* switchable-dashboards view list */
+.dashviews{list-style:none;margin:1.1rem 0 0;padding:0}
+.dashviews li{display:flex;align-items:baseline;gap:.75rem;padding:.62rem 0;border-top:1px solid var(--line);font-size:.92rem;color:var(--muted)}
+.dashviews li:first-child{border-top:0}
+.dashviews b{color:var(--ink);font-weight:600;min-width:4.6rem;flex:none;font-family:"IBM Plex Mono",monospace;font-size:.76rem;letter-spacing:.05em;text-transform:uppercase}
+.dv-dot{width:.5rem;height:.5rem;border-radius:50%;flex:none;align-self:center}
+
+/* card status line + mini list */
+.card-meta{display:flex;align-items:center;gap:.5rem;font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--live);margin-top:.5rem}
+.card-meta .cm-dot{width:.45rem;height:.45rem;border-radius:50%;background:var(--live);box-shadow:0 0 7px var(--live);flex:none}
+.mini-list{list-style:none;margin:.55rem 0 0;padding:0;display:flex;flex-direction:column;gap:.4rem}
+.mini-list li{position:relative;padding-left:1.15rem;font-size:.9rem;color:var(--muted)}
+.mini-list li::before{content:"→";position:absolute;left:0;color:var(--accent)}
+
+/* idea filter list */
+.ideas{display:flex;flex-direction:column;gap:.7rem;margin-top:1.5rem}
+.idea{display:flex;justify-content:space-between;align-items:center;gap:1rem;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:.9rem 1.15rem;box-shadow:var(--shadow);transition:border-color .15s,transform .08s}
+.idea:hover{border-color:var(--line-strong);transform:translateY(-1px)}
+.idea .txt{min-width:0}
+.idea h3{font-size:1rem;font-weight:700;margin:0}
+.idea p{font-size:.87rem;color:var(--muted);margin:.16rem 0 0}
+.idea .epill{flex:none}
+.ideas-empty{display:none;margin-top:1.1rem;padding:1rem 1.15rem;border:1px dashed var(--line-strong);border-radius:12px;font-family:"IBM Plex Mono",monospace;font-size:.85rem;color:var(--muted)}
+.ideas-empty.show{display:block}
+
+/* ---------- LCARS bridge console (committed-dark stage) ---------- */
+.lc{background:#000;border-radius:14px;padding:12px;font-family:"Antonio","Archivo",system-ui,sans-serif;color:#000;-webkit-user-select:none;user-select:none}
+.lc *{box-sizing:border-box}
+.lc-head{display:flex;gap:8px;height:46px;margin-bottom:8px}
+.lc-elbow{width:124px;flex:none;background:#ff9900;border-radius:32px 8px 0 0}
+.lc-bar{flex:1;min-width:0;background:#99ccff;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 16px;color:#000;font-weight:600;letter-spacing:.12em;text-transform:uppercase;font-size:.76rem;overflow:hidden}
+.lc-bar .lc-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lc-bar .lc-sd{font-size:.64rem;letter-spacing:.06em;opacity:.68;white-space:nowrap;flex:none}
+.lc-main{display:flex;gap:8px;align-items:stretch}
+.lc-rail{width:124px;flex:none;display:flex;flex-direction:column;gap:6px}
+.lc-btn{border:0;height:46px;border-radius:8px;background:var(--c,#ff9900);color:#000;font-family:inherit;text-align:right;padding:0 13px 6px 8px;display:flex;flex-direction:column;align-items:flex-end;justify-content:flex-end;cursor:pointer;opacity:.5;transition:opacity .15s,transform .05s;overflow:hidden}
+.lc-btn .lc-lbl{font-weight:600;font-size:.8rem;letter-spacing:.01em;line-height:1;white-space:nowrap}
+.lc-btn .lc-n{font-size:.54rem;font-weight:400;opacity:.72;letter-spacing:.06em;margin-top:2px}
+.lc-btn:hover{opacity:.8}
+.lc-btn.on{opacity:1}
+.lc-btn:active{transform:translateY(1px)}
+.lc-btn:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.lc-railcap{flex:1;min-height:20px;background:#6655aa;border-radius:0 0 0 32px;opacity:.6}
+.lc-screen{flex:1;min-width:0;background:#08080b;border:1px solid #1b1b22;border-radius:10px;padding:13px 15px;display:flex;flex-direction:column;box-shadow:inset 0 0 42px rgba(0,0,0,.6)}
+.lc-scr-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;border-bottom:1px solid #22222b;padding-bottom:8px;margin-bottom:11px}
+.lc-scr-title{font-family:"Antonio","Archivo",sans-serif;font-size:1.1rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#ff9f1a}
+.lc-scr-sub{font-family:"IBM Plex Mono",monospace;font-size:.57rem;letter-spacing:.14em;color:#5b6680;text-transform:uppercase;white-space:nowrap}
+.lc-readout{display:flex;flex-direction:column;gap:10px}
+.lc-row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:5px 12px}
+.lc-k{font-family:"IBM Plex Mono",monospace;font-size:.6rem;letter-spacing:.12em;color:#77839c;text-transform:uppercase}
+.lc-v{font-family:"Antonio","Archivo",sans-serif;font-size:1.02rem;font-weight:600;letter-spacing:.05em;text-align:right;color:#fff;white-space:nowrap}
+.lc-bar-wrap{grid-column:1/3;height:6px;border-radius:99px;background:#1b1b24;overflow:hidden}
+.lc-bar-fill{display:block;height:100%;border-radius:99px;transition:width .55s cubic-bezier(.2,.7,.2,1)}
+.lc-tag{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:.57rem;font-weight:600;letter-spacing:.08em;padding:.16rem .5rem;border-radius:4px;color:#000;text-transform:uppercase}
+.lc-note{font-family:"IBM Plex Mono",monospace;font-size:.68rem;color:var(--faint);margin-top:.8rem;letter-spacing:.02em}
+@media (max-width:520px){
+  .lc-elbow,.lc-rail{width:106px}
+  .lc-btn .lc-lbl{font-size:.72rem}
+  .lc-v{font-size:.92rem}
+  .lc-scr-title{font-size:.98rem}
+}
+@media (prefers-reduced-motion:reduce){.lc-bar-fill{transition:none}}
+</style>
+</head>
+<body class="p-road">
+
+<header class="nav"><div class="wrap">
+  <a class="brand" href="index.html"><span class="dot"></span> DECS&nbsp;Home&nbsp;Systems</a>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="globalguard.html">GlobalGuard</a>
+    <a href="homeassistant.html">Home&nbsp;Assistant</a>
+    <a href="wallpanel.html">Wall&nbsp;panel</a>
+    <a href="cameras.html">Cameras</a>
+    <a href="presence.html">Presence</a>
+    <a href="roomscribe.html">Roomscribe</a>
+    <a href="traccar.html">Traccar</a>
+    <a href="finance.html">Finance</a>
+    <a href="fan.html">Fan</a>
+    <a href="rada.html">Rada&nbsp;shower</a>
+    <a href="theme.html">HA&nbsp;Theme</a>
+    <a href="technical.html">Technical</a>
+    <a href="roadmap.html" class="active">Roadmap</a>
+    <a href="claude.html">Claude&nbsp;Code</a>
+    <button class="themebtn" id="tt" aria-label="Toggle colour theme"><span id="ttic">◐</span> theme</button>
+  </nav>
+</div></header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">Roadmap · the wishlist</span>
+        <h1 class="title">Everything works.<br><em>Now let's make it show off.</em></h1>
+        <p class="lede">The plumbing's done — the alarm's alive, the house is local, the solar's on the wall. So this is the fun list: the ambitious, the playful and the genuinely useful things we can bolt on next, rated by effort and nothing more. Nothing here is committed. It's a menu.</p>
+        <div class="meta-row">
+          <span class="epill quick">quick win</span>
+          <span class="epill weekend">a weekend</span>
+          <span class="epill ambitious">ambitious</span>
+        </div>
+      </div>
+      <aside class="card road-legend">
+        <p class="road-legend-h">How to read the list</p>
+        <div class="rl-row"><span class="epill quick">quick win</span><span>An evening's work — a dashboard card, a scene, a bit of YAML.</span></div>
+        <div class="rl-row"><span class="epill weekend">a weekend</span><span>A proper little project: design it, build it, live with it.</span></div>
+        <div class="rl-row"><span class="epill ambitious">ambitious</span><span>New hardware or real reverse-engineering — the deep end.</span></div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- 01 · DASHBOARDS & LOOK -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">01 · Dashboards &amp; look</span><h2>Make the wall panel a joy to walk past</h2><p class="lede">The house runs itself; the panel is how it shows its face. These two are about that face — one practical, one pure theatre.</p></div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-top"><h3>Switchable dashboards</h3><span class="epill weekend">a weekend</span></div>
+        <p style="color:var(--muted)">One tap — or the time of day — swaps the whole panel. The wall tablet already flips its brightness and state by time; this makes the entire <em>layout</em> follow suit, so you only ever see what matters right now.</p>
+        <ul class="dashviews">
+          <li><span class="dv-dot" style="background:var(--amber-bright)"></span><b>Day</b><span>solar, weather and the day ahead, up front</span></li>
+          <li><span class="dv-dot" style="background:var(--violet)"></span><b>Night</b><span>a dim clock and the alarm state — nothing else</span></li>
+          <li><span class="dv-dot" style="background:var(--live)"></span><b>Guest</b><span>just the lights, nothing to fiddle or break</span></li>
+          <li><span class="dv-dot" style="background:var(--alert)"></span><b>Security</b><span>every camera at once, one glance to sweep</span></li>
+        </ul>
+        <p class="card-meta"><span class="cm-dot"></span>Step one shipped — a six-tab, no-scroll panel · <a href="wallpanel.html" style="color:inherit">see the wall panel page</a></p>
+        <p style="color:var(--muted);font-size:.86rem;margin-top:.5rem">Still to do: the time-of-day auto-switch and a guest view — and, because the current panel is already built from a theme, an LCARS skin would drop straight in.</p>
+      </div>
+      <div class="card">
+        <div class="card-top"><h3>LCARS bridge console <span aria-hidden="true">🖖</span></h3><span class="epill ambitious">ambitious</span></div>
+        <p style="color:var(--muted);margin-bottom:1rem">A full <em>Star&nbsp;Trek</em> LCARS skin for the panel — the house as a starship's ops console. Tap a system to read it out. It's a mock below, but the numbers are the ones the panel already knows. Pure theatre, entirely doable.</p>
+        <div class="lc" id="lc-console" role="group" aria-label="LCARS bridge console — a playful mock of the home ops panel">
+          <div class="lc-head">
+            <div class="lc-elbow" aria-hidden="true"></div>
+            <div class="lc-bar"><span class="lc-title">DECS · Deck 1 · Home Ops</span><span class="lc-sd">SD 47935.2</span></div>
+          </div>
+          <div class="lc-main">
+            <div class="lc-rail">
+              <button class="lc-btn on" type="button" data-panel="power" style="--c:#ff9900"><span class="lc-lbl">POWER</span><span class="lc-n">01 · PWR</span></button>
+              <button class="lc-btn" type="button" data-panel="tactical" style="--c:#cc99cc"><span class="lc-lbl">TACTICAL</span><span class="lc-n">02 · SEC</span></button>
+              <button class="lc-btn" type="button" data-panel="environmental" style="--c:#99ccff"><span class="lc-lbl">ENVIRONMENTAL</span><span class="lc-n">03 · ENV</span></button>
+              <button class="lc-btn" type="button" data-panel="lights" style="--c:#ffcc66"><span class="lc-lbl">LIGHTS</span><span class="lc-n">04 · ILL</span></button>
+              <div class="lc-railcap" aria-hidden="true"></div>
+            </div>
+            <div class="lc-screen" id="lc-screen" aria-live="polite"></div>
+          </div>
+        </div>
+        <p class="lc-note">↳ tap a system on the rail — POWER is live by default.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 02 · MAKE IT THINK -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">02 · Make it think</span><h2>Automation with a bit of a brain</h2><p class="lede">Everything's already reporting in — presence, solar, the sun's angle, the alarm's state. These four just join the dots so the house acts on its own, at the right moment.</p></div>
+    <div class="grid-2">
+      <div class="card feat">
+        <div class="feat-top"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 21s7-5.5 7-11a7 7 0 10-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg></div><span class="epill weekend">a weekend</span></div>
+        <h3>Presence &amp; geofencing</h3>
+        <p>The house disarms as your phone reaches the drive and arms itself when the last person leaves — no fumbling for a fob. The trick is to start the disarm <em>early</em>, so the alarm's slow radio never leaves you waiting at the door.</p>
+        <p class="card-meta"><span class="cm-dot"></span>The indoor half is spec'd — an 11-room <a href="presence.html" style="color:inherit">mmWave presence design pack</a></p>
+      </div>
+      <div class="card feat">
+        <div class="feat-top"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M19.1 4.9l-1.8 1.8M6.7 17.3l-1.8 1.8"/></svg></div><span class="epill weekend">a weekend</span></div>
+        <h3>Solar-aware automation</h3>
+        <p>The Victron data's already live — so run the big loads when the sun's up and the battery's full. The washing machine, the immersion, the car: all wait for surplus, and hold back the moment you'd be importing. Free energy, spent on purpose.</p>
+      </div>
+      <div class="card feat">
+        <div class="feat-top"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 2a7 7 0 00-4 12c.7.6 1 1.2 1 2h6c0-.8.3-1.4 1-2A7 7 0 0012 2z"/></svg></div><span class="epill quick">quick win</span></div>
+        <h3>Adaptive lighting</h3>
+        <p>Lights that track the sun — warm and low in the evening, bright and cool at midday — with a "last one to bed" sweep that quietly takes the whole house dark behind you.</p>
+      </div>
+      <div class="card feat">
+        <div class="feat-top"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></div><span class="epill quick">quick win</span></div>
+        <h3>Away &amp; holiday mode</h3>
+        <p>A believable, lived-in look while you're away: lights that replay your real evening patterns rather than an obvious timer, tied straight to the alarm's armed state so it arms itself the moment you leave.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 03 · SECURITY, LEVELLED UP -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">03 · Security, levelled up</span><h2>The alarm's alive — now make it fast and watchful</h2></div>
+    <div class="grid-2">
+      <div class="card feat">
+        <div class="feat-top"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 8a5 5 0 0 1 0 8"/></svg></div><span class="epill ambitious">ambitious</span></div>
+        <h3>Tone-ACK confirmation</h3>
+        <p>The instant-disarm key-fob relay is <a href="technical.html#alarm" style="color:var(--accent)">already built</a> — but the panel only <em>reports</em> back six to nine seconds later, so the bridge still confirms an arm against a slow clock. The next step gives it an ear: a tiny circuit tapped onto the panel's own sounder, so Home&nbsp;Assistant hears the confirmation beep in milliseconds and only re-fires the fob if it stays silent. Fast <em>and</em> certain.</p>
+        <p class="card-meta"><span class="cm-dot"></span>Spec'd &amp; costed — see the <a href="technical.html#tone" style="color:inherit">Technical page</a></p>
+      </div>
+      <div class="card feat">
+        <div class="feat-top"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="2.5" y="7" width="14" height="11" rx="2"/><path d="M16.5 10.5l5-2.5v8l-5-2.5z"/></svg></div><span class="epill weekend">a weekend</span></div>
+        <h3>Cameras on the wall</h3>
+        <p>Fold the cameras into the panel and a dedicated Security dashboard — the same one the "Security" view above would summon on a tap.</p>
+        <ul class="mini-list">
+          <li>Live tiles, every feed at a glance</li>
+          <li>Snapshot-on-motion straight to your phone</li>
+          <li>A doorbell press pops the front door full-screen</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 04 · THE QUICK-HIT LIST -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">04 · The quick-hit list</span><h2>Small things, big polish</h2><p class="lede">The little stuff — mostly an evening apiece. Filter by how much of a Saturday it'd cost.</p></div>
+    <div class="demo-controls" id="idea-filter" role="group" aria-label="Filter ideas by effort">
+      <button class="dbtn play" type="button" data-filter="all">All</button>
+      <button class="dbtn" type="button" data-filter="quick">Quick win</button>
+      <button class="dbtn" type="button" data-filter="weekend">A weekend</button>
+      <button class="dbtn" type="button" data-filter="ambitious">Ambitious</button>
+    </div>
+    <div class="ideas" id="idea-list">
+      <div class="idea" data-effort="quick"><div class="txt"><h3>HA Energy dashboard</h3><p>Wire the Victron feeds into Home Assistant's native power-flow diagram.</p></div><span class="epill quick">quick win</span></div>
+      <div class="idea" data-effort="quick"><div class="txt"><h3>Per-array solar breakdown</h3><p>Map the three MPPTs to the 2.1 / 6.3 / 4.2&nbsp;kWp arrays and chart each on its own.</p></div><span class="epill quick">quick win</span></div>
+      <div class="idea" data-effort="quick"><div class="txt"><h3>Fully Kiosk self-heal</h3><p>Auto-restart on crash plus start-on-boot, so the wall panel never needs babysitting.</p></div><span class="epill quick">quick win</span></div>
+      <div class="idea" data-effort="quick"><div class="txt"><h3>Voice scenes</h3><p>"Movie night", "good morning", "everyone out" — one phrase, a dozen actions.</p></div><span class="epill quick">quick win</span></div>
+      <div class="idea" data-effort="quick"><div class="txt"><h3>Panel backup-battery swap</h3><p>Replace the alarm panel's dead clock battery so a power cut can't reset it.</p></div><span class="epill quick">quick win</span></div>
+      <div class="idea" data-effort="weekend"><div class="txt"><h3>Second-household voice control</h3><p>Full alarm voice control from a second family member's own account.</p></div><span class="epill weekend">a weekend</span></div>
+      <div class="idea" data-effort="weekend"><div class="txt"><h3>Rada digital shower in HA</h3><p>Surface the Sense shower's state and chase real control — the <a href="rada.html" style="color:var(--accent)">BLE teardown is on its own page</a>.</p></div><span class="epill weekend">a weekend</span></div>
+    </div>
+    <p class="ideas-empty" id="idea-empty">Nothing that ambitious down here — the big swings live up in sections 02 and 03.</p>
+  </div>
+</section>
+
+<!-- 05 · IN THE HEADSET -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">05 · In the headset</span><h2>Roomscribe grows a model library</h2><p class="lede">The Quest&nbsp;3 mixed-reality mapper already pins real devices to real fixtures and controls them in passthrough. Next it earns a catalogue of real 3D objects, a refine step, and — the big one — models that show live state. Full write-up on the <a href="roomscribe.html" style="color:var(--accent)">Roomscribe page</a>.</p></div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-top"><h3>A model library &amp; place-then-refine</h3><span class="epill ambitious">ambitious</span></div>
+        <p style="color:var(--muted)">Swap the placeholder blobs for a library of real smart-home objects — downlighters, pendants, lamps, switches, thermostats, TVs, speakers, fans. Pick from a category, drop it, then nudge, rotate, scale and snap it to the surface.</p>
+        <ul class="mini-list">
+          <li>Category picker → exact model → refine</li>
+          <li>Furniture boxes become real pieces the same way</li>
+          <li>Add what the scan missed — a chair, a plant, anything</li>
+        </ul>
+        <p class="card-meta"><span class="cm-dot"></span>Sits on the working pin architecture · <a href="roomscribe.html" style="color:inherit">see the roadmap section</a></p>
+      </div>
+      <div class="card">
+        <div class="card-top"><h3>A living 3D twin</h3><span class="epill weekend">a weekend*</span></div>
+        <p style="color:var(--muted)">Once a pin is a real object it can show the real state: the lamp glows its actual colour, the TV lights when it's playing, the fan spins when it's running, the alarm bulbs pulse when armed. A dashboard you stand inside.</p>
+        <ul class="mini-list">
+          <li>Each model bound to its live HA state</li>
+          <li>Export a "dollhouse" to the wall panel &amp; phone</li>
+          <li>Point-and-say control · spatial scenes</li>
+        </ul>
+        <p style="color:var(--muted);font-size:.86rem;margin-top:.5rem">* a weekend <em>after</em> the library exists — the models do the heavy lifting.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CLOSING -->
+<section>
+  <div class="wrap reveal">
+    <div class="close">
+      <span class="eyebrow" style="color:var(--amber-bright)">Nothing here is committed</span>
+      <h2 style="margin-top:1rem">Pick one, and it moves into the build.</h2>
+      <p>None of this is set in stone — it's a menu to graze from. Fancy the LCARS console lighting up the wall, the presence-based geofencing that disarms the house before you reach the door, or a washing machine that quietly waits for the sun? Those three are top of the pile. Say the word and any item here moves off this page and into the plan — same Pi, same no-cloud rules, same weekend energy.</p>
+      <div class="sig"><span class="dot"></span><span>LCARS console · presence geofencing · solar-aware loads — the favourites</span><span>·</span><span>everything else, on request</span></div>
+    </div>
+  </div>
+</section>
+
+<footer>Roadmap &amp; ideas · a living menu of what's next for the house · nothing committed, everything possible · <a href="index.html">DECS Home Systems</a></footer>
+
+<script src="app.js"></script>
+<script>
+/* ---------- INTERACTIVE #1 · LCARS bridge console ---------- */
+(function(){
+  var root=document.getElementById('lc-console'); if(!root) return;
+  var screen=document.getElementById('lc-screen');
+  var btns=[].slice.call(root.querySelectorAll('.lc-btn'));
+  var LC={
+    power:{sub:"Reactor · Sec 1701",rows:[
+      {k:"Solar array",v:"4.2 kW ▲",bar:62,c:"#ffcc66"},
+      {k:"Battery",v:"82%",bar:82,c:"#99ff99"},
+      {k:"House load",v:"0.9 kW",bar:16,c:"#99ccff"},
+      {k:"Grid",v:"Export",tag:"#99ff99"}
+    ]},
+    tactical:{sub:"Perimeter · Grid 47",rows:[
+      {k:"Perimeter",v:"Armed",tag:"#ff6666"},
+      {k:"Zones",v:"10 clear",bar:100,c:"#99ccff"},
+      {k:"Last event",v:"Disarmed 07:14",c:"#cc99cc"}
+    ]},
+    environmental:{sub:"Life support",rows:[
+      {k:"Lounge",v:"21°C",bar:46,c:"#ffcc66"},
+      {k:"Loft",v:"24°C",bar:69,c:"#ff9900"},
+      {k:"Humidity",v:"48%",bar:48,c:"#99ccff"}
+    ]},
+    lights:{sub:"Deck 1 · Illum",rows:[
+      {k:"Rooms",v:"6 · 3 on",bar:50,c:"#ffcc66"},
+      {k:"Nanoleaf",v:"Active",tag:"#cc99cc"},
+      {k:"All off",v:"Ready",c:"#99ccff"}
+    ]}
+  };
+  function render(key){
+    var d=LC[key]; if(!d) return;
+    var h='<div class="lc-scr-head"><span class="lc-scr-title">'+key+'</span><span class="lc-scr-sub">'+d.sub+'</span></div><div class="lc-readout">';
+    d.rows.forEach(function(r){
+      h+='<div class="lc-row"><span class="lc-k">'+r.k+'</span>';
+      if(r.tag){ h+='<span class="lc-v"><span class="lc-tag" style="background:'+r.tag+'">'+r.v+'</span></span>'; }
+      else{ h+='<span class="lc-v" style="color:'+(r.c||'#fff')+'">'+r.v+'</span>'; }
+      if(typeof r.bar==='number'){ h+='<span class="lc-bar-wrap"><span class="lc-bar-fill" style="width:'+r.bar+'%;background:'+(r.c||'#99ccff')+'"></span></span>'; }
+      h+='</div>';
+    });
+    h+='</div>';
+    screen.innerHTML=h;
+  }
+  function select(key){
+    btns.forEach(function(b){b.classList.toggle('on',b.getAttribute('data-panel')===key);});
+    render(key);
+  }
+  btns.forEach(function(b){b.addEventListener('click',function(){select(b.getAttribute('data-panel'));});});
+  select('power');
+})();
+
+/* ---------- INTERACTIVE #2 · effort filter ---------- */
+(function(){
+  var bar=document.getElementById('idea-filter'); if(!bar) return;
+  var btns=[].slice.call(bar.querySelectorAll('.dbtn'));
+  var rows=[].slice.call(document.querySelectorAll('#idea-list .idea'));
+  var empty=document.getElementById('idea-empty');
+  function apply(f){
+    var n=0;
+    rows.forEach(function(r){
+      var show=(f==='all')||(r.getAttribute('data-effort')===f);
+      r.style.display=show?'flex':'none';
+      if(show)n++;
+    });
+    if(empty)empty.classList.toggle('show',n===0);
+  }
+  btns.forEach(function(b){b.addEventListener('click',function(){
+    btns.forEach(function(x){x.classList.remove('play');});
+    b.classList.add('play');
+    apply(b.getAttribute('data-filter'));
+  });});
+  apply('all');
+})();
+</script>
+</body>
+</html>

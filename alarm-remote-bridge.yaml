@@ -1,0 +1,95 @@
+# Alarm Remote Voice Bridge — ESP32 + isolated 4-channel relay.
+# Presses the four buttons of a 12 V alarm key fob through ISOLATED relay
+# contacts, so Home Assistant (and Google, via HA) can Arm / Disarm /
+# Part-arm / Panic.
+#
+# WHY A RELAY, NOT AN OPTOCOUPLER: the fob floats — its button "common" sits
+# behind a reverse-protection diode, not at true ground. Any switch that shares
+# a ground with the ESP32 (a common-ground opto board, or a bare transistor)
+# bonds the fob's common to the system ground and JAMS the remote. A relay's
+# contacts are galvanically isolated, so they bridge a button's two pads like a
+# fingertip with nothing shared. Keep the fob on its own power; its ground must
+# never touch the ESP32 / 12 V ground.
+#
+# Wiring (see the Technical page):
+#   Control side (shares ground):  D23->IN1 Arm, D22->IN2 Disarm,
+#     D21->IN3 Part-arm, D19->IN4 Panic; ESP GND->relay DC-; 12 V->DC+/DC-.
+#     Set the board to HIGH-level trigger (3.3 V high = relay on).
+#   Isolated fob side:  COMx -> that button's signal pad (yellow/green/blue/
+#     white); NOx -> the fob's shared common "G" pad (one grey serves all four).
+#
+# Flash once over USB (ESPHome dashboard, or web.esphome.io), put your Wi-Fi in
+# secrets.yaml, then adopt in Home Assistant. Four button.* entities appear.
+
+esphome:
+  name: alarm-remote-bridge
+  friendly_name: Alarm Remote Bridge
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap: {}                      # fallback hotspot for first-time setup
+
+captive_portal:
+logger:
+api:                          # Home Assistant fills in the encryption key on adopt
+ota:
+  - platform: esphome
+
+# The four relay inputs, driven HIGH to close (board on HIGH-level trigger).
+# ESPHome holds them LOW at boot, so the ESP32 can never fire the alarm while it
+# resets. GPIO23/22/21/19 are not strapping pins — no boot glitches.
+output:
+  - platform: gpio
+    id: out_arm
+    pin: GPIO23
+  - platform: gpio
+    id: out_disarm
+    pin: GPIO22
+  - platform: gpio
+    id: out_part
+    pin: GPIO21
+  - platform: gpio
+    id: out_panic
+    pin: GPIO19
+
+button:
+  # Arm / Disarm / Part-arm: one clean 600 ms press.
+  - platform: template
+    name: Arm
+    icon: mdi:shield-lock
+    on_press:
+      - output.turn_on: out_arm
+      - delay: 600ms
+      - output.turn_off: out_arm
+
+  - platform: template
+    name: Disarm
+    icon: mdi:shield-off
+    on_press:
+      - output.turn_on: out_disarm
+      - delay: 600ms
+      - output.turn_off: out_disarm
+
+  - platform: template
+    name: Part-arm
+    icon: mdi:shield-home
+    on_press:
+      - output.turn_on: out_part
+      - delay: 600ms
+      - output.turn_off: out_part
+
+  # Panic: the panel needs a single SUSTAINED hold (~3.5 s), not pulses.
+  # Latch the line high for 3.5 s, then release.
+  - platform: template
+    name: Panic
+    icon: mdi:alarm-light
+    on_press:
+      - output.turn_on: out_panic
+      - delay: 3500ms
+      - output.turn_off: out_panic

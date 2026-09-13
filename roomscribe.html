@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Roomscribe — DECS Home Systems</title>
+<meta name="description" content="A native Meta Quest 3 mixed-reality app that maps the house: put the headset on, look at the real room in passthrough, point the controller at a Home Assistant device and pin it in place. The pins are anchored to the room and survive app restarts and leaving the room, so you can walk up to any light and switch it on from where it actually is — built in Unity + Meta XR, compiled and deployed to the headset entirely from the command line.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* ---- roomscribe page: local additions (accent = violet) ---- */
+  .p-rs .card.feat .ic{color:#8a7dff}
+  .pl-wire{fill:none;stroke:#243040;stroke-width:3;stroke-linecap:round;opacity:.35}
+  .pl-flow{fill:none;stroke-width:4;stroke-linecap:round;stroke-dasharray:2 12;opacity:.95;animation:plmove .9s linear infinite}
+  @keyframes plmove{to{stroke-dashoffset:-14}}
+  .pl-node{fill:#0e151f;stroke:#26333f;stroke-width:1.4}
+  .pl-node.hi{fill:#12101f;stroke:#8a7dff;stroke-width:1.6}
+  .pl-t{font-family:"IBM Plex Mono",ui-monospace,monospace;fill:#9aa7b3}
+  .pl-title{fill:#e7edf3;font-weight:600}
+  .pl-cap{fill:#7c8a97}
+  .pl-badge{fill:#8a7dff;font-weight:600}
+  @media (prefers-reduced-motion:reduce){.pl-flow{animation:none}}
+  pre.code{background:#0b121b;border:1px solid var(--line);border-left:3px solid #8a7dff;border-radius:12px;padding:1rem 1.15rem;overflow-x:auto;
+    font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.8rem;line-height:1.6;color:#c7d2dd;margin:1.1rem 0 .4rem;white-space:pre}
+  pre.code .cm{color:#66788a}
+  .codecap{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--faint);letter-spacing:.03em;margin:0 0 1.3rem;padding-left:.2rem}
+  .ents{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-top:1.3rem}
+  @media(max-width:720px){.ents{grid-template-columns:1fr}}
+  .ent{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:1rem 1.1rem;position:relative;overflow:hidden}
+  .ent::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:#8a7dff}
+  .ent .eh{display:flex;align-items:center;gap:.55rem;font-weight:700;color:var(--ink);font-family:"Archivo",sans-serif}
+  .ent .ek{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:#8a7dff;margin-top:.35rem}
+  .ent .ev{color:var(--muted);font-size:.9rem;margin-top:.35rem;line-height:1.45}
+  .rs-steps{counter-reset:s;list-style:none;margin:1.3rem 0 0;padding:0;display:grid;gap:.7rem}
+  .rs-steps li{counter-increment:s;display:grid;grid-template-columns:2rem 1fr;gap:.85rem;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:.9rem 1.1rem}
+  .rs-steps li::before{content:counter(s);font-family:"IBM Plex Mono",monospace;font-size:.82rem;font-weight:600;color:#8a7dff;background:#12101f;border:1px solid #2b2740;border-radius:8px;width:2rem;height:2rem;display:flex;align-items:center;justify-content:center}
+  .rs-steps b{grid-column:2;display:block;color:var(--ink);font-family:"Archivo",sans-serif}
+  .rs-steps span{grid-column:2;color:var(--muted);font-size:.92rem}
+  /* ---- roadmap · item-library additions ---- */
+  .tile{fill:#0e151f;stroke:#26333f;stroke-width:1.2}
+  .tlbl{font-family:"IBM Plex Mono",monospace;fill:#9aa7b3;font-size:10px}
+  .tcat{font-family:"IBM Plex Mono",monospace;fill:#8a7dff;font-size:11px;font-weight:600;letter-spacing:.12em}
+  .tmut{font-family:"IBM Plex Mono",monospace;fill:#7c8a97;font-size:10px}
+  .tnum{font-family:"IBM Plex Mono",monospace;fill:#e7edf3;font-size:12px;font-weight:600}
+  .dash-box{fill:rgba(90,97,114,.06);stroke:#5a6172;stroke-width:1.6;stroke-dasharray:5 5}
+  .solid-box{fill:rgba(138,125,255,.07);stroke:#8a7dff;stroke-width:1.7}
+  .rs-callout{margin-top:2rem;background:linear-gradient(100deg,rgba(138,125,255,.10),transparent 72%);border:1px solid var(--line);border-left:3px solid #8a7dff;border-radius:14px;padding:1.2rem 1.35rem}
+  .rs-callout h3{font-family:"Archivo",sans-serif;font-size:1.1rem;font-weight:700;color:var(--ink);margin:0 0 .4rem}
+  .rs-callout p{color:var(--muted);font-size:.95rem;margin:0;line-height:1.55}
+  .phase-row{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1.6rem}
+  .phase-chip{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:#8a7dff;border:1px solid color-mix(in srgb,#8a7dff 38%,transparent);background:rgba(138,125,255,.08);border-radius:999px;padding:.36rem .72rem;letter-spacing:.02em}
+</style>
+</head>
+<body class="p-rs">
+
+<header class="nav"><div class="wrap">
+  <a class="brand" href="index.html"><span class="dot"></span> DECS&nbsp;Home&nbsp;Systems</a>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="globalguard.html">GlobalGuard</a>
+    <a href="homeassistant.html">Home&nbsp;Assistant</a>
+    <a href="wallpanel.html">Wall&nbsp;panel</a>
+    <a href="cameras.html">Cameras</a>
+    <a href="presence.html">Presence</a>
+    <a href="roomscribe.html" class="active">Roomscribe</a>
+    <a href="traccar.html">Traccar</a>
+    <a href="finance.html">Finance</a>
+    <a href="fan.html">Fan</a>
+    <a href="rada.html">Rada&nbsp;shower</a>
+    <a href="theme.html">HA&nbsp;Theme</a>
+    <a href="technical.html">Technical</a>
+    <a href="roadmap.html">Roadmap</a>
+    <a href="claude.html">Claude&nbsp;Code</a>
+    <button class="themebtn" id="tt" aria-label="Toggle colour theme"><span id="ttic">◐</span> theme</button>
+  </nav>
+</div></header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">Mixed reality · Meta Quest 3 · native Unity + Meta XR</span>
+        <h1 class="title">Pin your home,<br><em>in the room itself</em>.</h1>
+        <p class="lede">Put the headset on and you see your real room in colour passthrough. Point the controller at a light, pull the trigger, and a marker drops onto the real fixture — bound to that Home&nbsp;Assistant device. The pin <b>stays where you put it</b>: it survives an app restart and walking out of the room and back, because it's anchored to the room the Quest already knows. Walk up to any light and switch it on from exactly where it stands. A quick browser proof came first — but the things that make it actually work only exist in a native app, so Roomscribe is Unity&nbsp;+&nbsp;Meta&nbsp;XR, built and pushed to the headset without opening the editor once.</p>
+        <div class="meta-row">
+          <span class="chip">Quest 3</span>
+          <span class="chip">Unity 6 · Meta XR</span>
+          <span class="chip">Spatial anchors</span>
+          <span class="chip">Home Assistant</span>
+          <span class="chip">no cloud</span>
+        </div>
+      </div>
+      <div class="panel" role="img" aria-label="Roomscribe status on the Quest: colour passthrough mixed reality, devices read live from Home Assistant over the LAN, pins anchored to the room and persisting across restarts, furniture shown as scene-label outlines, and no cloud.">
+        <div class="head"><span>Roomscribe · on the Quest</span><span>native MR</span></div>
+        <div class="rows">
+          <div class="prow"><span class="led on"></span><span class="k">View</span><span class="v">colour passthrough · MR</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">Devices</span><span class="v">Home Assistant · LAN</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">Pins</span><span class="v">anchored · survive restart</span></div>
+          <div class="prow"><span class="led info"></span><span class="k">Furniture</span><span class="v">scene-label outlines</span></div>
+          <div class="prow gone"><span class="led dead"></span><span class="k">Cloud</span><span class="v">none — all on-device + LAN</span></div>
+        </div>
+        <div class="beacon">
+          <span class="lbl">ray</span>
+          <svg viewBox="0 0 220 30" preserveAspectRatio="none" aria-hidden="true">
+            <line x1="0" y1="15" x2="220" y2="15" stroke="#26313d" stroke-width="1"/>
+            <polyline class="trace" points="0,15 46,15 58,15 64,6 72,24 80,15 132,15 144,15 150,7 158,23 166,15 220,15" fill="none" stroke="#8a7dff" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+            <circle class="pulse-dot" cx="64" cy="6" r="2.4" style="fill:#8a7dff"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- STATS -->
+<section style="padding-block:clamp(2.2rem,5vw,3.2rem)">
+  <div class="wrap reveal">
+    <div class="stats">
+      <div class="stat"><span class="big num-strong">MR</span><span class="lab">passthrough, not VR</span></div>
+      <div class="stat"><span class="big num-strong">✓</span><span class="lab">pins survive restart</span></div>
+      <div class="stat"><span class="big num-strong">0</span><span class="lab">cloud · LAN only</span></div>
+      <div class="stat"><span class="big num-strong">0</span><span class="lab">editor clicks to build</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 01 WHY NATIVE -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">01 · Why it had to go native</span><h2>The browser got us 80% — the last 20% is where it lives</h2><p class="lede">The idea was tested first as a WebXR page served straight from Home&nbsp;Assistant. You could point and pin and even toggle lights — but the pins wandered. The browser can't bind to the <em>rooms the Quest has already mapped</em>, its anchors drift, and it can't read the headset's furniture labels. So the moment you changed rooms, the markers lost their place. Everything that makes this trustworthy is native-only, so we rebuilt it in Unity with Meta's XR toolkit.</p></div>
+    <div class="grid-3">
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/></svg></div><h3>Knows your rooms</h3><p>Meta's Scene &amp; Mixed-Reality Utility Kit hand the app the rooms you set up on the headset — walls, floor and furniture — so a pin can belong to a real, recognised room, not floating coordinates.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="4"/></svg></div><h3>Anchors that hold</h3><p>Native spatial anchors re-locate to the physical room every session. That's the difference between "the pin is roughly there" and "the pin is on the bulb, still, tomorrow."</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18M8 4v5"/></svg></div><h3>Reads the furniture</h3><p>The Quest already labels tables, screens, storage and the rest. We draw those as clean outlines — a sense of the room with no camera and nothing private ever shown.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 02 HOW IT WORKS -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">02 · How it works</span><h2>Point at the real thing, pin it, control it</h2><p class="lede">The controller casts a ray into the passthrough view; where it lands on the real room, a marker is dropped and tied to a Home&nbsp;Assistant device. From then on the marker <b>is</b> the control: point at it, pull the trigger, and Home&nbsp;Assistant toggles the device over the LAN — the marker even glows in the bulb's real colour.</p></div>
+    <figure>
+      <div class="demo-stage" role="img" aria-label="Control path: the Quest controller casts a ray onto the real room surface in passthrough; a pin is dropped and bound to a Home Assistant entity, parented to the room's floor anchor so it persists; pulling the trigger on the pin sends a service call to Home Assistant over the LAN and the device switches.">
+        <svg viewBox="0 0 960 300" aria-hidden="true">
+          <path class="pl-wire" d="M246 150 C 320 150 340 150 406 150"/><path class="pl-flow" d="M246 150 C 320 150 340 150 406 150" stroke="#8a7dff"/>
+          <path class="pl-wire" d="M666 150 C 720 150 740 150 806 150"/><path class="pl-flow" d="M666 150 C 720 150 740 150 806 150" stroke="#8a7dff"/>
+          <rect class="pl-node" x="26" y="104" width="220" height="92" rx="12"/>
+          <text class="pl-t pl-title" x="136" y="134" text-anchor="middle" font-size="12">Point in passthrough</text>
+          <text class="pl-t pl-cap" x="136" y="153" text-anchor="middle" font-size="10">controller ray → room surface</text>
+          <text class="pl-t pl-cap" x="136" y="169" text-anchor="middle" font-size="10">trigger drops a pin</text>
+          <text class="pl-t pl-badge" x="326" y="138" text-anchor="middle" font-size="10">bind</text>
+          <text class="pl-t pl-cap" x="326" y="172" text-anchor="middle" font-size="10">pin ↔ HA device</text>
+          <rect class="pl-node hi" x="406" y="104" width="260" height="92" rx="12"/>
+          <text class="pl-t pl-title" x="536" y="132" text-anchor="middle" font-size="12">Pin · anchored to the room</text>
+          <text class="pl-t pl-cap" x="536" y="151" text-anchor="middle" font-size="10">parented to the room's floor anchor</text>
+          <text class="pl-t pl-cap" x="536" y="167" text-anchor="middle" font-size="10">re-locates every session</text>
+          <text class="pl-t pl-badge" x="736" y="138" text-anchor="middle" font-size="10">toggle</text>
+          <text class="pl-t pl-cap" x="736" y="172" text-anchor="middle" font-size="10">REST over LAN</text>
+          <rect class="pl-node hi" x="806" y="104" width="128" height="92" rx="12"/>
+          <text class="pl-t pl-title" x="870" y="138" text-anchor="middle" font-size="12">Home Assistant</text>
+          <text class="pl-t pl-cap" x="870" y="156" text-anchor="middle" font-size="10">device switches</text>
+        </svg>
+      </div>
+      <figcaption>The app reads the device list and toggles devices straight from Home&nbsp;Assistant's REST API over the home network — the same keyless, LAN-only path the rest of the house uses. No vendor cloud, no account in the headset.</figcaption>
+    </figure>
+    <ol class="rs-steps">
+      <li><b>Pick a device</b><span>The floating panel lists your Home&nbsp;Assistant devices, filtered to the room you're standing in. Tap one to arm it.</span></li>
+      <li><b>Point &amp; pin</b><span>A ray comes off the controller with a cursor where it meets the real room. Pull the trigger to drop the pin on the fixture.</span></li>
+      <li><b>Test it</b><span>Flip to Test mode, point at the pin, pull the trigger — the real light switches, and the pin recolours to its live state.</span></li>
+      <li><b>Leave &amp; come back</b><span>Restart the app or walk out and back — the pins are still on the fixtures. Nothing to re-place.</span></li>
+    </ol>
+  </div>
+</section>
+
+<!-- 03 IT STAYS PUT -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">03 · The hard part — it stays put</span><h2>Anchored to the room, not to thin air</h2><p class="lede">The failure mode of the browser version was pins drifting when you moved between rooms. The fix is the heart of the app: the headset works out <b>which mapped room you're physically inside</b> (by your position within its bounds, not a guess), and every pin is stored as a pose <b>relative to that room's floor anchor</b>. Because the Quest re-locates the floor anchor to the real room each session, the pins ride back onto the real fixtures automatically — through restarts and room changes alike.</p></div>
+    <div class="ents">
+      <div class="ent"><div class="eh">Room lock</div><div class="ek">MRUKRoom.IsPositionInRoom(head)</div><div class="ev">The current room is the one whose bounds actually contain your head — so on a cold start a pin binds to the room you're <b>in</b>, not "the first one".</div></div>
+      <div class="ent"><div class="eh">Room-relative pins</div><div class="ek">parent = room.FloorAnchor</div><div class="ev">Each pin's pose is kept in the floor anchor's frame. The floor anchor re-locates every session, so the pin follows it back to the real fixture — robust where per-pin anchors were flaky.</div></div>
+    </div>
+    <div class="sec-head col" style="margin-top:2.2rem"><span class="eyebrow">Talking to the house</span><h3 style="margin:.2rem 0 0">The same LAN path as everything else</h3><p class="lede">Devices and their live state come from Home&nbsp;Assistant's REST API; a tap on a pin is a single service call — reached on the Pi's own address over the home Wi-Fi, never the tunnel (which Cloudflare's bot check blocks for a non-browser client anyway).</p></div>
+    <pre class="code"><span class="cm">// toggle the pinned device — one service call, over the LAN</span>
+POST http://192.168.5.126:8123/api/services/homeassistant/toggle
+Authorization: Bearer &lt;long-lived token&gt;
+{ "entity_id": "light.utility_lights" }
+
+<span class="cm">// the pin's colour tracks the real state</span>
+GET /api/states/light.utility_lights   →  { "state": "on", "attributes": { "rgb_color": [255,176,64] } }</pre>
+    <p class="codecap">The token lives only on the headset (pushed to the app's own data folder); nothing about the house leaves the network.</p>
+  </div>
+</section>
+
+<!-- 04 PANEL + FURNITURE -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">04 · The controls</span><h2>A panel you can throw wherever you want</h2><p class="lede">Everything is driven from one floating panel and the controller. It's built to be used stood in a room, one-handed, with the beam.</p></div>
+    <div class="grid-3">
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16M4 5v14M4 12h10"/></svg></div><h3>Place / Test</h3><p>Two modes: <b>Place</b> drops pins, <b>Test</b> switches the real devices. The beam stops on the panel, the button under it lights up, and a cursor shows exactly where you're pointing.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg></div><h3>Grab &amp; recentre</h3><p>Grab the panel by its top bar and drag it anywhere; press a button to summon it back in front of you. It spawns at eye level, wherever you're looking.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M7 20h10"/></svg></div><h3>Furniture outlines</h3><p>The room's furniture is drawn as faint coloured wireframes from the Quest's own scene labels — enough to read the space, with no camera feed and nothing photoreal.</p></div>
+    </div>
+    <div class="demo-note" style="margin-top:1.6rem"><b>Why not a photoreal scan?</b> The Quest can build a photoreal copy of a room, but it shows every bit of clutter, it's locked inside Meta's own app, and it can't carry interactive device pins. Outlines from the scene labels give the useful part — where things are — while keeping the room private and the pins live.</div>
+  </div>
+</section>
+
+<!-- 05 BUILT HEADLESS -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">05 · How it was built</span><h2>Compiled to the headset without opening the editor</h2><p class="lede">The whole app was scaffolded, configured and built from the command line — Unity in batch mode, driven over SSH and the terminal, reading the build log and fixing compile errors in the loop, then side-loaded to the Quest over USB. No editor windows, no manual scene wiring.</p></div>
+    <pre class="code"><span class="cm"># configure the project (XR, Android, Meta features) then build the APK — batch mode, no UI</span>
+Unity.exe -batchmode -nographics -quit -projectPath C:\envy\roomscribe -buildTarget Android \
+  -executeMethod Roomscribe.EditorTools.ProjectConfigurator.Configure -logFile configure.log
+Unity.exe -batchmode -nographics -quit -projectPath C:\envy\roomscribe -buildTarget Android \
+  -executeMethod Roomscribe.EditorTools.BuildAndroid.Build -logFile build.log
+
+<span class="cm"># push it to the headset + drop in the Home Assistant token</span>
+adb install -r Builds\roomscribe.apk</pre>
+    <p class="codecap">The scene itself is assembled in C# at configure time — camera rig, passthrough, MRUK and the app components — so a build is fully reproducible from source with one command.</p>
+  </div>
+</section>
+
+<!-- glyph library: shared defs used by the diagrams below -->
+<svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute">
+  <defs>
+    <g id="ic-downlight" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle r="13"/><circle r="6.5" fill="currentColor" stroke="none" opacity=".22"/><path d="M-6 16 -9 22M0 16 0 23M6 16 9 22"/></g>
+    <g id="ic-pendant" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M-9 -20H9M0 -20V-8M-13 5 -6 -8H6L13 5Z"/><circle cy="9" r="3" fill="currentColor" stroke="none" opacity=".3"/></g>
+    <g id="ic-lamp" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M-11 -1 -6 -14H6L11 -1Z M0 -1V15 M-9 17H9"/></g>
+    <g id="ic-switch" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="-13" y="-16" width="26" height="32" rx="4"/><rect x="-6" y="-9" width="12" height="18" rx="2"/><path d="M-6 0H6"/></g>
+    <g id="ic-plug" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="-13" y="-13" width="26" height="26" rx="6"/><path d="M-4 -4V4M4 -4V4M0 -9V-6"/></g>
+    <g id="ic-thermo" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle r="15" stroke-width="2.6"/><circle r="8"/><path d="M0 -8V-4"/></g>
+    <g id="ic-tv" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="-19" y="-13" width="38" height="26" rx="2.5"/><path d="M0 13V17M-8 17H8"/></g>
+    <g id="ic-soundbar" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="-21" y="-6" width="42" height="12" rx="6"/><circle cx="-10" r="2.2" fill="currentColor" stroke="none" opacity=".4"/><circle r="2.2" fill="currentColor" stroke="none" opacity=".4"/><circle cx="10" r="2.2" fill="currentColor" stroke="none" opacity=".4"/></g>
+    <g id="ic-echo" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M-12 -11V11M12 -11V11"/><ellipse cy="11" rx="12" ry="4"/><ellipse cy="-11" rx="12" ry="4" fill="currentColor" stroke="none" opacity=".3"/><ellipse cy="-11" rx="12" ry="4"/></g>
+    <g id="ic-motion" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M-12 -2A12 12 0 0 1 12 -2M-12 -2H12"/><path d="M0 -2 -8 15M0 -2 0 17M0 -2 8 15" opacity=".45"/></g>
+    <g id="ic-camera" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="-17" y="-9" width="27" height="18" rx="3"/><circle cx="4" r="5.5"/><circle cx="4" r="2" fill="currentColor" stroke="none" opacity=".4"/><path d="M-17 -3 -21 -4M-17 3 -21 4"/></g>
+    <g id="ic-smoke" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle r="15"/><circle r="10" stroke-dasharray="2 4" opacity=".5"/><circle r="2.4" fill="currentColor" stroke="none"/></g>
+    <g id="ic-fan" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle r="3.6" fill="currentColor" stroke="none"/><ellipse cx="-13" rx="10" ry="3.4"/><ellipse cx="13" rx="10" ry="3.4"/><ellipse cy="-13" rx="3.4" ry="10"/><ellipse cy="13" rx="3.4" ry="10"/></g>
+    <g id="ic-radiator" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M-16 -12H16M-16 12H16M-12 -12V12M-6 -12V12M0 -12V12M6 -12V12M12 -12V12"/></g>
+    <g id="ic-ac" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="-18" y="-9" width="36" height="18" rx="4"/><path d="M-14 -2H14M-14 3H14" opacity=".55"/><path d="M8 12q4 4 9 3" opacity=".5"/></g>
+    <g id="ic-chair" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="-15" y="-15" width="30" height="30" rx="3"/><path d="M-15 -15H15" stroke-width="3"/></g>
+    <g id="ic-plant" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle r="13"/><path d="M0 0 -7 -9M0 0 7 -9M0 0 0 -12M0 0 -10 2M0 0 10 2" opacity=".7"/></g>
+    <g id="ic-sofa" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M-30 16V4a6 6 0 0 1 6 -6h48a6 6 0 0 1 6 6v12"/><path d="M-24 4H24"/><path d="M-30 10H30"/><path d="M-26 16v5M26 16v5"/></g>
+  </defs>
+</svg>
+
+<!-- 06 · THE DOLLHOUSE (built) -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">06 · Built from the scan</span><h2>The dollhouse, running for real</h2><p class="lede">This one isn't a concept — it's live. The Quest exports the mapped rooms (floor, furniture and every pinned device) in one shared frame; a small three.js viewer renders them on the Home&nbsp;Assistant wall panel in their true relative positions. Three real spaces below — the <b>utility</b>, the <b>back-door lobby</b> and <b>Kev's bedroom</b> — walked, scanned and pinned in the headset, then stood up as a doll's-house you can spin. The pins carry <b>live state</b>: the red one is the back-door alarm light showing its real colour.</p></div>
+    <figure>
+      <video controls loop muted playsinline preload="metadata" poster="media/dollhouse-poster.jpg" style="width:100%;display:block;border:1px solid var(--line);border-radius:16px;background:#080b11">
+        <source src="media/dollhouse.mp4" type="video/mp4">
+        Your browser can't play this video — <a href="media/dollhouse.mp4" style="color:#8a7dff">download it here</a>.
+      </video>
+      <figcaption>The live dollhouse on the wall panel — three rooms exported from the Quest&nbsp;3, devices coloured by their real Home&nbsp;Assistant state, tap a pin to toggle it. Drag to orbit; the "Labels" toggle names every device.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- 07 · ROADMAP: THE LIBRARY -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">07 · On the roadmap</span><h2>From placeholder pins to a library of real things</h2><p class="lede">Right now a pinned device is a coloured blob — ideal for proving the thing works, plain to look at. Next it becomes a <b>catalogue of real smart-home objects</b>: choose what a device actually is from a category, drop it in, then refine it until it sits right. The same treatment turns the furniture outlines into real pieces and lets you add anything the scan missed. None of this is built yet — it's where Roomscribe goes next, and it all sits on the pin architecture that already works.</p></div>
+
+    <figure>
+      <div class="demo-stage" role="img" aria-label="Concept of the Roomscribe item library: five categories — Lighting, Controls, AV, Sensors and Climate — each holding real smart-home objects: downlighters, pendants and table lamps; light switches, smart plugs and thermostats; TVs, soundbars and smart speakers; motion sensors, cameras and smoke or gas detectors; ceiling fans, radiators and air-conditioning.">
+        <svg viewBox="0 0 960 432" style="color:#8a7dff">
+          <rect x="22" y="22" width="916" height="398" rx="16" fill="#0b121b" stroke="#1c2530"/>
+          <text x="48" y="56" style="fill:#e7edf3;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;letter-spacing:.14em">ITEM LIBRARY</text>
+          <text class="tmut" x="912" y="56" text-anchor="end">pick a category → place → refine</text>
+          <line x1="48" y1="68" x2="912" y2="68" stroke="#1c2530"/>
+          <text class="tcat" x="134" y="97" text-anchor="middle">LIGHTING</text>
+          <text class="tcat" x="307" y="97" text-anchor="middle">CONTROLS</text>
+          <text class="tcat" x="480" y="97" text-anchor="middle">AV</text>
+          <text class="tcat" x="653" y="97" text-anchor="middle">SENSORS</text>
+          <text class="tcat" x="826" y="97" text-anchor="middle">CLIMATE</text>
+          <!-- LIGHTING -->
+          <rect class="tile" x="59" y="110" width="150" height="92" rx="10"/><use href="#ic-downlight" transform="translate(134,150)"/><text class="tlbl" x="134" y="190" text-anchor="middle">Downlighter</text>
+          <rect class="tile" x="59" y="214" width="150" height="92" rx="10"/><use href="#ic-pendant" transform="translate(134,254)"/><text class="tlbl" x="134" y="294" text-anchor="middle">Pendant</text>
+          <rect class="tile" x="59" y="318" width="150" height="92" rx="10"/><use href="#ic-lamp" transform="translate(134,358)"/><text class="tlbl" x="134" y="398" text-anchor="middle">Table lamp</text>
+          <!-- CONTROLS -->
+          <rect class="tile" x="232" y="110" width="150" height="92" rx="10"/><use href="#ic-switch" transform="translate(307,150)"/><text class="tlbl" x="307" y="190" text-anchor="middle">Light switch</text>
+          <rect class="tile" x="232" y="214" width="150" height="92" rx="10"/><use href="#ic-plug" transform="translate(307,254)"/><text class="tlbl" x="307" y="294" text-anchor="middle">Smart plug</text>
+          <rect class="tile" x="232" y="318" width="150" height="92" rx="10"/><use href="#ic-thermo" transform="translate(307,358)"/><text class="tlbl" x="307" y="398" text-anchor="middle">Thermostat</text>
+          <!-- AV -->
+          <rect class="tile" x="405" y="110" width="150" height="92" rx="10"/><use href="#ic-tv" transform="translate(480,150)"/><text class="tlbl" x="480" y="190" text-anchor="middle">TV</text>
+          <rect class="tile" x="405" y="214" width="150" height="92" rx="10"/><use href="#ic-soundbar" transform="translate(480,254)"/><text class="tlbl" x="480" y="294" text-anchor="middle">Soundbar</text>
+          <rect class="tile" x="405" y="318" width="150" height="92" rx="10"/><use href="#ic-echo" transform="translate(480,358)"/><text class="tlbl" x="480" y="398" text-anchor="middle">Smart speaker</text>
+          <!-- SENSORS -->
+          <rect class="tile" x="578" y="110" width="150" height="92" rx="10"/><use href="#ic-motion" transform="translate(653,150)"/><text class="tlbl" x="653" y="190" text-anchor="middle">Motion</text>
+          <rect class="tile" x="578" y="214" width="150" height="92" rx="10"/><use href="#ic-camera" transform="translate(653,254)"/><text class="tlbl" x="653" y="294" text-anchor="middle">Camera</text>
+          <rect class="tile" x="578" y="318" width="150" height="92" rx="10"/><use href="#ic-smoke" transform="translate(653,358)"/><text class="tlbl" x="653" y="398" text-anchor="middle">Smoke / gas</text>
+          <!-- CLIMATE -->
+          <rect class="tile" x="751" y="110" width="150" height="92" rx="10"/><use href="#ic-fan" transform="translate(826,150)"/><text class="tlbl" x="826" y="190" text-anchor="middle">Ceiling fan</text>
+          <rect class="tile" x="751" y="214" width="150" height="92" rx="10"/><use href="#ic-radiator" transform="translate(826,254)"/><text class="tlbl" x="826" y="294" text-anchor="middle">Radiator</text>
+          <rect class="tile" x="751" y="318" width="150" height="92" rx="10"/><use href="#ic-ac" transform="translate(826,358)"/><text class="tlbl" x="826" y="398" text-anchor="middle">Air-con</text>
+        </svg>
+      </div>
+      <figcaption>A concept of the in-headset picker — choose a category, then the exact object, and it drops onto the fixture instead of a generic marker. The set grows into a proper library.</figcaption>
+    </figure>
+
+    <div class="sec-head col" style="margin-top:2.4rem"><span class="eyebrow">drop it · then refine it</span><h3 style="margin:.2rem 0 0">Place from a category, then nudge it until it's right</h3><p class="lede">Placing stays one quick action — point, pull, done — but now you drop a <em>chosen</em> model and fine-tune it: slide it along the surface, spin it to face the right way, scale it to the real thing. Fittings that belong on a surface <b>snap to it</b> — a downlight to the ceiling, a switch to the wall. And the furniture the Quest outlined gets the same upgrade: a box becomes a sofa.</p></div>
+    <figure>
+      <div class="demo-stage" role="img" aria-label="The place-then-refine flow. Devices: a generic blob, pointed at with the controller ray, becomes a chosen model from a category, then gains a transform gizmo to move, rotate and scale it, snapping to the ceiling. Furniture: a scanned dashed box becomes a fitted sofa model the same way.">
+        <svg viewBox="0 0 960 360">
+          <text class="tcat" x="46" y="58">DEVICES</text>
+          <!-- dev stage 1 -->
+          <path class="pl-wire" d="M92 150H208"/>
+          <path d="M214 66 152 120" stroke="#8a7dff" stroke-width="1.4" stroke-dasharray="2 5" fill="none"/>
+          <circle cx="152" cy="120" r="2.6" fill="#8a7dff"/>
+          <path d="M150 140V150" stroke="#59636e" stroke-width="1.4"/>
+          <circle cx="150" cy="128" r="12" fill="#39414d" stroke="#59636e" stroke-width="1.4"/>
+          <text class="tmut" x="150" y="176" text-anchor="middle">generic pin</text>
+          <!-- arrow 1 -->
+          <path class="pl-wire" d="M236 112H392"/><path class="pl-flow" d="M236 112H392" stroke="#8a7dff"/><path d="M386 107 394 112 386 117" fill="none" stroke="#8a7dff" stroke-width="1.5"/>
+          <!-- dev stage 2 -->
+          <rect x="420" y="58" width="120" height="20" rx="10" fill="#12101f" stroke="#8a7dff"/>
+          <text class="pl-badge" x="480" y="72" text-anchor="middle" font-size="10">Lighting ▸ Pendant</text>
+          <g style="color:#8a7dff"><use href="#ic-pendant" transform="translate(480,122) scale(1.3)"/></g>
+          <text class="tmut" x="480" y="176" text-anchor="middle">chosen model</text>
+          <!-- arrow 2 -->
+          <path class="pl-wire" d="M566 112H724"/><path class="pl-flow" d="M566 112H724" stroke="#8a7dff"/><path d="M718 107 726 112 718 117" fill="none" stroke="#8a7dff" stroke-width="1.5"/>
+          <!-- dev stage 3 -->
+          <path class="pl-wire" d="M752 80H868"/><text class="tmut" x="810" y="72" text-anchor="middle" opacity=".8">ceiling · snap</text>
+          <g style="color:#8a7dff"><use href="#ic-pendant" transform="translate(810,122) scale(1.3)"/></g>
+          <ellipse cx="810" cy="122" rx="48" ry="16" fill="none" stroke="#8a7dff" stroke-width="1.2" stroke-dasharray="3 4" opacity=".8"/>
+          <path d="M810 150V168M805 162 810 168 815 162" stroke="#8a7dff" stroke-width="1.3" fill="none"/>
+          <path d="M848 122H868M862 117 868 122 862 127" stroke="#8a7dff" stroke-width="1.3" fill="none"/>
+          <rect x="775" y="95" width="6" height="6" fill="#8a7dff"/><rect x="839" y="95" width="6" height="6" fill="#8a7dff"/><rect x="775" y="142" width="6" height="6" fill="#8a7dff"/><rect x="839" y="142" width="6" height="6" fill="#8a7dff"/>
+          <text class="tmut" x="810" y="176" text-anchor="middle">refine · rotate · scale</text>
+          <!-- furniture row -->
+          <text class="tcat" x="46" y="230">FURNITURE</text>
+          <rect class="dash-box" x="280" y="246" width="80" height="48" rx="4"/><text class="tmut" x="320" y="314" text-anchor="middle">scanned box</text>
+          <path class="pl-wire" d="M372 270H588"/><path class="pl-flow" d="M372 270H588" stroke="#8a7dff"/><path d="M582 265 590 270 582 275" fill="none" stroke="#8a7dff" stroke-width="1.5"/>
+          <text class="pl-badge" x="480" y="258" text-anchor="middle" font-size="10">fit a model to the box</text>
+          <g style="color:#8a7dff"><use href="#ic-sofa" transform="translate(640,262) scale(1.25)"/></g>
+          <text class="tmut" x="640" y="314" text-anchor="middle">sofa, fitted</text>
+        </svg>
+      </div>
+      <figcaption>Two tracks, one gesture: a device blob becomes a chosen model you then refine and snap; a scanned furniture box becomes a real piece the same way.</figcaption>
+    </figure>
+    <div class="ents">
+      <div class="ent"><div class="eh">Devices</div><div class="ek">blob → category → model → refine</div><div class="ev">Every pin is already a 3D object bound to a Home&nbsp;Assistant entity and parented to the room's floor anchor — so swapping the sphere for a chosen mesh and adding a move/rotate/scale step is a natural extension, not a rebuild.</div></div>
+      <div class="ent"><div class="eh">Furniture</div><div class="ek">scene box → fitted model</div><div class="ev">The Quest hands over a labelled box for each piece. We scale a matching model to that box, so the faint wireframes become a sofa, a table, a bed — still drawn from labels, never a camera.</div></div>
+    </div>
+
+    <div class="sec-head col" style="margin-top:2.4rem"><span class="eyebrow">fill the gaps</span><h3 style="margin:.2rem 0 0">Add what the scan missed</h3><p class="lede">No scan catches everything — a chair tucked under a desk, a pot plant in the corner, a lamp the headset never saw. So any item from the library can be dropped in freely, bound to nothing, anchored to the room exactly like a device pin. The map becomes something you <b>build</b>, not just something the headset hands you.</p></div>
+    <figure>
+      <div class="demo-stage" role="img" aria-label="Top-down room plan. Dashed boxes are furniture the Quest scanned — a sofa, a table, a media unit. Solid violet objects with a plus badge are items added by hand from the library — a chair and a plant the scan missed.">
+        <svg viewBox="0 0 960 340">
+          <rect x="70" y="44" width="820" height="252" rx="8" fill="#0a0f16" stroke="#2a3644" stroke-width="2.5"/>
+          <path d="M250 44H150" stroke="#0a0f16" stroke-width="5"/><path d="M150 44H250" stroke="#8a7dff" stroke-width="2" opacity=".45"/>
+          <path d="M560 44H460" stroke="#0a0f16" stroke-width="5"/><path d="M460 44H560" stroke="#8a7dff" stroke-width="2" opacity=".45"/>
+          <path d="M410 296H480" stroke="#0a0f16" stroke-width="5"/><path d="M410 296a70 70 0 0 1 70 -70" fill="none" stroke="#2a3644" stroke-width="1.2" opacity=".6"/>
+          <rect class="dash-box" x="120" y="96" width="150" height="66" rx="5"/><text class="tmut" x="195" y="133" text-anchor="middle">sofa</text>
+          <rect class="dash-box" x="360" y="188" width="140" height="86" rx="5"/><text class="tmut" x="430" y="235" text-anchor="middle">table</text>
+          <rect class="dash-box" x="700" y="78" width="130" height="42" rx="5"/><text class="tmut" x="765" y="103" text-anchor="middle">media unit</text>
+          <g style="color:#8a7dff"><use href="#ic-chair" transform="translate(600,212) scale(1.2)"/></g>
+          <circle cx="618" cy="196" r="8" fill="#8a7dff"/><path d="M614 196H622M618 192V200" stroke="#0a0f16" stroke-width="2"/>
+          <text class="tmut" x="600" y="252" text-anchor="middle">chair</text>
+          <g style="color:#8a7dff"><use href="#ic-plant" transform="translate(820,248) scale(1.15)"/></g>
+          <circle cx="836" cy="234" r="8" fill="#8a7dff"/><path d="M832 234H840M836 230V238" stroke="#0a0f16" stroke-width="2"/>
+          <text class="tmut" x="820" y="278" text-anchor="middle">plant</text>
+          <rect class="dash-box" x="80" y="312" width="26" height="14" rx="3"/><text class="tmut" x="114" y="323">what the Quest scanned</text>
+          <rect class="solid-box" x="320" y="312" width="26" height="14" rx="3"/><text class="tmut" x="354" y="323">added by hand</text>
+        </svg>
+      </div>
+      <figcaption>Dashed boxes are what the Quest scanned; the solid pieces are added by hand — a chair and a plant the scan missed, dropped straight from the library.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- 08 · WHERE IT LEADS -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">08 · Where it leads</span><h2>When the models come alive</h2><p class="lede">Once a pin is a real object, it can show the <b>real state</b>. The lamp glows its actual colour and brightness; the TV screen lights when it's playing; the fan's blades turn when it's running; the thermostat shows its setpoint; the alarm bulbs pulse red when the house is armed. The map stops being a map and becomes a <b>live dashboard you stand inside</b> — cheap to add once the library exists, and the single biggest payoff of the whole idea.</p></div>
+    <figure>
+      <div class="demo-stage" role="img" aria-label="Concept of the living twin: a room elevation where each placed object mirrors its Home Assistant state — a pendant glowing warm because the light is on, a ceiling fan with motion arcs because it is running, a TV with a lit screen because media is playing, and a thermostat reading 21 degrees.">
+        <svg viewBox="0 0 960 340">
+          <path d="M80 50H880" stroke="#2a3644" stroke-width="2"/>
+          <path d="M80 300H880" stroke="#2a3644" stroke-width="2"/>
+          <path d="M80 50V300M880 50V300" stroke="#2a3644" stroke-width="1.2" opacity=".5"/>
+          <text class="tmut" x="872" y="40" text-anchor="end" style="fill:#8a7dff">● Home Assistant · live</text>
+          <!-- pendant ON -->
+          <circle cx="180" cy="128" r="34" fill="#ffb44d" opacity=".10"/>
+          <g style="color:#ffb44d"><path d="M180 50V100" stroke="currentColor" stroke-width="1.6"/><use href="#ic-pendant" transform="translate(180,120) scale(1.5)"/></g>
+          <g stroke="#ffb44d" stroke-width="1.4" opacity=".7" fill="none"><path d="M150 152 141 166M180 158V174M210 152 219 166"/></g>
+          <text class="tnum" x="180" y="210" text-anchor="middle" style="fill:#ffcf8a">light · on</text>
+          <text class="tmut" x="180" y="228" text-anchor="middle">rgb 255,176,64</text>
+          <!-- fan RUNNING -->
+          <g style="color:#8a7dff"><use href="#ic-fan" transform="translate(420,98) scale(1.55)"/></g>
+          <g fill="none" stroke="#8a7dff" stroke-width="1.3" opacity=".55"><path d="M458 72a42 42 0 0 1 7 27M465 99 458 92M382 124a42 42 0 0 1 -7 -27M375 97 382 104"/></g>
+          <text class="tnum" x="420" y="210" text-anchor="middle" style="fill:#b9afff">fan · running</text>
+          <text class="tmut" x="420" y="228" text-anchor="middle">speed 2</text>
+          <!-- TV PLAYING -->
+          <rect x="612" y="122" width="76" height="54" rx="3" fill="#8a7dff" opacity=".16"/>
+          <g style="color:#8a7dff"><use href="#ic-tv" transform="translate(650,150) scale(2)"/></g>
+          <path d="M642 140 664 150 642 160Z" fill="#b9afff"/>
+          <text class="tnum" x="650" y="210" text-anchor="middle" style="fill:#b9afff">media · playing</text>
+          <text class="tmut" x="650" y="228" text-anchor="middle">Shield · Netflix</text>
+          <!-- thermostat -->
+          <g style="color:#37d39a"><use href="#ic-thermo" transform="translate(830,142) scale(1.6)"/></g>
+          <text x="830" y="148" text-anchor="middle" style="fill:#7fe9c0;font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600">21°</text>
+          <text class="tnum" x="830" y="210" text-anchor="middle" style="fill:#7fe9c0">climate</text>
+          <text class="tmut" x="830" y="228" text-anchor="middle">heat → 21°C</text>
+        </svg>
+      </div>
+      <figcaption>A concept of the living twin: each object mirrors its Home&nbsp;Assistant state in real time — glow, motion and readouts, not just position.</figcaption>
+    </figure>
+
+    <div class="sec-head col" style="margin-top:2.6rem"><span class="eyebrow">further ahead</span><h3 style="margin:.2rem 0 0">Six more on the list</h3></div>
+    <div class="grid-3">
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4"/><circle cx="12" cy="12" r="2"/></svg></div><h3>Smart snapping</h3><p>Fittings orient themselves to the surface they belong on — a downlight flat to the ceiling, a switch upright on the wall, a TV against the wall plane — using the Quest's own wall, floor and ceiling planes. Placement becomes one correct click.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s6-5 6-10a6 6 0 10-12 0c0 5 6 10 6 10z" stroke-dasharray="3 3"/><circle cx="12" cy="11" r="2"/></svg></div><h3>Home Assistant auto-suggest</h3><p>The app knows which devices in this room aren't on the map yet — "3 lights in Utility not placed" — and offers a best-guess spot. Confirm to place, instead of hunt-and-place.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.7 5.1L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.9z"/><path d="M18.5 15l.7 1.9 1.9.7-1.9.8-.7 1.8-.8-1.8-1.8-.8 1.8-.7z"/></svg></div><h3>AI auto-populate</h3><p>The RTX box and Claude recognise objects from a walk-around and pre-drop the right model with a suggested device — you just confirm. The library is the manual layer; the AI fills it in for you.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-6 8 6"/><path d="M6 10v9h12v-9"/><rect x="9.5" y="13" width="5" height="4" rx="1"/></svg></div><h3>Truer geometry</h3><p>Furniture as oriented boxes instead of axis-aligned, real door openings cut into the walls, and multiple floors stacked — so the dollhouse reads even closer to the real place.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0012 0M12 17v3M9 20h6"/></svg></div><h3>Point-and-say control</h3><p>Look at a device and just say it — "warm white" — hands-free, using mixed reality's unfair advantage: it already knows exactly what you're pointing at.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="7" r="2.2"/><circle cx="18" cy="7" r="2.2"/><circle cx="12" cy="18" r="2.2"/><path d="M8 7h8M7.6 8.7 10.8 16.3M16.4 8.7 13.2 16.3"/></svg></div><h3>Spatial scenes &amp; automations</h3><p>Select a few placed devices to save a scene, or draw a link in the air — "motion here → this light" — authoring automations by standing in the room. It ties straight into the <a href="presence.html" style="color:#8a7dff">Presence</a> system.</p></div>
+    </div>
+
+    <div class="rs-callout">
+      <h3>The same tool, pointed at a job</h3>
+      <p>The thing that maps your own house is also a surveying and quoting tool for the electrical work: scan a client's room, drop the proposed fittings, check spacing and coverage, and walk out with a positioned parts list. Roomscribe aimed outward — and a natural fit alongside <a href="index.html" style="color:#8a7dff">the rest of the stack</a>.</p>
+    </div>
+
+    <div class="phase-row">
+      <span class="phase-chip">next · the library + refine</span>
+      <span class="phase-chip">then · live state</span>
+      <span class="phase-chip">then · snapping &amp; auto-suggest</span>
+      <span class="phase-chip">later · AI auto-populate · dollhouse · voice</span>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- CLOSING -->
+<section>
+  <div class="wrap reveal">
+    <div class="close">
+      <span class="eyebrow" style="color:#8a7dff">The house, in your hands</span>
+      <h2 style="margin-top:1rem">Walk the room, point, and it's on the map.</h2>
+      <p>A mixed-reality layer over the same local Home&nbsp;Assistant that runs everything else — devices pinned to the real fixtures, holding their place through restarts and room changes, controlled from where they actually are. First proved in the browser, then rebuilt native for the parts that had to be. A working proof today; the foundation for a spatial way to run the whole house.</p>
+      <div class="sig"><span class="dot" style="background:#8a7dff;box-shadow:0 0 8px #8a7dff"></span><span>Quest 3 · Unity + Meta XR</span><span>·</span><span>anchored to the room</span><span>·</span><span>talks to <a href="homeassistant.html" style="color:#8a7dff">Home Assistant</a></span></div>
+    </div>
+  </div>
+</section>
+
+<footer>Roomscribe · native Quest 3 mixed reality · pins anchored to the room · <a href="homeassistant.html">Home Assistant</a> · <a href="presence.html">Presence</a> · <a href="index.html">DECS Home Systems</a></footer>
+
+<script src="app.js"></script>
+</body>
+</html>

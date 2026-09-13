@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HA Theme — DECS Home Systems</title>
+<meta name="description" content="How the wall-panel dashboard actually gets its look: one custom-button-card template for the everyday tiles, card-mod to dress every other card to match, and a small theme for the palette. The copyable tile YAML, the card roster, the colours, and two diagrams.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* ---- code block ---- */
+  .code{background:#0a1017;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:1.3rem;box-shadow:var(--shadow)}
+  .code .cbar{display:flex;align-items:center;justify-content:space-between;padding:.55rem .9rem;background:#0e151f;border-bottom:1px solid var(--line)}
+  .code .cbar .fn{font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.06em;color:var(--faint)}
+  .code .cbar .cp{cursor:pointer;border:1px solid var(--line);background:#121922;color:#e7edf3;border-radius:8px;padding:.32rem .75rem;font-family:"IBM Plex Mono",monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;transition:border-color .15s,color .15s}
+  .code .cbar .cp:hover{border-color:var(--amber-bright);color:var(--amber-bright)}
+  .code pre{margin:0;padding:1.1rem 1.3rem;overflow-x:auto;font-family:"IBM Plex Mono",monospace;font-size:.8rem;line-height:1.62;color:#cbd5e1;-webkit-text-size-adjust:100%}
+  .code pre .c{color:#5b6b7d}
+  .code pre .k{color:#7fb2e6}
+  .code pre .s{color:#e0b483}
+  /* ---- three ingredients accent bars ---- */
+  .ing{position:relative;overflow:hidden}
+  .ing::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:var(--accent);opacity:.8}
+  /* ---- diagram (reused schematic style) ---- */
+  .pl-wire{fill:none;stroke:#243040;stroke-width:3;stroke-linecap:round;opacity:.35}
+  .pl-flow{fill:none;stroke-width:4;stroke-linecap:round;stroke-dasharray:2 12;opacity:.95;animation:plmove .9s linear infinite}
+  @keyframes plmove{to{stroke-dashoffset:-14}}
+  .pl-node{fill:#0e151f;stroke:#26333f;stroke-width:1.4}
+  .pl-node.hi{fill:#131d15;stroke:#F4B159;stroke-width:1.6}
+  .pl-t{font-family:"IBM Plex Mono",ui-monospace,monospace;fill:#9aa7b3}
+  .pl-title{fill:#e7edf3;font-weight:600}
+  .pl-cap{fill:#7c8a97}
+  .pl-badge{fill:#F4B159;font-weight:600}
+  @media (prefers-reduced-motion:reduce){.pl-flow{animation:none}}
+  /* ---- tile anatomy ---- */
+  .anat{display:grid;grid-template-columns:1fr 1.1fr;gap:1.6rem;align-items:center}
+  @media(max-width:820px){.anat{grid-template-columns:1fr}}
+  .tiled{border-radius:18px;border:1px solid rgba(255,182,56,.55);background:radial-gradient(120% 110% at 50% 0%, rgba(255,182,56,.22), transparent 55%), linear-gradient(155deg,#1a2431 0%,#0e1621 100%);box-shadow:0 14px 34px -20px rgba(0,0,0,.8),0 0 24px 2px rgba(255,182,56,.2);padding:20px 14px;text-align:center;max-width:15rem;margin:0 auto;font-family:"Hanken Grotesk",sans-serif}
+  .tiled .ic{width:40px;height:40px;margin:0 auto;color:#ffb638;filter:drop-shadow(0 0 10px rgba(255,182,56,.75))}
+  .tiled .nm{font-size:14px;font-weight:600;color:#eff4f9;margin-top:8px}
+  .tiled .st{font-size:12px;color:#ffb638;font-weight:600;margin-top:2px}
+  .tiled .lb{font-size:10px;color:#5b6875;text-transform:uppercase;letter-spacing:.08em;margin-top:3px}
+  .anno{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.65rem}
+  .anno li{display:grid;grid-template-columns:1.9rem 1fr;gap:.6rem;font-size:.94rem;color:var(--muted)}
+  .anno li b{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--accent);padding-top:.2rem}
+  .anno li span b{font-family:inherit;font-size:inherit;color:var(--ink);padding:0}
+  /* ---- card roster ---- */
+  .roster{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-top:1.3rem}
+  @media(max-width:720px){.roster{grid-template-columns:1fr}}
+  .rc{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:.85rem 1.05rem}
+  .rc .nm{font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--ink);font-size:.84rem}
+  .rc .nm .tag{float:right;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);border:1px solid var(--line);border-radius:999px;padding:.1rem .5rem;font-weight:500}
+  .rc .ro{color:var(--muted);font-size:.9rem;margin-top:.35rem;line-height:1.4}
+  /* ---- palette ---- */
+  .pal{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:.7rem;margin-top:1.3rem}
+  .sw{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+  .sw .chip{height:52px}
+  .sw .meta{padding:.5rem .65rem}
+  .sw .hex{font-family:"IBM Plex Mono",monospace;font-size:.74rem;color:var(--ink);font-weight:600}
+  .sw .role{font-size:.72rem;color:var(--muted);margin-top:.05rem}
+</style>
+</head>
+<body class="p-theme">
+
+<header class="nav"><div class="wrap">
+  <a class="brand" href="index.html"><span class="dot"></span> DECS&nbsp;Home&nbsp;Systems</a>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="globalguard.html">GlobalGuard</a>
+    <a href="homeassistant.html">Home&nbsp;Assistant</a>
+    <a href="wallpanel.html">Wall&nbsp;panel</a>
+    <a href="cameras.html">Cameras</a>
+    <a href="presence.html">Presence</a>
+    <a href="roomscribe.html">Roomscribe</a>
+    <a href="traccar.html">Traccar</a>
+    <a href="finance.html">Finance</a>
+    <a href="fan.html">Fan</a>
+    <a href="rada.html">Rada&nbsp;shower</a>
+    <a href="theme.html" class="active">HA&nbsp;Theme</a>
+    <a href="technical.html">Technical</a>
+    <a href="roadmap.html">Roadmap</a>
+    <a href="claude.html">Claude&nbsp;Code</a>
+    <button class="themebtn" id="tt" aria-label="Toggle colour theme"><span id="ttic">◐</span> theme</button>
+  </nav>
+</div></header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">The dashboard recipe · button-card + card-mod</span>
+        <h1 class="title">The look,<br><em>open-sourced</em>.</h1>
+        <p class="lede">People keep asking what theme the wall panel uses. It isn't one you can install — it's a recipe. One <b>custom-button-card</b> template builds every everyday tile; <b>card-mod</b> dresses every other card to match; and a tiny theme sets the palette. Here's the whole thing: the tile YAML to copy, the handful of cards that do the work, and the colours.</p>
+        <div class="meta-row">
+          <span class="chip">custom:button-card</span>
+          <span class="chip">card-mod</span>
+          <span class="chip">layout-card</span>
+          <span class="chip">one shared template</span>
+        </div>
+      </div>
+      <div class="panel" role="img" aria-label="The recipe: a small theme for the palette, one button-card template for the everyday tiles, card-mod to make every other card match, and ten community cards in all.">
+        <div class="head"><span>The recipe</span><span>copy · adapt</span></div>
+        <div class="rows">
+          <div class="prow"><span class="led warn"></span><span class="k">Theme</span><span class="v">palette only · ~30 lines</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">Template</span><span class="v">1 button-card, reused everywhere</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">card-mod</span><span class="v">the glue on every other card</span></div>
+          <div class="prow"><span class="led info"></span><span class="k">Cards</span><span class="v">10 community cards · all HACS</span></div>
+          <div class="prow gone"><span class="led dead"></span><span class="k">Bespoke</span><span class="v">nothing you can't recreate</span></div>
+        </div>
+        <div class="beacon">
+          <span class="lbl">radius</span>
+          <svg viewBox="0 0 220 30" preserveAspectRatio="none" aria-hidden="true">
+            <rect x="6" y="6" width="208" height="18" rx="9" fill="none" stroke="#F4B159" stroke-width="1.4" opacity=".8"/>
+          </svg>
+          <span class="mono" style="font-size:.7rem;letter-spacing:.08em;color:#F4B159">18 px</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- STATS -->
+<section style="padding-block:clamp(2.2rem,5vw,3.2rem)">
+  <div class="wrap reveal">
+    <div class="stats">
+      <div class="stat"><span class="big num-strong">1</span><span class="lab">shared template</span></div>
+      <div class="stat"><span class="big num-strong">10</span><span class="lab">HACS cards</span></div>
+      <div class="stat"><span class="big num-strong">70</span><span class="lab">tiles it builds</span></div>
+      <div class="stat"><span class="big num-strong">18px</span><span class="lab">radius, everywhere</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 01 THREE INGREDIENTS -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">01 · The recipe</span><h2>Three ingredients, one surface</h2><p class="lede">Every tile you see is one of these three things. Get them right and the whole dashboard looks like it was designed as one piece — because, in effect, it was designed once.</p></div>
+    <div class="grid-3">
+      <div class="card feat ing"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div><h3>One button-card template</h3><p>The lights, stat tiles, action buttons, alarm state and zone tiles are all <b style="color:var(--ink)">custom:button-card</b>, and they all inherit a single base template. Change the gradient once and all sixty change together.</p></div>
+      <div class="card feat ing"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg></div><h3>card-mod for the rest</h3><p>The charts, the doorbell video, the solar power-flow, the media cards — other people's cards that can't be a button-card. <b style="color:var(--ink)">card-mod</b> forces the same gradient, 18&nbsp;px radius, border and glow onto them, so they blend in.</p></div>
+      <div class="card feat ing"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="12" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="13" r="2.5"/><path d="M12 22a10 10 0 1 1 0-20c2.5 0 3 1.5 2 3s-1 3 1 3h2c2 0 3 2 1 4-2 2-1 4 1 5"/></svg></div><h3>A theme for the palette</h3><p>A small HA <b style="color:var(--ink)">theme file</b> sets nothing but the base colours behind everything. All the character — the gradients, the amber glow, the motion — lives in per-card CSS, not the theme.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 02 THE TWO LANES (diagram) -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">02 · How it fits together</span><h2>Two lanes, one consistent surface</h2><p class="lede">Everything on screen arrives by one of two routes — but both end up wearing the same coat.</p></div>
+    <figure>
+      <div class="demo-stage" role="img" aria-label="Two lanes converge into one surface. Left lane: everyday tiles are built from custom:button-card inheriting one shared template — lights, stats, actions, zones and the alarm state. Right lane: special cards are community cards — power-flow, charts, video, media and chips — restyled by card-mod. Both feed into one surface with the same gradient, an 18-pixel radius and an amber glow.">
+        <svg viewBox="0 0 960 330" aria-hidden="true">
+          <!-- flows to the bottom node -->
+          <path class="pl-wire" d="M250 150 C 250 210 360 214 470 236"/><path class="pl-flow" d="M250 150 C 250 210 360 214 470 236" stroke="#F4B159"/>
+          <path class="pl-wire" d="M710 150 C 710 210 600 214 490 236"/><path class="pl-flow" d="M710 150 C 710 210 600 214 490 236" stroke="#3FCBD6"/>
+          <!-- left node: everyday tiles -->
+          <rect class="pl-node hi" x="70" y="34" width="360" height="118" rx="14"/>
+          <text class="pl-t pl-title" x="250" y="66" text-anchor="middle" font-size="13">Everyday tiles</text>
+          <text class="pl-t pl-badge" x="250" y="88" text-anchor="middle" font-size="11">custom:button-card · one template</text>
+          <text class="pl-t pl-cap" x="250" y="116" text-anchor="middle" font-size="11">lights · stats · actions</text>
+          <text class="pl-t pl-cap" x="250" y="134" text-anchor="middle" font-size="11">zones · alarm state</text>
+          <!-- right node: special cards -->
+          <rect class="pl-node" x="530" y="34" width="360" height="118" rx="14"/>
+          <text class="pl-t pl-title" x="710" y="66" text-anchor="middle" font-size="13">Special cards</text>
+          <text class="pl-t" x="710" y="88" text-anchor="middle" font-size="11" fill="#3FCBD6" font-weight="600">their own card + card-mod</text>
+          <text class="pl-t pl-cap" x="710" y="116" text-anchor="middle" font-size="11">power-flow · charts · video</text>
+          <text class="pl-t pl-cap" x="710" y="134" text-anchor="middle" font-size="11">media players · chips</text>
+          <!-- bottom node: one surface -->
+          <rect class="pl-node hi" x="250" y="238" width="460" height="74" rx="14"/>
+          <text class="pl-t pl-title" x="480" y="268" text-anchor="middle" font-size="13">One surface</text>
+          <text class="pl-t pl-cap" x="480" y="290" text-anchor="middle" font-size="11">same gradient · 18&#160;px radius · amber glow · one motion language</text>
+        </svg>
+      </div>
+      <figcaption>The everyday tiles get their look for free from the template; card-mod is what makes the charts and video look like they belong.</figcaption>
+    </figure>
+    <p class="demo-note"><b>A third route.</b> A couple of tabs aren't built from cards at all — the <a href="wallpanel.html">Vitals</a> health console and the <a href="traccar.html">Traccar</a> GPS map are small self-contained web-apps embedded in an iframe. They wear the same dark palette, 18&nbsp;px radius and amber accent, so they sit in the grid like everything else — the map on a keyless Esri dark basemap that matches without a paid key.</p>
+  </div>
+</section>
+
+<!-- 03 ANATOMY -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">03 · Anatomy of a tile</span><h2>What makes one tile tick</h2><p class="lede">This is the light tile, "on". Five parts do all the work — and four of them come straight from the shared template, so you write them once.</p></div>
+    <div class="anat">
+      <div class="tiled" aria-hidden="true">
+        <div class="ic"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 2a6 6 0 0 0-4 10.5c.7.7 1 1.3 1 2.5h6c0-1.2.3-1.8 1-2.5A6 6 0 0 0 12 2z"/></svg></div>
+        <div class="nm">Corner lamp</div>
+        <div class="st">On</div>
+        <div class="lb">Lounge</div>
+      </div>
+      <ul class="anno">
+        <li><b>01</b><span><b>The card.</b> A 155° gradient, an 18&nbsp;px radius, a hairline border and a deep drop-shadow. Every tile on the dashboard is this shell.</span></li>
+        <li><b>02</b><span><b>The grid.</b> <code>grid-template-areas</code> stacks the icon, name, state and label — swap the areas and the same tile becomes wide or compact.</span></li>
+        <li><b>03</b><span><b>The state block.</b> One <code>state:</code> rule says "when this is <code>on</code>, go amber and glow." That single block is the whole personality.</span></li>
+        <li><b>04</b><span><b>The keyframes.</b> <code>extra_styles</code> injects a <code>@keyframes</code> pulse, so an active tile breathes rather than just sitting there.</span></li>
+        <li><b>05</b><span><b>The behaviour.</b> Tap toggles, hold opens more-info — the only two lines that aren't about looks.</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 04 THE YAML -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">04 · Copy it</span><h2>One tile, whole and self-contained</h2><p class="lede">This is the exact tile above, flattened so it needs nothing but <b>button-card</b>. Add a Manual card, paste, change the entity. Recolour the hex values and it's yours.</p></div>
+    <div class="code">
+      <div class="cbar"><span class="fn">decs-light-tile.yaml</span><button class="cp" type="button" data-copy="y1">Copy</button></div>
+      <pre id="y1"><span class="c"># A single "DECS" light tile — needs only custom:button-card (HACS).</span>
+<span class="c"># Toggles a light/switch; glows amber and pulses softly when it's on.</span>
+<span class="k">type</span>: custom:button-card
+<span class="k">entity</span>: light.lounge_corner_lamp        <span class="c"># &larr; any light or switch</span>
+<span class="k">name</span>: Corner lamp
+<span class="k">label</span>: Lounge
+<span class="k">icon</span>: mdi:floor-lamp
+<span class="k">show_state</span>: true
+<span class="k">show_label</span>: true
+<span class="k">tap_action</span>:
+  <span class="k">action</span>: toggle
+<span class="k">hold_action</span>:
+  <span class="k">action</span>: more-info
+<span class="k">styles</span>:
+  <span class="k">card</span>:
+    - padding: 14px 10px
+    - border-radius: 18px
+    - border: 1px solid rgba(255,255,255,.12)
+    - background: <span class="s">"linear-gradient(155deg, #1a2431 0%, #0e1621 100%)"</span>
+    - box-shadow: <span class="s">"0 14px 34px -20px rgba(0,0,0,.8)"</span>
+    - transition: <span class="s">"border-color .25s ease, box-shadow .25s ease"</span>
+    - overflow: hidden
+  <span class="k">grid</span>:
+    - grid-template-areas: <span class="s">'"i" "n" "s" "l"'</span>
+    - grid-template-rows: min-content min-content min-content min-content
+    - grid-gap: 2px
+  <span class="k">icon</span>:
+    - width: 38px
+    - height: 38px
+    - color: <span class="s">"#4f5d6b"</span>
+    - transition: <span class="s">"all .3s ease"</span>
+  <span class="k">name</span>:  [font-size: 14px, font-weight: 600, color: <span class="s">"#eff4f9"</span>, margin-top: 6px]
+  <span class="k">state</span>: [font-size: 12px, color: <span class="s">"#6b7a89"</span>]
+  <span class="k">label</span>: [font-size: 10px, text-transform: uppercase, letter-spacing: .08em, color: <span class="s">"#5b6875"</span>, margin-top: 2px]
+<span class="c"># state-based overrides — this block is what makes it glow when "on"</span>
+<span class="k">state</span>:
+  - <span class="k">value</span>: <span class="s">"on"</span>
+    <span class="k">styles</span>:
+      <span class="k">card</span>:
+        - border-color: rgba(255,182,56,.55)
+        - animation: decs-glow 2.4s ease-in-out infinite
+        - background: <span class="s">"radial-gradient(120% 110% at 50% 0%, rgba(255,182,56,.22), transparent 55%), linear-gradient(155deg, #1a2431 0%, #0e1621 100%)"</span>
+      <span class="k">icon</span>:
+        - color: <span class="s">"#ffb638"</span>
+        - filter: <span class="s">"drop-shadow(0 0 10px rgba(255,182,56,.75))"</span>
+      <span class="k">state</span>: [color: <span class="s">"#ffb638"</span>, font-weight: 600]
+  - <span class="k">value</span>: unavailable
+    <span class="k">styles</span>: {card: [opacity: .45]}
+<span class="c"># the keyframes for the pulse (button-card injects this for you)</span>
+<span class="k">extra_styles</span>: |
+  @keyframes decs-glow {
+    0%, 100% { box-shadow: 0 14px 34px -20px rgba(0,0,0,.8), 0 0 0 1px rgba(255,182,56,.35); }
+    50%      { box-shadow: 0 14px 34px -20px rgba(0,0,0,.8), 0 0 24px 2px rgba(255,182,56,.55); }
+  }</pre>
+    </div>
+    <p class="demo-note"><b>Wall-panel note:</b> on the real dashboard the styling lives once in a <code>button_card_templates</code> block and every tile just says <code>template: decs_light</code> — so this whole thing collapses to five lines per tile. The version above is deliberately flattened so it stands alone.</p>
+  </div>
+</section>
+
+<!-- 05 ONE TEMPLATE -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">05 · Write it once</span><h2>How sixty tiles stay identical</h2><p class="lede">The secret to the consistency isn't discipline — it's inheritance. The look is defined in one place; every tile points at it and adds only what's different.</p></div>
+    <div class="code">
+      <div class="cbar"><span class="fn">the pattern</span><button class="cp" type="button" data-copy="y2">Copy</button></div>
+      <pre id="y2"><span class="c"># 1 — define the look ONCE, at the top of the dashboard</span>
+<span class="k">button_card_templates</span>:
+  <span class="k">decs_tile</span>:            <span class="c"># the base: gradient, radius, shadow, fonts</span>
+    <span class="k">styles</span>: { ... }
+  <span class="k">decs_light</span>:           <span class="c"># a variant that extends the base</span>
+    <span class="k">template</span>: decs_tile   <span class="c"># &larr; inherits everything above</span>
+    <span class="k">tap_action</span>: { action: toggle }
+    <span class="k">state</span>: [ { value: <span class="s">"on"</span>, styles: { ... amber glow ... } } ]
+
+<span class="c"># 2 — then every tile is just five lines</span>
+- <span class="k">type</span>: custom:button-card
+  <span class="k">template</span>: decs_light    <span class="c"># &larr; all the styling, for free</span>
+  <span class="k">entity</span>: switch.chair_lamp
+  <span class="k">name</span>: Chair lamp
+  <span class="k">label</span>: Lounge</pre>
+    </div>
+    <div class="grid-2" style="margin-top:1.6rem">
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20"/></svg></div><h3>Variants, not copies</h3><p>A stat tile, a light, a big alarm-state tile, a zone tile — each is a small variant that starts from <code>decs_tile</code> and changes only its grid and its state colours. One edit to the base ripples through the lot.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m18 16 4-4-4-4M6 8l-4 4 4 4M14.5 4l-5 16"/></svg></div><h3>Built by a script</h3><p>On the wall panel a small Python builder stamps the tab bar into every view and injects the one line each tile needs to fill its grid cell — so the YAML stays hand-readable and the layout stays exact.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 06 CARD ROSTER -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">06 · The card roster</span><h2>Ten cards do everything</h2><p class="lede">All from HACS. The first two are the workhorses; the rest each own one job on the dashboard.</p></div>
+    <div class="roster">
+      <div class="rc"><div class="nm">button-card <span class="tag">workhorse</span></div><div class="ro">Every everyday tile. Templates, JS value templates, per-state styling and the keyframe animations all live here.</div></div>
+      <div class="rc"><div class="nm">card-mod <span class="tag">workhorse</span></div><div class="ro">Arbitrary CSS on any card. This is what drags the charts, video and media cards into the same visual language.</div></div>
+      <div class="rc"><div class="nm">layout-card <span class="tag">layout</span></div><div class="ro"><code>custom:grid-layout</code> pins every card to a cell of a 100-vh grid, so each tab is exactly one screen and never scrolls.</div></div>
+      <div class="rc"><div class="nm">mushroom <span class="tag">ui</span></div><div class="ro">The tab-pill bar, the "active now" chips, and the compact media-player cards on the Media tab.</div></div>
+      <div class="rc"><div class="nm">mini-graph-card <span class="tag">charts</span></div><div class="ro">The little temperature and humidity sparklines nested inside the heating tiles.</div></div>
+      <div class="rc"><div class="nm">apexcharts-card <span class="tag">charts</span></div><div class="ro">The solar tab's hourly kWh chart with the battery line overlaid.</div></div>
+      <div class="rc"><div class="nm">power-flow-card-plus <span class="tag">solar</span></div><div class="ro">The animated PV → house / battery / grid diagram, dots moving at a rate that tracks the watts.</div></div>
+      <div class="rc"><div class="nm">advanced-camera-card <span class="tag">video</span></div><div class="ro">The doorbell and front-door live streams, cover-cropped so there are no black bars.</div></div>
+      <div class="rc"><div class="nm">auto-entities <span class="tag">logic</span></div><div class="ro">The chips that only exist while something's actually on — lights, plugs, whatever's playing.</div></div>
+      <div class="rc"><div class="nm">kiosk-mode <span class="tag">chrome</span></div><div class="ro">Hides Home Assistant's own header and sidebar, so the panel is nothing but the dashboard.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 07 PALETTE -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">07 · The palette</span><h2>Nine colours, tuned for a dark wall</h2><p class="lede">Deliberately muted so it's calm in a hallway at night, with one warm accent that does the talking. Swap the accent and the whole panel changes character.</p></div>
+    <div class="pal">
+      <div class="sw"><div class="chip" style="background:linear-gradient(155deg,#1a2431,#0e1621)"></div><div class="meta"><div class="hex">#1a2431→#0e1621</div><div class="role">tile gradient</div></div></div>
+      <div class="sw"><div class="chip" style="background:#eff4f9"></div><div class="meta"><div class="hex">#eff4f9</div><div class="role">primary text</div></div></div>
+      <div class="sw"><div class="chip" style="background:#95a4b5"></div><div class="meta"><div class="hex">#95a4b5</div><div class="role">muted text</div></div></div>
+      <div class="sw"><div class="chip" style="background:#ffb638"></div><div class="meta"><div class="hex">#ffb638</div><div class="role">accent · amber</div></div></div>
+      <div class="sw"><div class="chip" style="background:#39d98a"></div><div class="meta"><div class="hex">#39d98a</div><div class="role">good · green</div></div></div>
+      <div class="sw"><div class="chip" style="background:#ff5a5a"></div><div class="meta"><div class="hex">#ff5a5a</div><div class="role">alert · red</div></div></div>
+      <div class="sw"><div class="chip" style="background:#7986ff"></div><div class="meta"><div class="hex">#7986ff</div><div class="role">night · violet</div></div></div>
+      <div class="sw"><div class="chip" style="background:#5cc8ff"></div><div class="meta"><div class="hex">#5cc8ff</div><div class="role">info · blue</div></div></div>
+      <div class="sw"><div class="chip" style="background:#ff7a45"></div><div class="meta"><div class="hex">#ff7a45</div><div class="role">heat · warm</div></div></div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- CLOSING -->
+<section>
+  <div class="wrap reveal">
+    <div class="close">
+      <span class="eyebrow" style="color:#F4B159">Take it</span>
+      <h2 style="margin-top:1rem">Not a theme to install — a recipe to make your own.</h2>
+      <p>One button-card template, card-mod on everything else, a small palette, and a builder to keep it all pinned to the screen. Copy the tile above, point it at your own entity, and recolour it in a minute. If you build something with it, that's the whole idea.</p>
+      <div class="sig"><span class="dot" style="background:#F4B159;box-shadow:0 0 8px #F4B159"></span><span>button-card + card-mod</span><span>·</span><span>one shared template</span><span>·</span><span>see it live on the <a href="wallpanel.html" style="color:#F4B159">Wall panel</a></span></div>
+    </div>
+  </div>
+</section>
+
+<footer>HA Theme · one button-card template, card-mod on the rest, a small palette · <a href="wallpanel.html">Wall panel</a> · <a href="index.html">DECS Home Systems</a></footer>
+
+<script src="app.js"></script>
+<script>
+/* copy buttons */
+[].forEach.call(document.querySelectorAll('.cp'),function(b){
+  b.addEventListener('click',function(){
+    var pre=document.getElementById(b.getAttribute('data-copy')); if(!pre)return;
+    var txt=pre.innerText;
+    navigator.clipboard.writeText(txt).then(function(){
+      var o=b.textContent; b.textContent='Copied ✓';
+      setTimeout(function(){b.textContent=o;},1400);
+    }).catch(function(){});
+  });
+});
+</script>
+</body>
+</html>

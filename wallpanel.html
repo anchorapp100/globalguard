@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Wall Panel — DECS Home Systems</title>
+<meta name="description" content="A 2014 Samsung tablet reborn as a no-scroll, six-tab Home Assistant wall panel: live Victron solar at five-second resolution, a Victron-style energy page, alarm control, doorbell video, a self-diagnosing charge monitor — and a two-part 3D-printed clamshell wall mount you can explode and rotate.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<style>
+/* ---------- wall-panel page: local additions (theme-aware unless a committed-dark stage) ---------- */
+.tabmock{background:#05080d;border:1px solid #1b2431;border-radius:22px;padding:14px 14px 16px;box-shadow:0 30px 60px -30px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.04);position:relative}
+.tabmock .bez{border-radius:12px;overflow:hidden;background:#000;aspect-ratio:16/10;position:relative}
+.tabmock img{display:block;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s ease;position:absolute;inset:0}
+.tabmock img.on{opacity:1}
+.tabmock .home{width:34px;height:6px;border-radius:4px;background:#1a222c;margin:12px auto 0}
+.tpills{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;margin-top:1.1rem}
+.tpill{font-family:"IBM Plex Mono",monospace;font-size:.74rem;border-radius:999px;padding:.5rem .95rem;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--muted);display:inline-flex;align-items:center;gap:.4rem;transition:border-color .15s,background .15s,color .15s}
+.tpill:hover{border-color:var(--line-strong);color:var(--ink)}
+.tpill.on{color:var(--accent);border-color:var(--accent);background:var(--accent-soft);font-weight:600}
+.tpill.dim{opacity:.45;cursor:default}
+.tcap{margin-top:1rem;font-size:.95rem;color:var(--muted);text-align:center;max-width:46rem;margin-inline:auto;min-height:3.2em}
+.tcap b{color:var(--ink);font-weight:600}
+.gal{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;margin-top:1.2rem}
+@media(max-width:760px){.gal{grid-template-columns:repeat(2,1fr)}}
+.gal a{display:block;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:#000;aspect-ratio:16/10}
+.gal a img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .25s ease}
+.gal a:hover img{transform:scale(1.03)}
+.gal a.on{outline:2px solid var(--accent);outline-offset:2px}
+
+/* pipeline schematic (committed-dark stage) */
+.pl-wire{fill:none;stroke:#243040;stroke-width:3;stroke-linecap:round;opacity:.35}
+.pl-flow{fill:none;stroke-width:4;stroke-linecap:round;stroke-dasharray:2 12;opacity:.95;animation:plmove .9s linear infinite}
+.pl-flow.slow{animation-duration:1.8s;opacity:.7}
+@keyframes plmove{to{stroke-dashoffset:-14}}
+.pl-node{fill:#0e151f;stroke:#26333f;stroke-width:1.4}
+.pl-node.hi{fill:#101b28;stroke:#3FCBD6;stroke-width:1.6}
+.pl-t{font-family:"IBM Plex Mono",ui-monospace,monospace;fill:#9aa7b3}
+.pl-title{fill:#e7edf3;font-weight:600}
+.pl-cap{fill:#7c8a97}
+.pl-badge{fill:#3FCBD6;font-weight:600}
+@media (prefers-reduced-motion:reduce){.pl-flow{animation:none}}
+
+/* tile anatomy */
+.anat{display:grid;grid-template-columns:1.1fr 1fr;gap:1.4rem;align-items:start}
+@media(max-width:820px){.anat{grid-template-columns:1fr}}
+.tileimg{border-radius:18px;border:1px solid rgba(255,255,255,.06);background:linear-gradient(155deg,#1a2431 0%,#0e1621 100%);padding:14px 16px;color:#eff4f9;font-family:"Hanken Grotesk",sans-serif;box-shadow:0 14px 34px -20px rgba(0,0,0,.8);max-width:22rem}
+.tileimg .n{font-size:13px;font-weight:600;color:#95a4b5;display:flex;gap:.5rem;align-items:center}
+.tileimg .n i{width:22px;height:22px;border-radius:6px;background:rgba(255,182,56,.15);display:inline-block}
+.tileimg .s{font-size:30px;font-weight:700;letter-spacing:-.5px;margin-top:6px}
+.tileimg .g{height:44px;margin:8px 0 6px}
+.tileimg .l{font-size:12px;color:#95a4b5}
+.anno{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.6rem}
+.anno li{display:grid;grid-template-columns:1.8rem 1fr;gap:.6rem;font-size:.93rem;color:var(--muted)}
+.anno li b{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--accent);padding-top:.2rem}
+.anno li span b{font-family:inherit;font-size:inherit;color:var(--ink);padding:0}
+
+/* charge-trend demo */
+.ct{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem;align-items:start;margin-top:1.4rem}
+@media(max-width:820px){.ct{grid-template-columns:1fr}}
+.ct .tileimg{max-width:none}
+.ct .bar{height:8px;border-radius:6px;background:rgba(255,255,255,.07);overflow:hidden;margin:8px 0 2px}
+.ct .bar i{display:block;height:100%;border-radius:6px;background:#39d98a;transition:width .3s,background .3s}
+.ct .btns{display:flex;gap:.5rem;margin-top:14px}
+.ct .btns span{flex:1;text-align:center;font-size:12px;font-weight:600;padding:9px 6px;border-radius:14px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.05)}
+.ctl{display:flex;flex-direction:column;gap:1rem}
+.ctl label{display:flex;flex-direction:column;gap:.35rem;font-family:"IBM Plex Mono",monospace;font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.ctl label output{color:var(--ink);font-weight:600;float:right}
+.ctl input[type=range]{width:100%;accent-color:var(--accent)}
+.presets{display:flex;flex-wrap:wrap;gap:.45rem}
+.ct-read{font-family:"IBM Plex Mono",monospace;font-size:.8rem;color:var(--muted);line-height:1.6;border-top:1px solid var(--line);padding-top:.9rem}
+.ct-read b{color:var(--ink)}
+
+/* 3D mount viewer (committed-dark stage) */
+#m3d{position:relative;aspect-ratio:16/9;min-height:320px;background:radial-gradient(120% 90% at 50% 20%,#1b2532 0%,#0a0e14 60%,#05080d 100%);border:1px solid #1b2431;border-radius:16px;overflow:hidden;box-shadow:0 30px 60px -30px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.03);touch-action:none}
+#m3d canvas{display:block;width:100%;height:100%}
+#m3d-loading[hidden]{display:none}
+#m3d-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:"IBM Plex Mono",monospace;font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:#7c8a97;pointer-events:none}
+.m3d-ui{display:grid;grid-template-columns:auto 1fr auto;gap:.8rem;align-items:center;margin-top:1rem}
+@media(max-width:640px){.m3d-ui{grid-template-columns:1fr;gap:.6rem}}
+.m3d-ui .btns{display:flex;gap:.5rem;flex-wrap:wrap}
+.m3d-scrub{display:flex;flex-direction:column;gap:.35rem}
+.m3d-scrub .lab{display:flex;justify-content:space-between;font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+#m3d-scrub{width:100%;accent-color:var(--accent);height:1.6rem;cursor:ew-resize}
+#m3d-state{font-family:"IBM Plex Mono",monospace;font-size:.76rem;color:var(--muted);text-align:center;margin-top:.5rem;min-height:1.4em}
+.dl{display:flex;flex-wrap:wrap;gap:.55rem;margin-top:1rem}
+.dl a{font-family:"IBM Plex Mono",monospace;font-size:.74rem;text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:.45rem .85rem;color:var(--ink);background:var(--surface);display:inline-flex;gap:.45rem;align-items:center}
+.dl a:hover{border-color:var(--accent);color:var(--accent)}
+.spec{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin-top:1.3rem}
+@media(max-width:720px){.spec{grid-template-columns:1fr 1fr}}
+.spec div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:.9rem 1rem}
+.spec .k{font-family:"IBM Plex Mono",monospace;font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+.spec .v{font-family:"Archivo",sans-serif;font-weight:800;font-size:1.25rem;letter-spacing:-.02em;margin-top:.2rem;font-variant-numeric:tabular-nums}
+.spec .d{font-size:.84rem;color:var(--muted);margin-top:.15rem}
+</style>
+</head>
+<body class="p-panel">
+
+<header class="nav"><div class="wrap">
+  <a class="brand" href="index.html"><span class="dot"></span> DECS&nbsp;Home&nbsp;Systems</a>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="globalguard.html">GlobalGuard</a>
+    <a href="homeassistant.html">Home&nbsp;Assistant</a>
+    <a href="wallpanel.html" class="active">Wall&nbsp;panel</a>
+    <a href="cameras.html">Cameras</a>
+    <a href="presence.html">Presence</a>
+    <a href="roomscribe.html">Roomscribe</a>
+    <a href="traccar.html">Traccar</a>
+    <a href="finance.html">Finance</a>
+    <a href="fan.html">Fan</a>
+    <a href="rada.html">Rada&nbsp;shower</a>
+    <a href="theme.html">HA&nbsp;Theme</a>
+    <a href="technical.html">Technical</a>
+    <a href="roadmap.html">Roadmap</a>
+    <a href="claude.html">Claude&nbsp;Code</a>
+    <button class="themebtn" id="tt" aria-label="Toggle colour theme"><span id="ttic">◐</span> theme</button>
+  </nav>
+</div></header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">The wall panel · eight tabs · zero scrolling</span>
+        <h1 class="title">A ten-year-old tablet,<br><em>the best screen</em> in the house.</h1>
+        <p class="lede">A 2014 Samsung Note that had been dead in a drawer now hangs in the hall in a printed clamshell, showing an eight-tab dashboard that never scrolls: live solar at five-second resolution, the alarm, both doorbells, every light — and it knows whether its own charger is keeping up.</p>
+        <div class="meta-row">
+          <span class="chip">Galaxy Note 10.1 (2014)</span>
+          <span class="chip">LineageOS + Fully Kiosk</span>
+          <span class="chip">1280 × 800 · no scroll</span>
+          <span class="chip">3D-printed mount</span>
+        </div>
+      </div>
+      <div class="panel" role="img" aria-label="Wall panel status: tablet on the hidden mesh, dashboard with eight tabs, solar polled every five seconds, alarm bridge live, two doorbells streaming, charger trend monitored.">
+        <div class="head"><span>Wall panel · live</span><span>v8</span></div>
+        <div class="rows">
+          <div class="prow"><span class="led on"></span><span class="k">Tablet</span><span class="v">SM-P600 · kiosk · 1280×800</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">Dashboard</span><span class="v">8 tabs · 70 tiles · no scroll</span></div>
+          <div class="prow"><span class="led info"></span><span class="k">Solar</span><span class="v">Modbus · every 5 s</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">Alarm</span><span class="v">arm / disarm from the wall</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">Doorbells</span><span class="v">2 live streams</span></div>
+          <div class="prow"><span class="led warn"></span><span class="k">Charger</span><span class="v">trend-monitored · alerts</span></div>
+        </div>
+        <div class="beacon">
+          <span class="lbl">refresh</span>
+          <svg viewBox="0 0 220 30" preserveAspectRatio="none" aria-hidden="true">
+            <line x1="0" y1="15" x2="220" y2="15" stroke="#26313d" stroke-width="1"/>
+            <polyline class="trace" points="0,15 30,15 36,15 40,6 46,24 52,15 82,15 88,15 92,6 98,24 104,15 134,15 140,15 144,6 150,24 156,15 186,15 192,15 196,6 202,24 208,15 220,15" fill="none" stroke="#3FCBD6" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+            <circle class="pulse-dot" cx="46" cy="15" r="2.2" style="fill:#3FCBD6"/>
+          </svg>
+          <span class="mono" style="font-size:.7rem;letter-spacing:.08em;color:#3FCBD6">5 s</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- STATS -->
+<section style="padding-block:clamp(2.2rem,5vw,3.2rem)">
+  <div class="wrap reveal">
+    <div class="stats">
+      <div class="stat"><span class="big num-strong">8</span><span class="lab">tabs, none scroll</span></div>
+      <div class="stat"><span class="big num-strong">5 s</span><span class="lab">solar refresh</span></div>
+      <div class="stat"><span class="big num-strong">60</span><span class="lab">custom tiles</span></div>
+      <div class="stat"><span class="big num-strong">2</span><span class="lab">printed halves</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 01 THE DASHBOARD (interactive tab mock) -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">01 · The dashboard</span><h2>Eight tabs, and nothing ever scrolls</h2><p class="lede">The whole point of a wall panel is that you glance at it. Every tab is a fixed grid that fits the 1280 × 800 screen exactly — no scrolling, no hidden rows. These are the tablet's own screenshots; tap the pills to switch.</p></div>
+    <div class="tabmock" id="tabmock">
+      <div class="bez" role="img" aria-label="The wall tablet showing its dashboard tabs">
+        <img src="images/panel-overview.jpg" alt="Overview tab: clock and weather, a front-door camera preview, the GlobalGuard card with arm and disarm buttons, a merged solar-energy card, a heating summary, the wall-tablet battery tile, active-now chips and light-group quick actions" class="on" data-tab="overview">
+        <img src="images/panel-alarm.jpg" alt="Alarm tab: the state in large green, a keypad, sixteen zone tiles that flash when a door opens or a sensor trips, and a recent-activity timeline" data-tab="alarm">
+        <img src="images/panel-heating.jpg" alt="Heating tab: eight room tiles tinted from cool blue to warm amber by temperature, each with a 24-hour trend line and humidity, plus a house average, a hot-water boost and a sensor-health tile" data-tab="heating">
+        <img src="images/panel-media.jpg" alt="Media tab: three TVs, the Shield, the Nest displays and Linda's cast TV as media cards; a Nest playing GB News Radio shows its album art as the card background, plus a set-top-boxes note" data-tab="media">
+        <img src="images/panel-solar.jpg" alt="Solar tab in the style of Victron's VRM: grid, battery and PV-charger tiles with sparklines, an animated power-flow diagram, the MultiPlus-II inverter, today's hourly chart and daily totals" data-tab="solar">
+        <img src="images/panel-doorbells.jpg" alt="Doorbells tab: front and back door live streams with last ring, last motion, announce, volume and motion-detection controls per door" data-tab="doorbells">
+      </div>
+      <div class="home"></div>
+    </div>
+    <div class="tpills" id="tpills" role="tablist">
+      <button class="tpill on" data-tab="overview" type="button">▦ Overview</button>
+      <button class="tpill dim" type="button" disabled title="Fifteen glowing light tiles by room">💡 Lights</button>
+      <button class="tpill" data-tab="alarm" type="button">🛡 Alarm</button>
+      <button class="tpill" data-tab="heating" type="button">♨ Heating</button>
+      <button class="tpill" data-tab="media" type="button">🎬 Media</button>
+      <button class="tpill" data-tab="solar" type="button">☀ Solar</button>
+      <button class="tpill" data-tab="doorbells" type="button">🔔 Doorbells</button>
+      <button class="tpill dim" type="button" disabled title="Both cameras full height">📷 Cameras</button>
+    </div>
+    <p class="tcap" id="tcap"></p>
+    <div class="gal" id="gal">
+      <a href="images/panel-overview.jpg" data-tab="overview" class="on"><img src="images/panel-overview-thumb.jpg" alt="" loading="lazy"></a>
+      <a href="images/panel-alarm.jpg" data-tab="alarm"><img src="images/panel-alarm-thumb.jpg" alt="" loading="lazy"></a>
+      <a href="images/panel-heating.jpg" data-tab="heating"><img src="images/panel-heating-thumb.jpg" alt="" loading="lazy"></a>
+      <a href="images/panel-media.jpg" data-tab="media"><img src="images/panel-media-thumb.jpg" alt="" loading="lazy"></a>
+      <a href="images/panel-solar.jpg" data-tab="solar"><img src="images/panel-solar-thumb.jpg" alt="" loading="lazy"></a>
+      <a href="images/panel-doorbells.jpg" data-tab="doorbells"><img src="images/panel-doorbells-thumb.jpg" alt="" loading="lazy"></a>
+    </div>
+    <p style="color:var(--muted);max-width:48rem;margin-top:1.4rem">The set has since grown to eight. A <b style="color:var(--ink)">Heating</b> tab tints eight rooms from cool blue to warm amber by temperature, each with a 24-hour trend, humidity and a tap-through thermostat. A <b style="color:var(--ink)">Media</b> tab gathers every TV, streamer and Nest — and paints a room's album art onto its card the moment it starts playing. The Overview's four energy tiles were merged into one card to make room for a heating summary, and you can now <b style="color:var(--ink)">swipe left and right</b> between tabs. Only Lights and Cameras are still waiting to be photographed. Since then a <b style="color:var(--ink)">Health</b> vitals console and a live <b style="color:var(--ink)"><a href="traccar.html" style="color:inherit">Traccar</a></b> GPS map have joined too — both full web-apps in an iframe.</p>
+  </div>
+</section>
+
+<!-- 02 HOW IT'S BUILT -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">02 · Under the tiles</span><h2>Ten cards, one grid, a builder script</h2><p class="lede">Home Assistant's stock dashboards scroll and reflow. This one is a hand-written YAML grid that pins every card to a cell of a 100-vh layout, styled by a theme that gives every tile the same gradient, glow and motion.</p></div>
+    <div class="anat">
+      <div>
+        <div class="tileimg" aria-hidden="true">
+          <div class="n"><i></i>Grid</div>
+          <div class="s" style="color:#30d1b4">↑ 1,396 W</div>
+          <svg class="g" viewBox="0 0 300 44" preserveAspectRatio="none"><defs><linearGradient id="gf" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#b088ff" stop-opacity=".45"/><stop offset="1" stop-color="#b088ff" stop-opacity="0"/></linearGradient></defs><path d="M0 40 L20 40 L26 8 L60 8 L70 30 L110 28 L150 32 L200 26 L240 30 L280 24 L300 28" fill="none" stroke="#b088ff" stroke-width="2"/><path d="M0 40 L20 40 L26 8 L60 8 L70 30 L110 28 L150 32 L200 26 L240 30 L280 24 L300 28 L300 44 L0 44Z" fill="url(#gf)"/></svg>
+          <div class="l" style="display:flex;justify-content:space-between"><span>L1</span><b style="color:#eff4f9">242.3 V · −6.2 A · 50.10 Hz</b></div>
+          <div class="l" style="margin-top:6px">Exporting · out 8.5 kWh · in 0.0 kWh today</div>
+        </div>
+        <p style="color:var(--muted);font-size:.9rem;margin-top:1rem">One tile, four cards deep: a <b style="color:var(--ink)">button-card</b> shell with JavaScript templates for the arrows and colours, a <b style="color:var(--ink)">mini-graph-card</b> sparkline nested inside it, the theme's card-mod styling, all placed by <b style="color:var(--ink)">layout-card</b>.</p>
+      </div>
+      <ul class="anno">
+        <li><b>01</b><span><b>layout-card</b> — a 12-column CSS grid per tab, rows in fractions of 100 vh, so the page height is the screen height.</span></li>
+        <li><b>02</b><span><b>button-card</b> — 60 tiles from eight templates: stat, sparkline, light, action, zone, status, alarm. Templates carry the keyframes for the glow and pulse.</span></li>
+        <li><b>03</b><span><b>mini-graph-card · apexcharts</b> — six-hour sparklines in the tiles, an hourly kWh chart with the battery line on the solar tab.</span></li>
+        <li><b>04</b><span><b>power-flow-card-plus</b> — the animated PV → house / battery / grid diagram, dots moving at a rate that tracks the watts.</span></li>
+        <li><b>05</b><span><b>advanced-camera-card</b> — the doorbell streams, cover-cropped so there are no black bars.</span></li>
+        <li><b>06</b><span><b>mushroom · auto-entities · card-mod · kiosk-mode</b> — the tab pills, the "active now" chips that only exist while something is on, the theme, and hiding every bit of HA's own chrome.</span></li>
+        <li><b>07</b><span><b>The builder</b> — a Python script stamps the tab bar into every view and injects the one line each tile needs to fill its cell, then the YAML is validated inside HA before it goes live. Dashboard changes need no restart.</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 03 REALTIME SOLAR (pipeline schematic) -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">03 · Realtime solar</span><h2>From the inverter to the wall in five seconds</h2><p class="lede">The Victron system is read over Modbus straight off the LAN — no cloud, no VRM portal — every five seconds. Derived sensors turn watts into the day's kilowatt-hours, and a recorder filter keeps the database sane at that rate.</p></div>
+    <figure>
+      <div class="demo-stage" role="img" aria-label="Data pipeline: the Cerbo GX inverter controller is polled over Modbus TCP every five seconds by Home Assistant, which exposes 453 Victron entities; an energy package derives grid import and export, battery charge and discharge, kilowatt-hour integrators and daily meters; a recorder filter keeps history for eighteen of them; the dashboard cards render that on the wall tablet.">
+        <svg viewBox="0 0 960 300" aria-hidden="true">
+          <g>
+            <path class="pl-wire" d="M186 150 C 240 150 250 150 296 150"/><path class="pl-flow" d="M186 150 C 240 150 250 150 296 150" stroke="#3FCBD6"/>
+            <path class="pl-wire" d="M456 150 C 510 150 520 150 566 150"/><path class="pl-flow" d="M456 150 C 510 150 520 150 566 150" stroke="#ffb638"/>
+            <path class="pl-wire" d="M726 150 C 770 150 780 150 816 150"/><path class="pl-flow" d="M726 150 C 770 150 780 150 816 150" stroke="#39d98a"/>
+            <path class="pl-wire" d="M646 112 C 646 70 700 60 760 60"/><path class="pl-flow slow" d="M646 112 C 646 70 700 60 760 60" stroke="#b088ff"/>
+          </g>
+          <rect class="pl-node hi" x="26" y="104" width="160" height="92" rx="12"/>
+          <text class="pl-t pl-title" x="106" y="136" text-anchor="middle" font-size="12">Cerbo GX</text>
+          <text class="pl-t pl-cap" x="106" y="154" text-anchor="middle" font-size="10">3 MPPTs · MultiPlus-II</text>
+          <text class="pl-t pl-cap" x="106" y="170" text-anchor="middle" font-size="10">32 kWh battery</text>
+          <text class="pl-t pl-badge" x="241" y="138" text-anchor="middle" font-size="10">Modbus TCP</text>
+          <text class="pl-t pl-cap" x="241" y="172" text-anchor="middle" font-size="10">every 5 s</text>
+          <rect class="pl-node" x="296" y="96" width="160" height="108" rx="12"/>
+          <text class="pl-t pl-title" x="376" y="128" text-anchor="middle" font-size="12">Home Assistant</text>
+          <text class="pl-t pl-cap" x="376" y="146" text-anchor="middle" font-size="10">hass-victron</text>
+          <text class="pl-t pl-badge" x="376" y="170" text-anchor="middle" font-size="13">453 entities</text>
+          <text class="pl-t pl-cap" x="376" y="188" text-anchor="middle" font-size="10">V · A · W · state</text>
+          <text class="pl-t pl-cap" x="511" y="138" text-anchor="middle" font-size="10">templates</text>
+          <text class="pl-t pl-cap" x="511" y="172" text-anchor="middle" font-size="10">integrators</text>
+          <rect class="pl-node" x="566" y="96" width="160" height="108" rx="12"/>
+          <text class="pl-t pl-title" x="646" y="126" text-anchor="middle" font-size="12">Energy package</text>
+          <text class="pl-t pl-cap" x="646" y="144" text-anchor="middle" font-size="10">import / export split</text>
+          <text class="pl-t pl-cap" x="646" y="160" text-anchor="middle" font-size="10">charge / discharge split</text>
+          <text class="pl-t pl-cap" x="646" y="176" text-anchor="middle" font-size="10">W → kWh · daily meters</text>
+          <text class="pl-t pl-cap" x="646" y="192" text-anchor="middle" font-size="10">today's forecast</text>
+          <rect class="pl-node" x="760" y="36" width="170" height="48" rx="10"/>
+          <text class="pl-t pl-title" x="845" y="56" text-anchor="middle" font-size="11">Recorder filter</text>
+          <text class="pl-t pl-cap" x="845" y="72" text-anchor="middle" font-size="10">453 polled · 18 kept</text>
+          <rect class="pl-node hi" x="816" y="104" width="118" height="92" rx="12"/>
+          <text class="pl-t pl-title" x="875" y="138" text-anchor="middle" font-size="12">Wall tablet</text>
+          <text class="pl-t pl-cap" x="875" y="156" text-anchor="middle" font-size="10">sparklines · flow</text>
+          <text class="pl-t pl-cap" x="875" y="172" text-anchor="middle" font-size="10">chart · totals</text>
+          <text class="pl-t pl-cap" x="480" y="262" text-anchor="middle" font-size="10">Nothing leaves the house · the VRM cloud is not in the loop</text>
+        </svg>
+      </div>
+      <figcaption>Watts arrive every five seconds; the package turns them into "to grid 8.5 kWh · consumption 2.8 kWh" for the day.</figcaption>
+    </figure>
+    <div class="grid-3" style="margin-top:1.6rem">
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 12h4l3-8 4 16 3-8h2"/></svg></div><h3>30 s → 5 s</h3><p>The integration's poll interval, dropped to five seconds. That's the difference between "updates now and then" and the sparklines visibly moving — the same feel as Victron's own app, without its cloud.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 19V5M4 19h16M8 15v-4M12 15V7M16 15v-2"/></svg></div><h3>Watts into kWh</h3><p>Grid and battery power are split into import/export and charge/discharge, integrated into energy, then cut into daily meters — so the tiles read <em>sold today</em>, <em>bought today</em>, <em>house today</em>.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg></div><h3>Recorder on a diet</h3><p>Polling 453 entities every five seconds would flood the history database. A filter records only the eighteen values the panel charts; everything else stays live but unrecorded.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 04 TABLET POWER (interactive) -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">04 · Does the charger keep up?</span><h2>A tile that knows when it's losing</h2><p class="lede">The tablet reports no charge current — only its battery percentage. So the panel measures the <b style="color:var(--ink)">trend</b> over twenty minutes and colours itself: green if it's gaining, red if it's plugged in but falling, amber if the charger is only just holding. Try the physics.</p></div>
+    <div class="ct">
+      <div>
+        <div class="tileimg" aria-live="polite">
+          <div class="n"><i id="ct-ic"></i>Wall tablet</div>
+          <div class="s" id="ct-pct">31%</div>
+          <div class="l" id="ct-lab">Gaining ↑ +7.1 %/h · full in ~9 h 40 m · 36 °C</div>
+          <div class="bar"><i id="ct-bar" style="width:31%"></i></div>
+          <div class="btns"><span>Screen off</span><span>Sleep</span></div>
+        </div>
+        <p class="ct-read" id="ct-read"></p>
+      </div>
+      <div class="ctl">
+        <label>Charger <output id="o-chg">10.6 W</output><input type="range" id="i-chg" min="2.5" max="15" step="0.1" value="10.6"></label>
+        <div class="presets">
+          <button class="dbtn" type="button" data-chg="2.5">PC USB port · 2.5 W</button>
+          <button class="dbtn" type="button" data-chg="10.6">Samsung 2 A · 10.6 W</button>
+          <button class="dbtn" type="button" data-chg="12">"2.4 A" brick · 12 W</button>
+          <button class="dbtn" type="button" data-chg="2.5" data-note="usbc">USB-C brick via adapter</button>
+        </div>
+        <label>Screen &amp; radios draw <output id="o-draw">5.0 W</output><input type="range" id="i-draw" min="2" max="8" step="0.1" value="5"></label>
+        <label>Battery now <output id="o-lvl">31%</output><input type="range" id="i-lvl" min="1" max="100" step="1" value="31"></label>
+      </div>
+    </div>
+    <div class="demo-note" style="margin-top:1.2rem"><b>What the house actually does:</b> a phone alert at 20 %, the screen switches itself off at 8 % to save the cell, comes back on once it's past 30 % in daylight, and a second alert fires if it has been plugged in but falling for half an hour. The tablet's own charging circuit tops out at 5.3 V × 2 A ≈ 10.6 W, so anything "more powerful" than a 2 A port buys nothing.</div>
+  </div>
+</section>
+
+<!-- 05 THE MOUNT (3D) -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">05 · The mount</span><h2>A two-piece clamshell you can take apart</h2><p class="lede">A tablet won't clip into a rigid printed lip — a 250 mm edge needs tens of kilograms to flex over — so the case is two halves that clamp it from left and right, which also happens to fit a 220 mm print bed. The left half drops onto its screws, the right half slides in sideways onto its own screws and into the seam’s dovetail fingers, and two spring latches click. Drag to rotate, scrub to assemble.</p></div>
+    <div id="m3d" role="img" aria-label="Interactive 3D model of the two-part printed wall mount with the tablet between the halves. Drag to rotate; the slider below assembles or explodes the parts; autoplay animates the assembly.">
+      <canvas></canvas>
+      <div id="m3d-loading">loading model…</div>
+    </div>
+    <div class="m3d-ui">
+      <div class="btns">
+        <button class="dbtn" id="m3d-play" type="button">▶ Autoplay</button>
+        <button class="dbtn" id="m3d-spin" type="button">⟳ Spin</button>
+        <button class="dbtn" id="m3d-reset" type="button">⌂ View</button>
+      </div>
+      <div class="m3d-scrub">
+        <div class="lab"><span>Mounted</span><span>Exploded</span></div>
+        <input type="range" id="m3d-scrub" min="0" max="1000" value="1000" aria-label="Explode or assemble the mount">
+      </div>
+      <span class="mono" style="font-size:.7rem;color:var(--faint);letter-spacing:.06em">drag · pinch · wheel</span>
+    </div>
+    <div id="m3d-state">Exploded — left half · tablet · right half</div>
+    <div class="spec">
+      <div><div class="k">Outer size</div><div class="v">248.5 × 176.8 × 13.0 mm</div><div class="d">tablet lies flat on a 2.6 mm plate, 2 mm lip</div></div>
+      <div><div class="k">Halves</div><div class="v">138 + 138 mm</div><div class="d">alternating dovetail fingers · fits a 220 mm bed</div></div>
+      <div><div class="k">The click</div><div class="v">2 latches</div><div class="d">4 mm spring beams, 0.6 mm barbs, 1.4 % strain</div></div>
+      <div><div class="k">Keyholes</div><div class="v">2 + 2</div><div class="d">left pair drop on, right pair slide in — countersunk for flush M4 heads</div></div>
+      <div><div class="k">Wall screws</div><div class="v">156 × 104 mm</div><div class="d">a plain rectangle, drilled from the 1:1 template</div></div>
+      <div><div class="k">Openings</div><div class="v">7 cuts</div><div class="d">USB, IR, power/volume, both speakers, microSD, S-Pen — from the photos</div></div>
+    </div>
+    <div class="dl">
+      <a href="models/Note101_P600_WallMount_LEFT.stl" download>⬇ LEFT half · STL</a>
+      <a href="models/Note101_P600_WallMount_RIGHT.stl" download>⬇ RIGHT half · STL</a>
+      <a href="models/Note101_P600_WallMount_ASSEMBLED_preview.stl" download>⬇ assembled preview · STL</a>
+    </div>
+    <p class="demo-note"><b>How it was made:</b> not in a CAD app — the case is generated by a Python script with real constructive solid geometry, and a verification script runs fifty-odd geometric assertions after every parameter change: the tablet fits with worst-case tolerances, the fingers key the halves, only the barbs resist pulling apart, every latch beam and finger sits on the print bed, every opening is clear through, a 9 mm screw head passes the keyholes and a 4 mm shank is trapped. Print both halves flat, no supports. Four M4 countersunk screws in the wall on a 156 × 104 mm rectangle, heads 2 mm proud; drop the left half onto its two, lay the tablet in, offer the right half up 14 mm to the right and push it left until both latches click.</p>
+  </div>
+</section>
+
+<!-- 06 POWER MANAGEMENT -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">06 · Power management</span><h2>Four states, and it wakes itself</h2><p class="lede">A 2014 battery on a modest charger can't run a bright screen all day <em>and</em> charge — only a screen that's fully off gains ground. So the panel steps through four power states on its own, and Home Assistant wakes the screen in software the instant something matters, so nothing is missed.</p></div>
+    <div class="grid-2">
+      <div class="card">
+        <p class="mono" style="font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:.9rem">The four states</p>
+        <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.75rem">
+          <li style="display:flex;gap:.7rem;align-items:baseline;color:var(--muted);font-size:.95rem"><span style="width:.55rem;height:.55rem;border-radius:50%;background:#43D98A;flex:none;align-self:center"></span><b style="color:var(--ink);min-width:3.4rem">Active</b> dashboard, full brightness</li>
+          <li style="display:flex;gap:.7rem;align-items:baseline;color:var(--muted);font-size:.95rem"><span style="width:.55rem;height:.55rem;border-radius:50%;background:#F4B159;flex:none;align-self:center"></span><b style="color:var(--ink);min-width:3.4rem">Dim</b> still readable, low backlight</li>
+          <li style="display:flex;gap:.7rem;align-items:baseline;color:var(--muted);font-size:.95rem"><span style="width:.55rem;height:.55rem;border-radius:50%;background:#B79BF0;flex:none;align-self:center"></span><b style="color:var(--ink);min-width:3.4rem">Sleep</b> screensaver, dimmed — drains slowly</li>
+          <li style="display:flex;gap:.7rem;align-items:baseline;color:var(--muted);font-size:.95rem"><span style="width:.55rem;height:.55rem;border-radius:50%;background:#5CB3F2;flex:none;align-self:center"></span><b style="color:var(--ink);min-width:3.4rem">Off</b> screen powered down — the only state that charges</li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="mono" style="font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:.9rem">What wakes it</p>
+        <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.75rem">
+          <li style="display:flex;gap:.7rem;color:var(--muted);font-size:.95rem"><span style="color:var(--accent)">→</span> <span><b style="color:var(--ink)">Doorbell</b> — wakes to the overview with the front-door preview</span></li>
+          <li style="display:flex;gap:.7rem;color:var(--muted);font-size:.95rem"><span style="color:var(--accent)">→</span> <span><b style="color:var(--ink)">Alarm</b> entry or trigger — wakes and stays on until it clears</span></li>
+          <li style="display:flex;gap:.7rem;color:var(--muted);font-size:.95rem"><span style="color:var(--accent)">→</span> <span><b style="color:var(--ink)">Home button</b> — two minutes, then back to charging</span></li>
+          <li style="display:flex;gap:.7rem;color:var(--muted);font-size:.95rem"><span style="color:var(--accent)">→</span> <span><b style="color:var(--ink)">Low battery</b> — screen off to charge, phone alert; back on once recovered</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="demo-note"><b>No button simulation needed.</b> Turning the screen back on is a plain Fully Kiosk command over the network, so any event can do it; the physical home button is just the manual equivalent. An <em>Auto</em> switch on the panel arms the whole system, and sliders set the resting state and the two brightness levels.</div>
+  </div>
+</section>
+
+<!-- 07 BATTERY BYPASS -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">07 · The battery bypass</span><h2>Or: take the battery out altogether</h2><p class="lede">The honest long-term fix for an always-on wall tablet — remove the eleven-year-old cell and feed the tablet directly. It also removes the one real hazard of a lithium battery sealed to a wall: swelling. The trick is to keep the pack's own little circuit board.</p></div>
+    <div class="grid-2">
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="15" height="8" rx="2"/><path d="M18 11h2v2h-2M6 12h6"/></svg></div><h3>Keep the management board</h3><p>That PCB on the cell is the battery's <b style="color:var(--ink)">BMS</b> — protection, thermistor and gauge. Separate the pouch, keep the board, and feed a regulated <b style="color:var(--ink)">~4.0&nbsp;V</b> into its cell pads. The tablet still sees a normal battery, so no faked sensors and no boot refusal.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg></div><h3>Then it runs forever</h3><p>A buck converter rated for the tablet's &gt;2&nbsp;A peaks holds ~4.0&nbsp;V; the charger sees "nearly full" and idles. Nothing left to drain or swell, so the panel can stay bright all day and the power manager becomes optional.</p></div>
+    </div>
+    <p style="margin-top:1.5rem"><a class="tech-link" href="technical.html#battery">Full method, schematic and safety notes on the Technical page &rarr;</a></p>
+  </div>
+</section>
+
+<!-- 06 LESSONS -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">08 · Field notes</span><h2>Things that cost an hour each</h2><p class="lede">The dashboard went from "a three out of ten" to this in one day of iteration against tablet screenshots. Most of the time went on these.</p></div>
+    <div class="logs">
+      <div class="log"><h3><span class="no">01</span>Tiles that shrank to their content</h3><dl class="grid"><dt>Symptom</dt><dd>Every custom tile sat small and lonely in its big grid cell.</dd><dt>Cause</dt><dd>Setting the card to 100 % height does nothing when the card's <em>host</em> element isn't stretched.</dd><dt>Fix</dt><dd class="fix">One extra style line per tile — injected automatically by the builder for all 60.</dd></dl></div>
+      <div class="log"><h3><span class="no">02</span>Icons that vanished</h3><dl class="grid"><dt>Symptom</dt><dd>Quick-action pills showed text and no icon at all.</dd><dt>Cause</dt><dd>In an auto-height card the icon's row collapses to zero unless the icon has an explicit height as well as a width.</dd><dt>Fix</dt><dd class="fix">Explicit icon heights in every template.</dd></dl></div>
+      <div class="log"><h3><span class="no">03</span>Black bars round the doorbell</h3><dl class="grid"><dt>Symptom</dt><dd>The 16:9 live stream letterboxed inside a taller tile.</dd><dt>Fix</dt><dd class="fix">A camera card that can cover-crop its cell, with its own status bar and menu switched off.</dd></dl></div>
+      <div class="log"><h3><span class="no">04</span>The header came back</h3><dl class="grid"><dt>Symptom</dt><dd>HA's own tab strip reappeared above the pill bar after a rebuild.</dd><dt>Cause</dt><dd>The kiosk setting was on each view but no longer at the dashboard root.</dd><dt>Fix</dt><dd class="fix">Both.</dd></dl></div>
+      <div class="log"><h3><span class="no">05</span>The tablet went "offline" while showing the dashboard</h3><dl class="grid"><dt>Symptom</dt><dd>Every tablet sensor unavailable, yet the panel was plainly live.</dd><dt>Cause</dt><dd>DHCP had quietly moved the tablet to a new address; the integration was still pointed at the old one.</dd><dt>Fix</dt><dd class="fix">Repointed, and a reservation so it can't wander again.</dd></dl></div>
+      <div class="log"><h3><span class="no">06</span>Six copies of the tab bar</h3><dl class="grid"><dt>Symptom</dt><dd>HA's dashboard loader doesn't reliably honour YAML anchors, so the pill bar had to be pasted into every view.</dd><dt>Fix</dt><dd class="fix">A tiny build step: write it once, stamp it into each view with the right pill lit.</dd></dl></div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- CLOSING -->
+<section>
+  <div class="wrap reveal">
+    <div class="close">
+      <span class="eyebrow" style="color:#3FCBD6">On the wall</span>
+      <h2 style="margin-top:1rem">The oldest device in the house is now the one everyone looks at.</h2>
+      <p>A drawer-bound tablet, a printed clamshell, and a dashboard that shows the solar moving in real time, arms the alarm, answers the door and keeps an eye on its own battery — all from the Pi in the cupboard, nothing in the cloud. Next on the list: a switchable LCARS skin, and cameras when they arrive.</p>
+      <div class="sig"><span class="dot" style="background:#3FCBD6;box-shadow:0 0 8px #3FCBD6"></span><span>wall panel · eight tabs · no scroll</span><span>·</span><span>Victron over Modbus · 5 s</span><span>·</span><span>NoteCase P600 mount · 2 halves</span></div>
+    </div>
+  </div>
+</section>
+
+<footer>The wall panel · Galaxy Note 10.1 (2014) · LineageOS + Fully Kiosk · eight-tab no-scroll dashboard · printed clamshell mount · <a href="index.html">DECS Home Systems</a></footer>
+
+<script src="app.js"></script>
+<script>
+/* ---------- 01: tab mock ---------- */
+(function(){
+  var imgs=[].slice.call(document.querySelectorAll('#tabmock img')), pills=[].slice.call(document.querySelectorAll('#tpills .tpill[data-tab]')), gal=[].slice.call(document.querySelectorAll('#gal a')), cap=document.getElementById('tcap');
+  var CAP={
+    overview:'<b>Overview.</b> Clock, weather and tomorrow’s forecast; a front-door preview; the GlobalGuard card with Arm home / Arm night / Disarm and the current mode lit; a merged solar-energy card; a heating summary; the tablet’s own battery tile; whatever is on right now; and light-group buttons.',
+    alarm:'<b>Alarm.</b> The state in 36-point green, amber or pulsing red; a keypad; sixteen zone tiles that flash red when a door opens or a PIR trips; and the recent-activity log.',
+    heating:'<b>Heating.</b> Eight rooms, each tile tinted from cool blue to warm amber by its temperature, with a 24-hour trend line and humidity; a house average, the hot-water tank with a one-hour boost, and a sensor-health tile watching batteries and signal.',
+    media:'<b>Media.</b> Both Samsung TVs, the Shield, the Nest displays and Linda’s cast TV — and when one starts playing, its album art becomes the card. Here a Nest is on GB News Radio. The set-top boxes wait on an IR bridge.',
+    solar:'<b>Solar.</b> Modelled on Victron’s VRM app: grid with L1 volts, amps and hertz; battery with a state-of-charge sparkline; the three PV arrays; the MultiPlus-II inverter; an animated power flow; today’s hourly chart and daily totals.',
+    doorbells:'<b>Doorbells.</b> Both streams live, last ring and last motion, the speaker announcement toggle, doorbell and chime volumes and motion detection — per door.'
+  };
+  var order=['overview','alarm','heating','media','solar','doorbells'], idx=0, timer=null, auto=!matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function show(t){
+    imgs.forEach(function(i){i.classList.toggle('on',i.getAttribute('data-tab')===t);});
+    pills.forEach(function(p){p.classList.toggle('on',p.getAttribute('data-tab')===t);});
+    gal.forEach(function(a){a.classList.toggle('on',a.getAttribute('data-tab')===t);});
+    cap.innerHTML=CAP[t]||''; idx=order.indexOf(t);
+  }
+  function cycle(){ if(!auto)return; timer=setTimeout(function(){show(order[(idx+1)%order.length]);cycle();},6500); }
+  function stop(){auto=false;clearTimeout(timer);}
+  pills.forEach(function(p){p.addEventListener('click',function(){stop();show(p.getAttribute('data-tab'));});});
+  gal.forEach(function(a){a.addEventListener('click',function(e){e.preventDefault();stop();show(a.getAttribute('data-tab'));window.scrollTo({top:document.getElementById('tabmock').getBoundingClientRect().top+window.scrollY-80,behavior:'smooth'});});});
+  show('overview'); cycle();
+})();
+
+/* ---------- 04: charge-trend demo ---------- */
+(function(){
+  var CAP_WH=31.2, MAX_IN=10.6;   // 8,220 mAh × 3.8 V; tablet charging circuit ceiling
+  var iChg=document.getElementById('i-chg'), iDraw=document.getElementById('i-draw'), iLvl=document.getElementById('i-lvl');
+  var oChg=document.getElementById('o-chg'), oDraw=document.getElementById('o-draw'), oLvl=document.getElementById('o-lvl');
+  var pct=document.getElementById('ct-pct'), lab=document.getElementById('ct-lab'), bar=document.getElementById('ct-bar'), ic=document.getElementById('ct-ic'), read=document.getElementById('ct-read');
+  var note='';
+  function eta(h){ if(!isFinite(h))return '?'; return h<1?Math.round(h*60)+' min':Math.floor(h)+' h '+Math.round((h%1)*60)+' m'; }
+  function upd(){
+    var chg=+iChg.value, draw=+iDraw.value, lvl=+iLvl.value;
+    var eff=Math.min(chg,MAX_IN), net=eff-draw, rate=net/CAP_WH*100;
+    oChg.textContent=chg.toFixed(1)+' W'; oDraw.textContent=draw.toFixed(1)+' W'; oLvl.textContent=lvl+'%';
+    var col, txt;
+    if(lvl>=99&&net>=0){col='#39d98a';txt='Full · charger keeping it topped up';}
+    else if(rate>0.5){col='#39d98a';txt='Gaining ↑ +'+rate.toFixed(1)+' %/h · full in ~'+eta((100-lvl)/rate);}
+    else if(rate<-0.5){col='#ff5a5a';txt='Charger too weak ↓ '+rate.toFixed(1)+' %/h · empty in ~'+eta(lvl/-rate);}
+    else{col='#ffcf5c';txt='Plugged in · charger only just keeping up';}
+    pct.textContent=lvl+'%'; pct.style.color=col; lab.textContent=txt+' · 37 °C'; bar.style.width=lvl+'%'; bar.style.background=col; ic.style.background=col; ic.style.opacity=.85;
+    read.innerHTML='Charger <b>'+chg.toFixed(1)+' W</b>'+(chg>MAX_IN?' → capped at <b>'+MAX_IN+' W</b> by the tablet':'')+(note?' · <b>'+note+'</b>':'')+'<br>minus the screen &amp; radios <b>'+draw.toFixed(1)+' W</b> = net <b>'+(net>=0?'+':'')+net.toFixed(1)+' W</b> into a 31 Wh cell → <b>'+(rate>=0?'+':'')+rate.toFixed(1)+' %/h</b>'+(rate<-0.5&&lvl<20?'<br><span style="color:var(--alert)">below 20 % → phone alert · at 8 % the screen switches itself off</span>':'');
+  }
+  [iChg,iDraw,iLvl].forEach(function(i){i.addEventListener('input',function(){note='';upd();});});
+  [].forEach.call(document.querySelectorAll('.presets .dbtn'),function(b){b.addEventListener('click',function(){iChg.value=b.getAttribute('data-chg');note=b.getAttribute('data-note')==='usbc'?'a C-to-micro cable negotiates like a PC port':'';upd();});});
+  upd();
+})();
+</script>
+<script type="module" src="mount3d.js?v=5"></script>
+</body>
+</html>

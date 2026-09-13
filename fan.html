@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The BLE ceiling fan — DECS Home Systems</title>
+<meta name="description" content="Bringing a cloud-free Ohniyou ceiling fan into Home Assistant with no hub and no new hardware: it's driven by Bluetooth LE broadcast-advertising (a fan that only listens), so it's controlled from the Pi's own Bluetooth via the ha-ble-adv custom component — full speed, presets, reverse, a dimmable downlight, a panel tile and Google voice.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* ---- fan page: local additions ---- */
+  .pl-wire{fill:none;stroke:#243040;stroke-width:3;stroke-linecap:round;opacity:.35}
+  .pl-flow{fill:none;stroke-width:4;stroke-linecap:round;stroke-dasharray:2 12;opacity:.95;animation:plmove .9s linear infinite}
+  @keyframes plmove{to{stroke-dashoffset:-14}}
+  .pl-node{fill:#0e151f;stroke:#26333f;stroke-width:1.4}
+  .pl-node.hi{fill:#101b28;stroke:#5cc8ff;stroke-width:1.6}
+  .pl-t{font-family:"IBM Plex Mono",ui-monospace,monospace;fill:#9aa7b3}
+  .pl-title{fill:#e7edf3;font-weight:600}
+  .pl-cap{fill:#7c8a97}
+  .pl-badge{fill:#5cc8ff;font-weight:600}
+  @media (prefers-reduced-motion:reduce){.pl-flow{animation:none}}
+  /* code blocks */
+  pre.code{background:#0b121b;border:1px solid var(--line);border-left:3px solid #5cc8ff;border-radius:12px;padding:1rem 1.15rem;overflow-x:auto;
+    font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.8rem;line-height:1.6;color:#c7d2dd;margin:1.1rem 0 .4rem;white-space:pre}
+  pre.code .cm{color:#66788a}
+  .codecap{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--faint);letter-spacing:.03em;margin:0 0 1.3rem;padding-left:.2rem}
+  /* entity legend */
+  .ents{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-top:1.3rem}
+  @media(max-width:720px){.ents{grid-template-columns:1fr}}
+  .ent{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:1rem 1.1rem;position:relative;overflow:hidden}
+  .ent::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:#5cc8ff}
+  .ent .eh{display:flex;align-items:center;gap:.55rem;font-weight:700;color:var(--ink);font-family:"Archivo",sans-serif}
+  .ent .ek{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:#5cc8ff;margin-top:.35rem}
+  .ent .ev{color:var(--muted);font-size:.9rem;margin-top:.35rem;line-height:1.45}
+</style>
+</head>
+<body class="p-fan">
+
+<header class="nav"><div class="wrap">
+  <a class="brand" href="index.html"><span class="dot"></span> DECS&nbsp;Home&nbsp;Systems</a>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="globalguard.html">GlobalGuard</a>
+    <a href="homeassistant.html">Home&nbsp;Assistant</a>
+    <a href="wallpanel.html">Wall&nbsp;panel</a>
+    <a href="cameras.html">Cameras</a>
+    <a href="presence.html">Presence</a>
+    <a href="roomscribe.html">Roomscribe</a>
+    <a href="traccar.html">Traccar</a>
+    <a href="finance.html">Finance</a>
+    <a href="fan.html" class="active">Fan</a>
+    <a href="rada.html">Rada&nbsp;shower</a>
+    <a href="theme.html">HA&nbsp;Theme</a>
+    <a href="technical.html">Technical</a>
+    <a href="roadmap.html">Roadmap</a>
+    <a href="claude.html">Claude&nbsp;Code</a>
+    <button class="themebtn" id="tt" aria-label="Toggle colour theme"><span id="ttic">◐</span> theme</button>
+  </nav>
+</div></header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">Bluetooth LE broadcast · no hub · no new hardware</span>
+        <h1 class="title">A ceiling fan that<br><em>only listens</em>.</h1>
+        <p class="lede">The bedroom's Ohniyou ceiling fan came with an app — <b>FanLampPro</b> — and nothing else: no hub, no Wi-Fi, no cloud API. It's driven by <b>Bluetooth&nbsp;LE broadcast-advertising</b>: the app shouts commands into the air and the fan silently listens. It never advertises back, so a normal Bluetooth scan finds nothing to pair with. We taught Home&nbsp;Assistant to shout the same commands — from the Pi's own Bluetooth radio, sat in the same room — so the fan, its speed, its reverse and its dimmable downlight all landed in HA and Google, with no extra box on the wall.</p>
+        <div class="meta-row">
+          <span class="chip">Ohniyou 52"</span>
+          <span class="chip">ha-ble-adv</span>
+          <span class="chip">Pi Bluetooth</span>
+          <span class="chip">no Broadlink</span>
+        </div>
+      </div>
+      <div class="panel" role="img" aria-label="Fan status: an Ohniyou BLE broadcast fan controlled from the Pi's own Bluetooth via the ha-ble-adv component, giving a fan entity with speed, presets and reverse plus a colour-temperature downlight, on the panel and in Google — with no hub and no new hardware.">
+        <div class="head"><span>Bedroom fan · in HA</span><span>0 new devices</span></div>
+        <div class="rows">
+          <div class="prow"><span class="led on"></span><span class="k">Fan</span><span class="v">speed · presets · reverse</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">Light</span><span class="v">warm↔cool downlight</span></div>
+          <div class="prow"><span class="led info"></span><span class="k">Transport</span><span class="v">Pi Bluetooth · broadcast</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">Voice</span><span class="v">"Bedroom Fan" · Google</span></div>
+          <div class="prow gone"><span class="led dead"></span><span class="k">Hub / cloud</span><span class="v">none — app bypassed</span></div>
+        </div>
+        <div class="beacon">
+          <span class="lbl">advert</span>
+          <svg viewBox="0 0 220 30" preserveAspectRatio="none" aria-hidden="true">
+            <line x1="0" y1="15" x2="220" y2="15" stroke="#26313d" stroke-width="1"/>
+            <polyline class="trace" points="0,15 40,15 52,15 58,6 66,24 74,15 120,15 132,15 138,7 146,23 154,15 220,15" fill="none" stroke="#5cc8ff" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+            <circle class="pulse-dot" cx="58" cy="6" r="2.4" style="fill:#5cc8ff"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- STATS -->
+<section style="padding-block:clamp(2.2rem,5vw,3.2rem)">
+  <div class="wrap reveal">
+    <div class="stats">
+      <div class="stat"><span class="big num-strong">2</span><span class="lab">entities (fan + light)</span></div>
+      <div class="stat"><span class="big num-strong">0</span><span class="lab">new hardware</span></div>
+      <div class="stat"><span class="big num-strong">BLE</span><span class="lab">broadcast advert</span></div>
+      <div class="stat"><span class="big num-strong">1</span><span class="lab">app press to learn</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 01 THE PROBLEM -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">01 · The catch</span><h2>A device with no handle to grab</h2><p class="lede">Most smart kit here was freed by finding its LAN or radio protocol. The fan is stranger. It belongs to the same family as the house's reverse-engineered "FastCon" Bluetooth bulbs: control is <b>one-way broadcast advertising</b>. The FanLampPro app doesn't <em>connect</em> to the fan — it transmits encrypted BLE advertisement packets that any nearby fan in pairing range will act on. The fan is a pure receiver: it never advertises its presence, exposes no GATT services, and answers no scan. There is simply nothing there to discover and connect to the normal way.</p></div>
+    <div class="grid-3">
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 0 1 0 20M12 2a10 10 0 0 0 0 20M2 12h20"/></svg></div><h3>Broadcast, not connect</h3><p>Commands ride in the advertising channel itself, encrypted. There's no session, no bond — whoever transmits the right packet in range wins.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div><h3>Invisible to a scan</h3><p>Because the fan only ever listens, a Bluetooth scan turns up nothing. The usual "add device" flow has no candidate to offer.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2M4 7h16v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zM9 11h6"/></svg></div><h3>No hub required</h3><p>Early on this looked like an RF remote needing a Broadlink blaster. It isn't — the app path is pure BLE, so the fix needed no extra hardware at all.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 02 THE INTEGRATION (diagram) -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">02 · The integration</span><h2>Teach Home Assistant to shout the same packets</h2><p class="lede">The answer is <b>NicoIIT's <code>ha-ble-adv</code></b> — a custom Home&nbsp;Assistant component that speaks exactly this broadcast-advertising family (FanLampPro, LampSmart&nbsp;Pro, Zhi&nbsp;Jia and friends). It transmits the commands straight from a Bluetooth radio HA already has: the <b>Raspberry&nbsp;Pi's own adapter</b>, which happens to sit in the same bedroom as the fan. No ESP proxy, no Broadlink, no bridge.</p></div>
+    <figure>
+      <div class="demo-stage" role="img" aria-label="Control path: a one-time config-flow captures the fan's codes by listening while the FanLampPro app is pressed next to the fan; thereafter Home Assistant, via the ha-ble-adv component, transmits the matching encrypted BLE advertisement packets from the Pi's own Bluetooth adapter, and the Ohniyou fan — a pure receiver — obeys.">
+        <svg viewBox="0 0 960 300" aria-hidden="true">
+          <path class="pl-wire" d="M226 150 C 300 150 320 150 386 150"/><path class="pl-flow" d="M226 150 C 300 150 320 150 386 150" stroke="#5cc8ff"/>
+          <path class="pl-wire" d="M646 150 C 710 150 730 150 806 150"/><path class="pl-flow" d="M646 150 C 710 150 730 150 806 150" stroke="#5cc8ff"/>
+          <rect class="pl-node" x="26" y="104" width="200" height="92" rx="12"/>
+          <text class="pl-t pl-title" x="126" y="134" text-anchor="middle" font-size="12">FanLampPro app</text>
+          <text class="pl-t pl-cap" x="126" y="153" text-anchor="middle" font-size="10">one-time, by the fan</text>
+          <text class="pl-t pl-cap" x="126" y="169" text-anchor="middle" font-size="10">config-flow learns codes</text>
+          <text class="pl-t pl-badge" x="306" y="138" text-anchor="middle" font-size="10">learn</text>
+          <text class="pl-t pl-cap" x="306" y="172" text-anchor="middle" font-size="10">light blinks = paired</text>
+          <rect class="pl-node hi" x="386" y="104" width="260" height="92" rx="12"/>
+          <text class="pl-t pl-title" x="516" y="132" text-anchor="middle" font-size="12">Home Assistant · ha-ble-adv</text>
+          <text class="pl-t pl-cap" x="516" y="151" text-anchor="middle" font-size="10">transmits from the Pi's Bluetooth (hci0)</text>
+          <text class="pl-t pl-cap" x="516" y="167" text-anchor="middle" font-size="10">encrypted BLE advertisements</text>
+          <text class="pl-t pl-badge" x="726" y="138" text-anchor="middle" font-size="10">broadcast</text>
+          <text class="pl-t pl-cap" x="726" y="172" text-anchor="middle" font-size="10">in-room range</text>
+          <rect class="pl-node hi" x="806" y="104" width="128" height="92" rx="12"/>
+          <text class="pl-t pl-title" x="870" y="138" text-anchor="middle" font-size="12">Ohniyou fan</text>
+          <text class="pl-t pl-cap" x="870" y="156" text-anchor="middle" font-size="10">listens · obeys</text>
+        </svg>
+      </div>
+      <figcaption>The component installs into <code>/config/custom_components/ble_adv</code> on the Pi; HA runs in a privileged, host-network container with the Pi's Bluetooth passed through, so it can open a raw HCI socket and transmit directly — no proxy in between.</figcaption>
+    </figure>
+    <div class="demo-note" style="margin-top:1.6rem"><b>How it was captured.</b> There's nothing to scan for, so the pairing is done by <em>imitation</em>. HA's config-flow ("Duplicate paired phone-app config") listens on the Pi's Bluetooth while you press a button in FanLampPro standing next to the fan; it offers a couple of candidate code-sets, you pick the one that makes the fan's light blink, and that's the binding. One press, done — and because it's just a code-set, not a bonded connection, it's rock-solid afterwards.</div>
+  </div>
+</section>
+
+<!-- 03 WHAT LANDED + CODE -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">03 · What landed</span><h2>A real fan and a real light in HA</h2><p class="lede">The binding produced two proper entities — a fan and a colour-temperature light — with the full feature set, not just on/off.</p></div>
+    <div class="ents">
+      <div class="ent"><div class="eh">Fan</div><div class="ek">fan.fan_main_fan</div><div class="ev">On/off, <b>speed&nbsp;%</b>, <b>breeze</b> and <b>sleep</b> presets, and reversible <b>direction</b> (summer/winter) — the whole remote, as a Home&nbsp;Assistant fan.</div></div>
+      <div class="ent"><div class="eh">Downlight</div><div class="ek">light.fan_main_light</div><div class="ev">The fan's built-in downlight as a dimmable <b>colour-temperature</b> light, warm through cool — a normal HA light entity.</div></div>
+    </div>
+
+    <div class="sec-head col" style="margin-top:2.4rem"><span class="eyebrow">The custom code</span><h3 style="margin:.2rem 0 0">Where it plugs into the rest of the house</h3><p class="lede">The component is third-party; the bits we wrote are how it slots into the panel and voice. The fan tile lives on the <a href="wallpanel.html">Lights tab</a>, generated from a small Python model of the rooms — tap toggles it, hold opens the speed &amp; direction control:</p></div>
+    <pre class="code"><span class="cm"># _lights-view-gen.py — the "Kev's Bedroom" room card</span>
+("fan.fan_main_fan", "Ceiling fan", "mdi:ceiling-fan", "fan"),
+
+<span class="cm"># fans are deliberately kept out of the master "N of 21 lights on"</span>
+<span class="cm"># count and the room "All off" — a fan isn't a light</span>
+ALL = [e for *_, ls in ROOMS for e,_,_,_ in ls if not e.startswith("fan.")]</pre>
+    <p class="codecap">Tap = on/off · hold = the fan's more-info card (speed slider + reverse) · excluded from the lights count &amp; All-off.</p>
+
+    <div class="sec-head col" style="margin-top:1.4rem"><p class="lede" style="margin:0">And exposed to Google, so it answers to voice — the fan as a native Google fan (on/off and speed), the downlight as its own controllable light:</p></div>
+    <pre class="code"><span class="cm"># configuration.yaml — google_assistant.entity_config</span>
+fan.fan_main_fan:
+  name: Bedroom Fan
+  aliases:
+    - Ceiling Fan
+    - Bedroom Ceiling Fan
+  expose: true
+light.fan_main_light:
+  name: Bedroom Fan Light</pre>
+    <p class="codecap">"Turn on the Bedroom Fan" · "set the Bedroom Fan to 50%" · "turn off the Bedroom Fan Light". Presets and reverse stay on the panel's control card.</p>
+
+    <div class="demo-note" style="margin-top:1.4rem"><b>One thing to watch.</b> The Pi's single Bluetooth radio is shared with the reverse-engineered bulb mesh, so the fan and those bulbs take turns on the same adapter — fine in practice, but the reason a spare ESP32 sits on the bench as a fallback broadcast proxy if contention ever bites.</div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- CLOSING -->
+<section>
+  <div class="wrap reveal">
+    <div class="close">
+      <span class="eyebrow" style="color:#5cc8ff">App-free air</span>
+      <h2 style="margin-top:1rem">The fan joined the house without buying a thing.</h2>
+      <p>A device with no hub, no cloud and no connectable radio — pulled into Home&nbsp;Assistant by having the Pi it already runs on transmit the same Bluetooth adverts the app does. Speed, presets, reverse and a dimmable downlight, on the wall panel and in Google, and the FanLampPro app never has to be opened again.</p>
+      <div class="sig"><span class="dot" style="background:#5cc8ff;box-shadow:0 0 8px #5cc8ff"></span><span>ha-ble-adv · Pi Bluetooth</span><span>·</span><span>0 new hardware</span><span>·</span><span>see it on the <a href="wallpanel.html" style="color:#5cc8ff">Wall panel</a></span></div>
+    </div>
+  </div>
+</section>
+
+<footer>BLE ceiling fan · ha-ble-adv on the Pi's Bluetooth · no hub, no cloud · <a href="wallpanel.html">Wall panel</a> · <a href="homeassistant.html">Home Assistant</a> · <a href="index.html">DECS Home Systems</a></footer>
+
+<script src="app.js"></script>
+</body>
+</html>

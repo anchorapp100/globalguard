@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Home Assistant Build — DECS Home Systems</title>
+<meta name="description" content="One dual-homed Raspberry Pi running Home Assistant in Docker: Tuya on local keys, a reverse-engineered BroadLink Bluetooth bulb mesh, Nanoleaf, Ring doorbells, a 12.6 kWp Victron solar array over Modbus and Google voice — every device local, no vendor cloud, no subscription.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="p-ha">
+
+<header class="nav"><div class="wrap">
+  <a class="brand" href="index.html"><span class="dot"></span> DECS&nbsp;Home&nbsp;Systems</a>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="globalguard.html">GlobalGuard</a>
+    <a href="homeassistant.html" class="active">Home&nbsp;Assistant</a>
+    <a href="wallpanel.html">Wall&nbsp;panel</a>
+    <a href="cameras.html">Cameras</a>
+    <a href="presence.html">Presence</a>
+    <a href="roomscribe.html">Roomscribe</a>
+    <a href="traccar.html">Traccar</a>
+    <a href="finance.html">Finance</a>
+    <a href="fan.html">Fan</a>
+    <a href="rada.html">Rada&nbsp;shower</a>
+    <a href="theme.html">HA&nbsp;Theme</a>
+    <a href="technical.html">Technical</a>
+    <a href="roadmap.html">Roadmap</a>
+    <a href="claude.html">Claude&nbsp;Code</a>
+    <button class="themebtn" id="tt" aria-label="Toggle colour theme"><span id="ttic">◐</span> theme</button>
+  </nav>
+</div></header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">The smart-home build · all local</span>
+        <h1 class="title">One Pi. Two networks.<br><em>The whole house.</em></h1>
+        <p class="lede">Home Assistant runs in Docker on a Raspberry&nbsp;Pi&nbsp;4 that lives on <b style="color:var(--ink)">both</b> home networks at once — the only host that can see everything — driving lights, alarm, doorbells and solar, all locally, no vendor cloud.</p>
+        <div class="meta-row">
+          <span class="chip">Home Assistant · Docker</span>
+          <span class="chip">Dual-homed Pi 4</span>
+          <span class="chip">Local control only</span>
+          <span class="chip">No subscription</span>
+        </div>
+      </div>
+      <div class="panel" role="img" aria-label="Integration status panel: eighteen Tuya devices on local keys, five BroadLink mesh bulbs, one Nanoleaf, two Ring doorbells, Victron solar over Modbus and Google voice — all live and controlled locally, nothing in the cloud.">
+        <div class="head"><span>Integrations · live</span><span>host-net</span></div>
+        <div class="rows">
+          <div class="prow"><span class="led on"></span><span class="k">Tuya</span><span class="v">18 · local keys</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">BroadLink</span><span class="v">5 · BLE mesh</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">Nanoleaf</span><span class="v">1 · Elements</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">Ring</span><span class="v">2 doorbells</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">Victron</span><span class="v">Modbus TCP</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">Google</span><span class="v">voice · local</span></div>
+        </div>
+        <div class="beacon">
+          <span class="lbl">all local</span>
+          <svg viewBox="0 0 220 30" preserveAspectRatio="none" aria-hidden="true">
+            <line x1="0" y1="15" x2="220" y2="15" stroke="#26313d" stroke-width="1"/>
+            <polyline class="trace" points="0,15 40,15 52,15 58,6 66,24 74,15 130,15 142,15 148,7 156,23 164,15 220,15" fill="none" stroke="#43D98A" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+            <circle class="pulse-dot" cx="66" cy="15" r="2.2"/>
+          </svg>
+          <span class="mono" style="font-size:.7rem;letter-spacing:.08em;color:var(--live)">0 cloud</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- STATS -->
+<section style="padding-block:clamp(2.2rem,5vw,3.2rem)">
+  <div class="wrap reveal">
+    <div class="stats">
+      <div class="stat"><span class="big num-strong">18</span><span class="lab">Tuya devices</span></div>
+      <div class="stat"><span class="big num-strong">12.6 kWp</span><span class="lab">solar array</span></div>
+      <div class="stat"><span class="big num-strong">32 kWh</span><span class="lab">battery</span></div>
+      <div class="stat"><span class="big num-strong">2</span><span class="lab">networks bridged</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 01 THE BACKBONE -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">01 · The backbone</span><h2>Why one Pi can see the whole house</h2><p class="lede">The trick isn't the Raspberry&nbsp;Pi — it's where it sits. This one machine is the only host on both home networks at the same time, so a single Home Assistant instance can reach every device.</p></div>
+    <div class="grid-2">
+      <div class="col">
+        <p style="color:var(--muted)">The wired interface, <span class="mono" style="font-size:.9em">eth0</span>, sits on the main house LAN and holds the default route. A second interface, <span class="mono" style="font-size:.9em">wlan0</span>, joins a <b style="color:var(--ink)">hidden mesh network</b> where most of the smart devices actually live. Nothing else on the network straddles both — only the Pi.</p>
+        <p style="color:var(--muted);margin-top:1rem">That only works because Home Assistant runs in Docker in <b style="color:var(--ink)">host-network mode</b> — it needs to see both interfaces directly, so one instance discovers and drives devices on either side. Bridged or NAT networking would wall half the house off.</p>
+        <p style="color:var(--muted);margin-top:1rem">The same Pi quietly carries MQTT, Node-RED and a solar grid-control flow alongside HA, all on a trivial load, booting from a USB SSD rather than a fragile SD card.</p>
+      </div>
+      <div class="card">
+        <p class="mono" style="font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:.9rem">One box, two homes</p>
+        <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.85rem">
+          <li style="display:flex;gap:.8rem;color:var(--muted);font-size:.95rem"><span class="mono" style="color:var(--accent);min-width:3.4rem">eth0</span> main LAN · wired · default route</li>
+          <li style="display:flex;gap:.8rem;color:var(--muted);font-size:.95rem"><span class="mono" style="color:var(--accent);min-width:3.4rem">wlan0</span> hidden mesh · where devices live</li>
+          <li style="display:flex;gap:.8rem;color:var(--muted);font-size:.95rem"><span class="mono" style="color:var(--accent);min-width:3.4rem">docker</span> host-network mode · sees both</li>
+          <li style="display:flex;gap:.8rem;color:var(--muted);font-size:.95rem"><span class="mono" style="color:var(--accent);min-width:3.4rem">+svc</span> MQTT · Node-RED · solar flow</li>
+          <li style="display:flex;gap:.8rem;color:var(--muted);font-size:.95rem"><span class="mono" style="color:var(--accent);min-width:3.4rem">boot</span> USB SSD · ~0.2 load</li>
+        </ul>
+      </div>
+    </div>
+    <figure style="margin-top:2rem">
+      <div class="figwrap">
+        <svg viewBox="0 0 960 280" role="img" aria-label="Network diagram: a group of Main LAN devices — router, Ring and Nanoleaf, the wall tablet — connect over eth0, the wired default route, into a highlighted central box for the Raspberry Pi running Home Assistant; a group of Hidden mesh devices — eighteen Tuya devices, the Victron GX and other IoT devices — connect over wlan0, a hidden Wi-Fi SSID, into the same Pi. The Pi runs in host-network mode and sees both networks at once." width="960" height="280" style="max-width:100%;height:auto;display:block;margin:0 auto">
+        <defs>
+          <marker id="haAr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker>
+        </defs>
+        <g class="lab">
+          <!-- left group: Main LAN -->
+          <text x="145" y="46" text-anchor="middle" font-size="12" font-weight="600" fill="var(--muted)" letter-spacing="1">MAIN LAN</text>
+          <rect x="40" y="58" width="210" height="176" rx="12" fill="none" stroke="var(--line)"/>
+          <rect x="58" y="76" width="174" height="42" rx="8" fill="var(--surface)" stroke="var(--line-strong)"/>
+          <text x="145" y="102" text-anchor="middle" font-size="11" fill="var(--ink)">Router · gateway</text>
+          <rect x="58" y="128" width="174" height="42" rx="8" fill="var(--surface)" stroke="var(--line-strong)"/>
+          <text x="145" y="154" text-anchor="middle" font-size="11" fill="var(--ink)">Ring · Nanoleaf</text>
+          <rect x="58" y="180" width="174" height="42" rx="8" fill="var(--surface)" stroke="var(--line-strong)"/>
+          <text x="145" y="206" text-anchor="middle" font-size="11" fill="var(--ink)">Wall tablet</text>
+          <!-- centre: the Pi -->
+          <rect x="398" y="104" width="164" height="84" rx="12" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.8"/>
+          <text x="480" y="140" text-anchor="middle" font-size="14" font-weight="700" fill="var(--accent)">Raspberry Pi</text>
+          <text x="480" y="160" text-anchor="middle" font-size="11.5" fill="var(--accent)">Home Assistant</text>
+          <text x="480" y="212" text-anchor="middle" font-size="10" fill="var(--muted)">host-network · sees both</text>
+          <!-- right group: Hidden mesh -->
+          <text x="815" y="46" text-anchor="middle" font-size="12" font-weight="600" fill="var(--muted)" letter-spacing="1">HIDDEN MESH</text>
+          <rect x="710" y="58" width="210" height="176" rx="12" fill="none" stroke="var(--line)"/>
+          <rect x="728" y="76" width="174" height="42" rx="8" fill="var(--surface)" stroke="var(--line-strong)"/>
+          <text x="815" y="102" text-anchor="middle" font-size="11" fill="var(--ink)">Tuya · 18</text>
+          <rect x="728" y="128" width="174" height="42" rx="8" fill="var(--surface)" stroke="var(--line-strong)"/>
+          <text x="815" y="154" text-anchor="middle" font-size="11" fill="var(--ink)">Victron GX</text>
+          <rect x="728" y="180" width="174" height="42" rx="8" fill="var(--surface)" stroke="var(--line-strong)"/>
+          <text x="815" y="206" text-anchor="middle" font-size="11" fill="var(--ink)">IoT devices</text>
+          <!-- arrows -->
+          <g fill="none">
+            <line x1="255" y1="146" x2="392" y2="146" stroke="var(--accent)" stroke-width="2" marker-end="url(#haAr)"/>
+            <text x="323" y="134" text-anchor="middle" font-size="11" font-weight="600" fill="var(--accent)">eth0</text>
+            <text x="323" y="170" text-anchor="middle" font-size="9.5" fill="var(--muted)">wired · default route</text>
+            <line x1="705" y1="146" x2="568" y2="146" stroke="var(--accent)" stroke-width="2" marker-end="url(#haAr)"/>
+            <text x="636" y="134" text-anchor="middle" font-size="11" font-weight="600" fill="var(--accent)">wlan0</text>
+            <text x="636" y="170" text-anchor="middle" font-size="9.5" fill="var(--muted)">hidden SSID · Wi-Fi</text>
+          </g>
+        </g>
+        </svg>
+      </div>
+      <figcaption>One Pi, dual-homed — eth0 on the main LAN, wlan0 on the hidden mesh. Home Assistant sees both sides and exposes one house.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- 02 WHAT'S PLUGGED IN -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">02 · What's plugged in</span><h2>Eight ecosystems, one local brain</h2><p class="lede">Every integration talks to its device on the LAN — some the official local way, some only after a little reverse-engineering. None of them phone a cloud.</p></div>
+    <div class="grid-3">
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v5M16 2v5M5 7h14v3a7 7 0 0 1-14 0zM12 17v5"/></svg></div><h3>Tuya · 18 local</h3><p>Eighteen plugs, lamps and switches driven by their <b style="color:var(--ink)">local keys</b>, not the Tuya cloud. The energy-monitor plugs report live power straight into HA.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l10 10-5 4V3l5 4L7 17"/></svg></div><h3>BroadLink FastCon</h3><p>Five RGB bulbs on a Bluetooth <b style="color:var(--ink)">broadcast mesh</b> — reverse-engineered from the app and driven straight off the Pi's own Bluetooth radio. A mid-house bulb relays to the far ones.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 2l4.5 8h-9zM7.5 13l4.5 8 4.5-8"/></svg></div><h3>Nanoleaf Elements</h3><p>An Elements panel that refused the normal flow — so the pairing token was <b style="color:var(--ink)">captured during pairing</b> and injected into the config directly.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 5 3 9H3c0-4 3-2 3-9z"/><path d="M10 21a2 2 0 0 0 4 0"/></svg></div><h3>Ring doorbells</h3><p>Two wired doorbells and two chimes. A press announces <em>"someone's at the front door"</em> on every Google speaker, and the front door lives on the wall panel.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg></div><h3>Victron solar</h3><p>A Cerbo GX read over <b style="color:var(--ink)">Modbus TCP every five seconds</b> — three arrays, a 32&nbsp;kWh battery, the MultiPlus-II, grid flow and house load — with derived daily kWh meters and a recorder filter so 453 entities at that rate don't drown the database.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></div><h3>Google voice</h3><p>Self-hosted Google Assistant — <b style="color:var(--ink)">no Nabu Casa subscription</b>. Arm the alarm, boost the hot water, and every light in the house, all by voice.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V5a2 2 0 0 0-4 0v9.76a4 4 0 1 0 4 0z"/></svg></div><h3>WundaSmart heating</h3><p>An underfloor heating system read <b style="color:var(--ink)">locally over the LAN</b> — eight room thermostats and the hot water, no Wunda cloud. Full detail below.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div><h3>Screens &amp; cast</h3><p>Both Samsung TVs, the Shield, the Nest displays and Linda's cast TV on a <b style="color:var(--ink)">Media tab</b> — controlled locally, and painted with a room's album art the moment it plays. The IR-only set-top boxes wait on a Harmony bridge.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 03 LIVE SOLAR (interactive) -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">03 · Live solar</span><h2>Where the power actually goes</h2><p class="lede">The Victron array read live — here's the power flowing through the house across the day. Pick a moment and watch it move.</p></div>
+
+    <style>
+    #sf-stage{margin-top:1.5rem}
+    .sf-wire{fill:none;stroke:#243040;stroke-width:3;stroke-linecap:round;opacity:.16;transition:opacity .3s ease,stroke .3s ease}
+    .sf-wire.sf-active{opacity:.32}
+    .sf-flow{fill:none;stroke-width:4;stroke-linecap:round;stroke-dasharray:2 13;opacity:0;transition:opacity .3s ease}
+    .sf-flow.sf-on{opacity:.95;animation:sfmove .85s linear infinite}
+    .sf-flow.sf-on.sf-dim{opacity:.5;animation-duration:1.7s}
+    .sf-flow.sf-rev{animation-direction:reverse}
+    @keyframes sfmove{to{stroke-dashoffset:-15}}
+    .sf-node{fill:#0e151f;stroke:#26333f;stroke-width:1.4}
+    .sf-inv{fill:#101b28;stroke:#33475b;stroke-width:1.6}
+    .sf-t{font-family:"IBM Plex Mono",ui-monospace,monospace;fill:#9aa7b3}
+    .sf-title{fill:#e7edf3;font-weight:600}
+    .sf-cap{fill:#7c8a97}
+    .sf-read{font-family:"IBM Plex Mono",ui-monospace,monospace;fill:#fff;font-weight:600}
+    #sf-arrays{transition:opacity .35s ease}
+    #sf-arrays.sf-lo{opacity:.5}
+    #sf-arrays.sf-off{opacity:.24}
+    .sf-sun{transition:opacity .35s ease}
+    .sf-sun.sf-lo{opacity:.5}
+    .sf-sun.sf-off{opacity:.2}
+    .sf-echo{margin-top:1.05rem;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.8rem;letter-spacing:.02em;color:var(--muted);text-align:center}
+    .sf-echo b{color:var(--ink);font-weight:600}
+    .sf-sep{margin:0 .5rem;color:var(--faint)}
+    .sf-fig{margin:0}
+    @media (prefers-reduced-motion:reduce){.sf-flow{display:none!important}.sf-wire.sf-active{opacity:.95}}
+    </style>
+
+    <figure class="sf-fig">
+      <div class="demo-stage" id="sf-stage" role="img" aria-label="Live solar-flow diagram. Three photovoltaic arrays — Front 2.1 kilowatt-peak, Rear 6.3, Front 4.2 — feed a central Cerbo GX inverter, which connects to a 32 kilowatt-hour battery, the house load and the grid. Use the buttons below to switch between midday, evening and night; the readouts and the animated power flows change to match.">
+        <svg viewBox="0 0 720 380" aria-hidden="true">
+          <!-- flow paths (drawn first, tuck under nodes) -->
+          <g id="sf-paths">
+            <path class="sf-wire" data-k="pv1" d="M174 120 C 226 120 236 178 286 178"/>
+            <path class="sf-flow" data-k="pv1" d="M174 120 C 226 120 236 178 286 178"/>
+            <path class="sf-wire" data-k="pv2" d="M174 188 C 226 188 240 196 286 196"/>
+            <path class="sf-flow" data-k="pv2" d="M174 188 C 226 188 240 196 286 196"/>
+            <path class="sf-wire" data-k="pv3" d="M174 256 C 226 256 236 224 286 224"/>
+            <path class="sf-flow" data-k="pv3" d="M174 256 C 226 256 236 224 286 224"/>
+            <path class="sf-wire" data-k="bat" d="M434 180 C 496 180 500 106 560 106"/>
+            <path class="sf-flow" data-k="bat" d="M434 180 C 496 180 500 106 560 106"/>
+            <path class="sf-wire" data-k="house" d="M434 202 C 496 202 505 195 560 195"/>
+            <path class="sf-flow" data-k="house" d="M434 202 C 496 202 505 195 560 195"/>
+            <path class="sf-wire" data-k="grid" d="M434 224 C 496 224 500 282 560 282"/>
+            <path class="sf-flow" data-k="grid" d="M434 224 C 496 224 500 282 560 282"/>
+          </g>
+          <!-- PV arrays -->
+          <g id="sf-arrays">
+            <rect class="sf-node" x="24" y="94" width="150" height="52" rx="10"/>
+            <text class="sf-t" x="99" y="124" text-anchor="middle" font-size="11">Front · 2.1 kWp</text>
+            <rect class="sf-node" x="24" y="162" width="150" height="52" rx="10"/>
+            <text class="sf-t" x="99" y="192" text-anchor="middle" font-size="11">Rear · 6.3 kWp</text>
+            <rect class="sf-node" x="24" y="230" width="150" height="52" rx="10"/>
+            <text class="sf-t" x="99" y="260" text-anchor="middle" font-size="11">Front · 4.2 kWp</text>
+          </g>
+          <!-- inverter -->
+          <rect class="sf-node sf-inv" x="286" y="150" width="148" height="104" rx="12"/>
+          <text class="sf-t sf-title" x="360" y="196" text-anchor="middle" font-size="12">Inverter</text>
+          <text class="sf-t sf-cap" x="360" y="214" text-anchor="middle" font-size="10">Cerbo GX</text>
+          <!-- battery -->
+          <rect class="sf-node" x="560" y="58" width="150" height="96" rx="12"/>
+          <text class="sf-t sf-title" x="635" y="82" text-anchor="middle" font-size="11">Battery · 32 kWh</text>
+          <text id="sf-bat-soc" class="sf-read" x="635" y="120" text-anchor="middle" font-size="30">78%</text>
+          <text id="sf-bat-state" class="sf-t" x="635" y="142" text-anchor="middle" font-size="10">charging ▲</text>
+          <!-- house -->
+          <rect class="sf-node" x="560" y="166" width="150" height="58" rx="12"/>
+          <text class="sf-t sf-title" x="635" y="190" text-anchor="middle" font-size="11">House</text>
+          <text id="sf-house-kw" class="sf-read" x="635" y="214" text-anchor="middle" font-size="18">1.2 kW</text>
+          <!-- grid -->
+          <rect class="sf-node" x="560" y="236" width="150" height="92" rx="12"/>
+          <text class="sf-t sf-title" x="635" y="262" text-anchor="middle" font-size="11">Grid</text>
+          <text id="sf-grid-kw" class="sf-read" x="635" y="292" text-anchor="middle" font-size="18">−4.1 kW</text>
+          <text id="sf-grid-label" class="sf-t" x="635" y="312" text-anchor="middle" font-size="10">export</text>
+          <!-- sun + PV total -->
+          <g class="sf-sun" id="sf-sun">
+            <circle cx="50" cy="50" r="11" fill="#f4b159"/>
+            <g stroke="#f4b159" stroke-width="2" stroke-linecap="round">
+              <line x1="50" y1="28" x2="50" y2="34"/><line x1="50" y1="66" x2="50" y2="72"/>
+              <line x1="28" y1="50" x2="34" y2="50"/><line x1="66" y1="50" x2="72" y2="50"/>
+              <line x1="34" y1="34" x2="38" y2="38"/><line x1="62" y1="62" x2="66" y2="66"/>
+              <line x1="66" y1="34" x2="62" y2="38"/><line x1="38" y1="62" x2="34" y2="66"/>
+            </g>
+          </g>
+          <text class="sf-t sf-cap" x="86" y="42" font-size="9">PV in</text>
+          <text id="sf-pv-kw" class="sf-read" x="86" y="58" font-size="15">9.8 kW</text>
+        </svg>
+      </div>
+      <div class="demo-controls" id="sf-controls">
+        <button class="dbtn play" data-sc="midday" type="button">Midday ☀</button>
+        <button class="dbtn" data-sc="evening" type="button">Evening 🌆</button>
+        <button class="dbtn" data-sc="night" type="button">Night 🌙</button>
+      </div>
+      <div class="sf-echo" id="sf-echo"></div>
+      <figcaption>Mirrors the real Modbus feed — polled every five seconds — that drives the <a href="wallpanel.html#tabmock" style="color:var(--accent)">wall panel's solar tab</a>.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- 04 SMART HEATING -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">04 · Smart heating</span><h2>Every room, its own temperature</h2><p class="lede">A WundaSmart underfloor system, pulled fully local into Home&nbsp;Assistant — eight rooms and the hot water, each on the wall panel and under voice control, with nothing going to Wunda's cloud.</p></div>
+    <div class="grid-3">
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V5a2 2 0 0 0-4 0v9.76a4 4 0 1 0 4 0z"/></svg></div><h3>Eight rooms, live</h3><p>Lounge, Kitchen, Hall, Bathroom, both bedrooms, Guest and Utility — each a <b style="color:var(--ink)">climate</b> entity with its own temperature, set-point and "calling for heat" state, plus humidity, battery and signal from every room stat.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M9 7h6M9 11h6"/><circle cx="12" cy="17" r="1.5"/></svg></div><h3>Hot water + boost</h3><p>The Davis&nbsp;CH water heater with a one-tap <b style="color:var(--ink)">hour boost</b> right on the panel — and by voice, the same as the alarm.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12a7.5 7.5 0 0 1 15 0M7.5 12a4.5 4.5 0 0 1 9 0"/><circle cx="12" cy="12" r="1.5"/></svg></div><h3>Local, like the rest</h3><p>The Hub&nbsp;Switch talks <b style="color:var(--ink)">868&nbsp;MHz</b> to the room stats; Home&nbsp;Assistant reaches the hub over the LAN and reads it directly — no Wunda app, no cloud round-trip.</p></div>
+    </div>
+    <p style="color:var(--muted);max-width:46rem;margin-top:1.4rem">On the <a href="wallpanel.html" style="color:var(--accent)">wall panel</a> each room tile is <b style="color:var(--ink)">tinted by its own temperature</b> — cool blue through to warm amber — with a 24-hour trend line and the room's humidity, so the whole house reads at a glance and a tap opens the full thermostat.</p>
+  </div>
+</section>
+
+<!-- 05 THE WALL PANEL -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">05 · The wall panel</span><h2>A 2014 tablet, back on the wall</h2><p class="lede">The control surface isn't a shiny new screen — it's a decade-old Samsung tablet that had been dead in a drawer for years, given one more job.</p></div>
+    <div class="grid-2">
+      <div class="col">
+        <p style="color:var(--muted)">Reflashed with <b style="color:var(--ink)">LineageOS</b> and locked to Fully Kiosk, it's now bolted to the wall running one full-screen Home Assistant dashboard, with all of HA's own chrome hidden so it reads like an appliance, not an app.</p>
+        <p style="color:var(--muted);margin-top:1rem">Home Assistant drives it back: the screen comes on with the sunrise — floored to <span class="mono" style="font-size:.9em">06:30</span> so early summers don't wake the hallway at four — goes black the moment you say <em>"sleep"</em>, and taps back to life at night. It now runs a <b style="color:var(--ink)">six-tab dashboard that never scrolls</b> — solar at five-second resolution, alarm, doorbells, lights — inside a two-part printed wall mount, and watches whether its own charger is keeping up.</p>
+        <p style="margin-top:1rem"><a href="wallpanel.html" style="color:var(--accent);font-weight:600">The wall panel has its own page — screenshots, the build, and a 3D model of the mount you can take apart →</a></p>
+      </div>
+      <div class="card">
+        <p class="mono" style="font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:.9rem">The reflash</p>
+        <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.8rem">
+          <li style="display:flex;gap:.7rem;color:var(--muted);font-size:.95rem"><span style="color:var(--accent)">→</span> LineageOS + Fully Kiosk, one dashboard</li>
+          <li style="display:flex;gap:.7rem;color:var(--muted);font-size:.95rem"><span style="color:var(--accent)">→</span> HA chrome hidden · full-screen kiosk</li>
+          <li style="display:flex;gap:.7rem;color:var(--muted);font-size:.95rem"><span style="color:var(--accent)">→</span> on at sunrise · floored to <span class="mono" style="font-size:.9em">06:30</span></li>
+          <li style="display:flex;gap:.7rem;color:var(--muted);font-size:.95rem"><span style="color:var(--accent)">→</span> "sleep" turns the screen black</li>
+          <li style="display:flex;gap:.7rem;color:var(--muted);font-size:.95rem"><span style="color:var(--accent)">→</span> tap-to-wake after dark</li>
+          <li style="display:flex;gap:.7rem;color:var(--muted);font-size:.95rem"><span style="color:var(--accent)">→</span> live front-door camera up top</li>
+        </ul>
+      </div>
+    </div>
+    <div class="ba" style="margin-top:1.4rem">
+      <div class="ba-col before"><div class="cap">● Before</div><ul>
+        <li><span class="mk">—</span>Obsolete 2014 tablet, stuck on an ancient Android</li>
+        <li><span class="mk">—</span>No modern app would install any more</li>
+        <li><span class="mk">—</span>Drawer-bound for years, gathering dust</li>
+        <li><span class="mk">—</span>On its way to the landfill pile</li>
+      </ul></div>
+      <div class="ba-col after"><div class="cap">● After</div><ul>
+        <li><span class="mk" style="color:var(--live)">✓</span><span><b>Always-on wall panel</b> — clock &amp; weather at a glance</span></li>
+        <li><span class="mk" style="color:var(--live)">✓</span><span><b>Arm &amp; disarm</b> the alarm from the hallway</span></li>
+        <li><span class="mk" style="color:var(--live)">✓</span><span><b>Live solar</b> — generation, battery and grid</span></li>
+        <li><span class="mk" style="color:var(--live)">✓</span><span><b>Doorbell cameras</b> the moment someone calls</span></li>
+        <li><span class="mk" style="color:var(--live)">✓</span><span><b>Every light</b>, grouped by room</span></li>
+        <li><span class="mk" style="color:var(--live)">✓</span><span><b>Dawn/dusk aware</b> — wakes and sleeps with the house</span></li>
+      </ul></div>
+    </div>
+  </div>
+</section>
+
+<!-- 06 REACH IT ANYWHERE -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">06 · Reach it anywhere</span><h2>Away from home, still local at heart</h2><p class="lede">The dashboard travels with you — without opening a single port on the router, and without ever trusting a change that hasn't been checked first.</p></div>
+    <div class="grid-2">
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div><h3>Cloudflare Tunnel</h3><p>A dedicated tunnel exposes Home Assistant over HTTPS with <b style="color:var(--ink)">no open ports</b> on the router — the connection is outbound-only. The phone app rides the tunnel when you're away and drops to the local IP the moment you're home on Wi-Fi.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-8 5"/><path d="M3 3v5h5"/><path d="M12 8v4l3 2"/></svg></div><h3>Recoverable by design</h3><p>The whole config lives in a <b style="color:var(--ink)">private git repo</b>. Every risky change is backed up and validated before it's allowed to load, so a bad edit can't take the house down — and secrets and tokens never leave the Pi.</p></div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- CLOSING -->
+<section>
+  <div class="wrap reveal">
+    <div class="close">
+      <span class="eyebrow" style="color:#5cb3f2">The house today</span>
+      <h2 style="margin-top:1rem">One Raspberry Pi runs the whole smart home — locally, privately, and with nothing to subscribe to.</h2>
+      <p>Lights, alarm, doorbells, solar and voice all answer to a single dual-homed Pi that sits on both networks and talks to every device on the LAN. No vendor cloud decides whether the lights turn on; no monthly fee keeps the dashboard alive. Old hardware got a second life, the config is versioned and recoverable, and the only thing leaving the house is you — over an outbound-only tunnel.</p>
+      <div class="sig"><span class="dot"></span><span>home-assistant · docker · dual-homed Pi 4 — all local</span><span>·</span><span>Tuya · BroadLink · Nanoleaf · Ring · Victron · Google</span></div>
+    </div>
+  </div>
+</section>
+
+<footer>Home Assistant build · one dual-homed Pi · Tuya, BroadLink mesh, Nanoleaf, Ring, Victron solar &amp; Google voice · all local, no subscription · <a href="index.html">DECS Home Systems</a></footer>
+
+<script src="app.js"></script>
+<script>
+/* interactive live-solar flow (section 03) */
+(function(){
+  var stage=document.getElementById('sf-stage'); if(!stage) return;
+  var wires={}, flows={};
+  [].forEach.call(stage.querySelectorAll('.sf-wire'),function(el){wires[el.getAttribute('data-k')]=el;});
+  [].forEach.call(stage.querySelectorAll('.sf-flow'),function(el){flows[el.getAttribute('data-k')]=el;});
+  var sun=document.getElementById('sf-sun'), arrays=document.getElementById('sf-arrays');
+  var elBatSoc=document.getElementById('sf-bat-soc'), elBatState=document.getElementById('sf-bat-state');
+  var elHouse=document.getElementById('sf-house-kw'), elGrid=document.getElementById('sf-grid-kw'), elGridLab=document.getElementById('sf-grid-label');
+  var elPv=document.getElementById('sf-pv-kw'), elEcho=document.getElementById('sf-echo');
+  var COL={pv:'#f4b159',bat:'#43d98a',house:'#5cb3f2',exp:'#43d98a',imp:'#ff6b63',idle:'#7c8a97'};
+  var SC={
+    midday:{pv:'9.8',house:'1.2',soc:'78',bstate:'charging ▲',grid:'−4.1',glabel:'export',gdir:'export',sun:'',arr:'',
+      act:{pv1:{},pv2:{},pv3:{},bat:{},house:{},grid:{}}},
+    evening:{pv:'0.6',house:'2.4',soc:'54',bstate:'discharging ▼',grid:'+0.2',glabel:'import',gdir:'import',sun:'lo',arr:'lo',
+      act:{pv1:{dim:1},pv2:{dim:1},pv3:{dim:1},bat:{rev:1},house:{}}},
+    night:{pv:'0.0',house:'0.9',soc:'41',bstate:'discharging ▼',grid:'0.0',glabel:'idle',gdir:'idle',sun:'off',arr:'off',
+      act:{bat:{rev:1},house:{}}}
+  };
+  function colorFor(k,s){
+    if(k.charAt(0)==='p')return COL.pv;
+    if(k==='bat')return COL.bat;
+    if(k==='house')return COL.house;
+    if(k==='grid')return s.gdir==='import'?COL.imp:COL.exp;
+    return COL.idle;
+  }
+  function dim(el,mode){ if(!el)return; el.classList.remove('sf-lo','sf-off'); if(mode==='lo')el.classList.add('sf-lo'); else if(mode==='off')el.classList.add('sf-off'); }
+  function reset(){
+    Object.keys(wires).forEach(function(k){wires[k].classList.remove('sf-active');wires[k].style.stroke='';});
+    Object.keys(flows).forEach(function(k){var f=flows[k];f.classList.remove('sf-on','sf-rev','sf-dim');f.style.stroke='';});
+  }
+  function apply(name){
+    var s=SC[name]; if(!s)return;
+    elPv.textContent=s.pv+' kW';
+    elHouse.textContent=s.house+' kW';
+    elBatSoc.textContent=s.soc+'%';
+    elBatState.textContent=s.bstate;
+    elBatState.style.fill=(s.bstate.indexOf('charging')>=0)?COL.bat:COL.pv;
+    elGrid.textContent=s.grid+' kW';
+    elGrid.style.fill=(s.gdir==='export')?COL.exp:(s.gdir==='import'?COL.imp:COL.idle);
+    elGridLab.textContent=s.glabel;
+    dim(sun,s.sun); dim(arrays,s.arr);
+    reset();
+    Object.keys(s.act).forEach(function(k){
+      var a=s.act[k], col=colorFor(k,s);
+      if(wires[k]){wires[k].classList.add('sf-active');wires[k].style.stroke=col;}
+      if(flows[k]){var f=flows[k];f.classList.add('sf-on');if(a.rev)f.classList.add('sf-rev');if(a.dim)f.classList.add('sf-dim');f.style.stroke=col;}
+    });
+    var sep='<span class="sf-sep">·</span>';
+    elEcho.innerHTML='PV <b>'+s.pv+' kW</b>'+sep+'House <b>'+s.house+' kW</b>'+sep+'Battery <b>'+s.soc+'%</b>'+sep+'Grid <b>'+s.grid+' kW</b> '+(s.gdir==='idle'?'idle':s.glabel);
+  }
+  var btns=[].slice.call(document.querySelectorAll('#sf-controls .dbtn'));
+  btns.forEach(function(b){b.addEventListener('click',function(){btns.forEach(function(x){x.classList.remove('play');});b.classList.add('play');apply(b.getAttribute('data-sc'));});});
+  apply('midday');
+})();
+</script>
+</body>
+</html>

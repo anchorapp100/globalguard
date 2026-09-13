@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DECS Home Systems — Project</title>
+<meta name="description" content="A self-hosted smart home and a revived cloud-dead alarm, running locally on one Raspberry Pi. No cloud, no subscriptions.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="p-home">
+
+<header class="nav"><div class="wrap">
+  <a class="brand" href="index.html"><span class="dot"></span> DECS&nbsp;Home&nbsp;Systems</a>
+  <nav>
+    <a href="index.html" class="active">Overview</a>
+    <a href="globalguard.html">GlobalGuard</a>
+    <a href="homeassistant.html">Home&nbsp;Assistant</a>
+    <a href="wallpanel.html">Wall&nbsp;panel</a>
+    <a href="cameras.html">Cameras</a>
+    <a href="presence.html">Presence</a>
+    <a href="roomscribe.html">Roomscribe</a>
+    <a href="traccar.html">Traccar</a>
+    <a href="finance.html">Finance</a>
+    <a href="fan.html">Fan</a>
+    <a href="rada.html">Rada&nbsp;shower</a>
+    <a href="theme.html">HA&nbsp;Theme</a>
+    <a href="technical.html">Technical</a>
+    <a href="roadmap.html">Roadmap</a>
+    <a href="claude.html">Claude&nbsp;Code</a>
+    <button class="themebtn" id="tt" aria-label="Toggle colour theme"><span id="ttic">◐</span> theme</button>
+  </nav>
+</div></header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">Self-hosted · no cloud · one Raspberry Pi</span>
+        <h1 class="title">A whole home,<br><em>reverse-engineered</em> and owned.</h1>
+        <p class="lede">A dead-cloud burglar alarm brought back to life, nineteen smart devices freed from their apps, a 12.6&nbsp;kWp solar array read live, and an old tablet reborn as a wall panel — all orchestrated locally on a single Pi, with nothing phoning home. Orchestrated by Kevin; <a href="claude.html">driven — keyboard and SSH — by Claude&nbsp;Code</a>.</p>
+        <div class="meta-row">
+          <span class="chip">Raspberry Pi 4</span>
+          <span class="chip">Home Assistant</span>
+          <span class="chip">Reverse-engineered</span>
+          <span class="chip">£0 / month</span>
+        </div>
+      </div>
+      <div class="panel" role="img" aria-label="System status: alarm bridge live, solar read live over Modbus, forty-plus devices local, zero cloud dependencies.">
+        <div class="head"><span>System status</span><span>DECS · Pi 4</span></div>
+        <div class="rows">
+          <div class="prow"><span class="led on"></span><span class="k">Alarm</span><span class="v">GlobalGuard bridge — live</span></div>
+          <div class="prow"><span class="led info"></span><span class="k">Solar</span><span class="v">Victron · Modbus live</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">Devices</span><span class="v">40+ entities · local</span></div>
+          <div class="prow"><span class="led warn"></span><span class="k">Panel</span><span class="v">wall tablet · on</span></div>
+          <div class="prow gone"><span class="led dead"></span><span class="k">Cloud</span><span class="v">nothing phoning home</span></div>
+        </div>
+        <div class="beacon">
+          <span class="lbl">heartbeat</span>
+          <svg viewBox="0 0 220 30" preserveAspectRatio="none" aria-hidden="true">
+            <line x1="0" y1="15" x2="220" y2="15" stroke="#26313d" stroke-width="1"/>
+            <polyline class="trace" points="0,15 60,15 72,15 78,4 86,26 94,15 150,15 162,15 168,6 176,24 184,15 220,15" fill="none" stroke="#43D98A" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+            <circle class="pulse-dot" cx="86" cy="15" r="2.2"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- STATS -->
+<section style="padding-block:clamp(2.2rem,5vw,3.2rem)">
+  <div class="wrap reveal">
+    <div class="stats">
+      <div class="stat"><span class="big num-strong">1</span><span class="lab">Raspberry Pi</span></div>
+      <div class="stat"><span class="big num-strong">2</span><span class="lab">networks bridged</span></div>
+      <div class="stat"><span class="big num-strong">40+</span><span class="lab">devices in HA</span></div>
+      <div class="stat"><span class="big num-strong">£0</span><span class="lab">cloud / month</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 01 THREE STRANDS -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">01 · Twelve strands</span><h2>One project, twelve write-ups</h2></div>
+    <div class="grid-2">
+      <a class="card link feat" href="globalguard.html">
+        <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/></svg></div>
+        <h3>GlobalGuard Revival</h3>
+        <p>The manufacturer's cloud died years ago and took the alarm's alerts with it. We reverse-engineered its local radio protocol and gave it a new brain — phone alerts, voice control and a full sensory intruder response. <b style="color:var(--accent)">Read &amp; try it →</b></p>
+      </a>
+      <a class="card link feat" href="homeassistant.html">
+        <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></div>
+        <h3>Home Assistant Build</h3>
+        <p>One Pi, dual-homed across two networks, running everything: Tuya, a reverse-engineered Bluetooth bulb mesh, Nanoleaf, Ring, a live Victron solar array and Google voice. <b style="color:var(--accent)">Read &amp; try it →</b></p>
+      </a>
+      <a class="card link feat" href="wallpanel.html">
+        <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+        <h3>The Wall Panel</h3>
+        <p>A 2014 tablet in a printed clamshell, running an eight-tab dashboard that never scrolls: solar at five-second resolution, alarm, doorbells, lights, and a tile that knows whether its own charger is keeping up. With an exploded 3D model of the mount. <b style="color:var(--accent)">Read &amp; try it →</b></p>
+      </a>
+      <a class="card link feat" href="cameras.html">
+        <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="2" y="6" width="13" height="12" rx="2"/><path d="M15 10l7-4v12l-7-4z"/></svg></div>
+        <h3>Local AI Cameras</h3>
+        <p>Two Ring doorbells turned into a full local NVR — 24/7 recording, GPU-accelerated AI object detection, event rewind and phone alerts — with no Ring subscription. Frigate on an RTX 5070, streamed into the wall panel. <b style="color:var(--accent)">Read &amp; try it →</b></p>
+      </a>
+      <a class="card link feat" href="presence.html">
+        <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="2.4"/><path d="M8.4 8.4a5 5 0 000 7.2M15.6 8.4a5 5 0 010 7.2M5.6 5.6a9 9 0 000 12.8M18.4 5.6a9 9 0 010 12.8"/></svg></div>
+        <h3>Room Presence</h3>
+        <p>Eleven rooms that know whether anyone is actually in them — mmWave radar fused with PIR on ESPHome nodes, so lights and heating follow people, not just movement. Per-room zones, printed enclosures, all local. <b style="color:var(--accent)">Read the design pack →</b></p>
+      </a>
+      <a class="card link feat" href="roomscribe.html">
+        <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="M12 12 3 7M12 12v10M12 12l9-5"/></svg></div>
+        <h3>Roomscribe (MR)</h3>
+        <p>A native Meta&nbsp;Quest&nbsp;3 mixed-reality app: look at the real room in passthrough, point at a Home&nbsp;Assistant device and pin it onto the fixture. The pins stay put across restarts and room changes, and you control the device from where it actually stands. <b style="color:var(--accent)">Read &amp; see it →</b></p>
+      </a>
+      <a class="card link feat" href="traccar.html">
+        <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 21s-7-5.7-7-11a7 7 0 0 1 14 0c0 5.3-7 11-7 11z"/></svg></div>
+        <h3>Traccar GPS</h3>
+        <p>Two phones and the work van tracked through a self-hosted Traccar server on a keyless Esri dark map — addresses named to the actual house by a self-hosted property API, and a Day mode that draws the whole day's route and stops straight from Traccar. <b style="color:var(--accent)">Read &amp; try it →</b></p>
+      </a>
+      <a class="card link feat" href="finance.html">
+        <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></div>
+        <h3>Finance Tab</h3>
+        <p>A crypto dashboard on the wall: six coins with live prices and change from 24&nbsp;hours to all-time, a scrubable chart back to day one, and a news feed you can actually read on the panel — all from keyless public APIs and a tiny fetcher on the Pi. No data subscription. <b style="color:var(--accent)">Read &amp; try it →</b></p>
+      </a>
+      <a class="card link feat" href="fan.html">
+        <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.6"/><path d="M12 9.4c3-3.2 6.5-3.4 6.5-1.1 0 1.7-2.6 2.6-6.5 3.7M12 14.6c-3 3.2-6.5 3.4-6.5 1.1 0-1.7 2.6-2.6 6.5-3.7"/></svg></div>
+        <h3>The BLE Fan</h3>
+        <p>A ceiling fan that has no hub and no connectable radio — it only listens for Bluetooth broadcast packets. We taught Home&nbsp;Assistant to shout the same packets from the Pi's own Bluetooth, landing speed, presets, reverse and a dimmable downlight, with no new hardware. <b style="color:var(--accent)">Read how →</b></p>
+      </a>
+      <a class="card link feat" href="rada.html">
+        <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s6 6.6 6 11a6 6 0 01-12 0c0-4.4 6-11 6-11z"/></svg></div>
+        <h3>Rada Digital Shower</h3>
+        <p>Bringing a cloud-free Rada Sense digital shower into Home Assistant — the sealed BLE and bus protocol pulled apart, what is controllable tonight, and the safe route to full control. <b style="color:var(--accent)">Read the teardown →</b></p>
+      </a>
+      <a class="card link feat" href="roadmap.html">
+        <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg></div>
+        <h3>Roadmap &amp; Ideas</h3>
+        <p>Where it goes next — switchable dashboards, an LCARS bridge console, presence &amp; geofencing, solar-aware automation and a tone-ACK ear that hears the alarm confirm. The ambitious wishlist. <b style="color:var(--accent)">Explore →</b></p>
+      </a>
+      <a class="card link feat" href="claude.html">
+        <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l6-6-6-6"/><path d="M12 19h8"/></svg></div>
+        <h3>Built with Claude Code</h3>
+        <p>How it actually got made. Kevin orchestrates — the vision, the wiring, the calls only a person can make; Claude&nbsp;Code drives — on the keyboard and over SSH into the Pi, reverse-engineering and debugging in the loop. The collaboration, the method, and the war stories. <b style="color:var(--accent)">Read the journey →</b></p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- LATEST ADDITIONS -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">Recently added</span><h2>Latest to land</h2></div>
+    <div class="grid-3">
+      <div class="card feat"><h3>Roomscribe (MR)</h3><p>Native Quest&nbsp;3 mixed-reality device mapping — pin Home&nbsp;Assistant devices onto the real fixtures and control them in passthrough. <a href="roomscribe.html" style="color:var(--accent)">New page →</a></p></div>
+      <div class="card feat"><h3>Gas leak detector</h3><p>A Shelly Gas SHGS-1 brought into Home&nbsp;Assistant — polled locally, no cloud — as a clear&nbsp;/&nbsp;mild&nbsp;/&nbsp;heavy status plus a gas-detected sensor, with a live tile on the wall panel's <a href="wallpanel.html" style="color:var(--accent)">Alarm tab</a>.</p></div>
+      <div class="card feat"><h3>Utility lights, batched</h3><p>Four more reverse-engineered FastCon bulbs added and grouped as <b>one</b> — switched together from the panel, with a hold-to-open drill-down for each bulb's colour and brightness. <a href="wallpanel.html" style="color:var(--accent)">Lights tab →</a></p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 02 THE ONE RULE -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">02 · The one rule</span><h2>Everything runs at home</h2></div>
+    <div class="grid-3">
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 15a4 4 0 010-8 5 5 0 019.6-1.5A4.5 4.5 0 0119 15z"/><line x1="4" y1="20" x2="20" y2="20"/></svg></div><h3>No cloud</h3><p>Every integration talks to the device on the LAN. Dead vendor clouds don't matter, and nothing depends on a subscription staying alive.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/></svg></div><h3>No new hardware</h3><p>The alarm panel, remotes and sensors are untouched. Old kit — an alarm hub, a 2014 tablet — gets a second life instead of landfill.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12a9 9 0 11-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg></div><h3>Recoverable</h3><p>Config is versioned to a private repo and every risky change is backed up first; secrets stay on the Pi. If it breaks, it comes back.</p></div>
+    </div>
+    <p class="lede" style="margin-top:1.6rem">The same Raspberry&nbsp;Pi&nbsp;4 — booting from a USB SSD — also carries a crypto paper-trading experiment and a solar grid-control flow, all comfortably under a 0.2 load.</p>
+  </div>
+</section>
+
+<footer>DECS Home Systems · built &amp; documented locally on one Pi · <a href="globalguard.html">GlobalGuard</a> · <a href="homeassistant.html">Home Assistant</a> · <a href="wallpanel.html">Wall panel</a> · <a href="cameras.html">Cameras</a> · <a href="presence.html">Presence</a> · <a href="roomscribe.html">Roomscribe</a> · <a href="traccar.html">Traccar</a> · <a href="finance.html">Finance</a> · <a href="fan.html">Fan</a> · <a href="rada.html">Rada&nbsp;shower</a> · <a href="roadmap.html">Roadmap</a></footer>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GlobalGuard Revival — DECS Home Systems</title>
+<meta name="description" content="Reviving a cloud-dead GlobalGuard alarm by reverse-engineering its local U-Net radio protocol — phone alerts, voice control and a full sensory intruder response, no cloud.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="p-gg">
+
+<header class="nav"><div class="wrap">
+  <a class="brand" href="index.html"><span class="dot"></span> DECS&nbsp;Home&nbsp;Systems</a>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="globalguard.html" class="active">GlobalGuard</a>
+    <a href="homeassistant.html">Home&nbsp;Assistant</a>
+    <a href="wallpanel.html">Wall&nbsp;panel</a>
+    <a href="cameras.html">Cameras</a>
+    <a href="presence.html">Presence</a>
+    <a href="roomscribe.html">Roomscribe</a>
+    <a href="traccar.html">Traccar</a>
+    <a href="finance.html">Finance</a>
+    <a href="fan.html">Fan</a>
+    <a href="rada.html">Rada&nbsp;shower</a>
+    <a href="theme.html">HA&nbsp;Theme</a>
+    <a href="technical.html">Technical</a>
+    <a href="roadmap.html">Roadmap</a>
+    <a href="claude.html">Claude&nbsp;Code</a>
+    <button class="themebtn" id="tt" aria-label="Toggle colour theme"><span id="ttic">◐</span> theme</button>
+  </nav>
+</div></header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">Field dossier · 29–30 Aug 2026</span>
+        <h1 class="title">A dead alarm,<br><em>brought back to life.</em></h1>
+        <p class="lede">GlobalGuard's cloud went dark years ago. The panel still armed the house — but if it tripped while nobody was home, no one was ever told. Over two days we reverse-engineered its radio hub, built a local bridge on a Raspberry&nbsp;Pi, and wired the whole thing into Home Assistant: phone alerts, per-room zones, arm and disarm, and voice control. No cloud. No new hardware. No subscription.</p>
+        <div class="meta-row">
+          <span class="chip">Everspring HSC04 hub</span>
+          <span class="chip">U-Net over UDP 5046</span>
+          <span class="chip">Home Assistant on a Pi</span>
+          <span class="chip">BroadLink BLE bulbs</span>
+        </div>
+      </div>
+      <div class="panel" role="img" aria-label="Status panel: the cloud path is offline; the local bridge is live, polling every ten seconds, with the phone armed.">
+        <div class="head"><span>System status</span><span>SC412 · U-Net</span></div>
+        <div class="rows">
+          <div class="prow gone"><span class="led dead"></span><span class="k">Cloud</span><span class="v">his2x.com — offline</span></div>
+          <div class="prow gone"><span class="led dead"></span><span class="k">Alerts</span><span class="v">none since the cloud died</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">Bridge</span><span class="v">Pi poller — live</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">Poll</span><span class="v">event log · every 2 s</span></div>
+          <div class="prow"><span class="led warn"></span><span class="k">Phone</span><span class="v">critical alerts armed</span></div>
+        </div>
+        <div class="beacon">
+          <span class="lbl">30 s beacon</span>
+          <svg viewBox="0 0 220 30" preserveAspectRatio="none" aria-hidden="true">
+            <line x1="0" y1="15" x2="220" y2="15" stroke="#26313d" stroke-width="1"/>
+            <polyline class="trace" points="0,15 60,15 72,15 78,4 86,26 94,15 150,15 162,15 168,6 176,24 184,15 220,15" fill="none" stroke="#43D98A" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+            <circle class="pulse-dot" cx="86" cy="15" r="2.2"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- STATS -->
+<section style="padding-block:clamp(2.2rem,5vw,3.2rem)">
+  <div class="wrap reveal">
+    <div class="stats">
+      <div class="stat"><span class="big num-strong">48 h</span><span class="lab">dead → done</span></div>
+      <div class="stat"><span class="big num-strong">10</span><span class="lab">alarm zones mapped</span></div>
+      <div class="stat"><span class="big num-strong">£0</span><span class="lab">new hardware / fees</span></div>
+      <div class="stat"><span class="big num-strong">instant</span><span class="lab">fob → panel</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 01 -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">01 · Where we started</span><h2>Working, but deaf to the outside world</h2></div>
+    <div class="grid-2">
+      <div class="col">
+        <p style="color:var(--muted)">The GlobalGuard kit — an Everspring hub, a Friedland/Honeywell panel, PIRs, door contacts and remotes — still worked perfectly on the wall. You could arm and disarm from the keypad every day. The problem was everything <em>past</em> the wall.</p>
+        <p style="color:var(--muted);margin-top:1rem">Everspring's notification cloud (<span class="mono" style="font-size:.9em">his2x.com</span>) had gone <span class="mono" style="font-size:.9em">NXDOMAIN</span>. So the one job that mattered when you were out — <b style="color:var(--ink)">telling you the alarm had tripped</b> — silently stopped, and had for years.</p>
+      </div>
+      <div class="card">
+        <p class="mono" style="font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:.9rem">The obstacles</p>
+        <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.85rem">
+          <li style="display:flex;gap:.8rem;color:var(--muted);font-size:.95rem"><span style="color:var(--alert)">✕</span> Hub answered on <b class="num-strong" style="color:var(--ink)">0 of 65,535</b> ports — outbound-only, no local API.</li>
+          <li style="display:flex;gap:.8rem;color:var(--muted);font-size:.95rem"><span style="color:var(--alert)">✕</span> Its only chatter was one <b style="color:var(--ink)">encrypted</b> packet every 30 seconds.</li>
+          <li style="display:flex;gap:.8rem;color:var(--muted);font-size:.95rem"><span style="color:var(--alert)">✕</span> Most of the smart home lived behind a second, hidden router.</li>
+          <li style="display:flex;gap:.8rem;color:var(--muted);font-size:.95rem"><span style="color:var(--alert)">✕</span> A new alarm or a cloud that no longer exists were the only "official" fixes.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 02 -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">02 · The breakthrough</span><h2>The hub was never dead — it was whispering every 30 seconds</h2><p class="lede">A packet capture on the Pi caught what every port scan had missed. From there it was a five-step chase to make the hub talk to <em>us</em> instead of a cloud that no longer answered.</p></div>
+    <div class="steps">
+      <div class="step"><div class="idx">01</div><div><h3>Catch the whisper</h3><p><span class="mono">tcpdump</span> on the Pi showed a 30.0-second beacon, clockwork, broadcasting over UDP. The hub was alive and well — it just spoke a protocol nothing had been listening for.</p></div></div>
+      <div class="step"><div class="idx">02</div><div><h3>It only speaks when spoken to — its way</h3><p>Cold knocks got nothing. The hub is a <b style="color:var(--ink)">callback device</b>: it dials <em>out</em> to whoever it believes is the app. We had to look like that app.</p></div></div>
+      <div class="step"><div class="idx">03</div><div><h3>The DES key was a decoy</h3><p>We decompiled the old Friedland PC software. The DES key baked inside it — <code>12345678</code> — only ever encrypts <em>stored strings</em>. The actual alarm link on 5046 is plain, unencrypted U-Net. Nothing to crack.</p></div></div>
+      <div class="step"><div class="idx">04</div><div><h3>Make it call the Pi</h3><p>The app announces itself with a 32-byte discovery broadcast carrying its <em>own</em> IP address. We replayed that packet with the Pi's IP — and the hub dialled straight back.</p></div></div>
+      <div class="step"><div class="idx">05</div><div><h3>Ask for the log, decode the reply</h3><p>A PIN handshake, then a burst request for the event log. The reply came back as 10-byte records — which we decoded, field by field, into real events.</p></div></div>
+    </div>
+    <div class="card" style="margin-top:2rem">
+      <p class="mono" style="font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:1.1rem">One event, straight off the wire</p>
+      <div class="frame"><div class="bytes">
+        <div class="byte"><span class="hex">EA</span><span class="fld">year</span></div>
+        <div class="byte"><span class="hex">07</span><span class="fld">mon</span></div>
+        <div class="byte"><span class="hex">1D</span><span class="fld">day</span></div>
+        <div class="byte"><span class="hex">0B</span><span class="fld">hr</span></div>
+        <div class="byte"><span class="hex">32</span><span class="fld">min</span></div>
+        <div class="byte"><span class="hex">26</span><span class="fld">sec</span></div>
+        <div class="byte k-status"><span class="hex">03</span><span class="fld">status</span></div>
+        <div class="byte"><span class="hex">08</span><span class="fld">zone</span></div>
+        <div class="byte"><span class="hex">00</span><span class="fld">src</span></div>
+        <div class="byte"><span class="hex">00</span><span class="fld">—</span></div>
+      </div></div>
+      <div class="decode-line"><span class="mono">A2 CA … C1 07</span><span class="arrow">→</span><b>2026-08-30 · 11:50:38</b><span class="arrow">→</span><span class="tag">INTRUDER</span><b>Kitchen (zone 08)</b></div>
+      <p style="color:var(--muted);font-size:.9rem;margin-top:.9rem">The year needs a quirky offset (<span class="mono" style="font-size:.9em">+1792</span>), month and day are zero-based, and byte 7 — the status — is the whole story: <span class="mono" style="font-size:.9em">03</span> is an intruder trip, <span class="mono" style="font-size:.9em">11</span>/<span class="mono" style="font-size:.9em">12</span> are arm/disarm. Everything downstream is built on this one record.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 03 ARCHITECTURE -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">03 · How it fits together</span><h2>One Raspberry Pi, standing in for a dead cloud</h2><p class="lede">The panel and hub are untouched — they do exactly what they always did. The Pi simply becomes the thing the hub dials home to, then fans the events out to everywhere they need to go.</p></div>
+    <figure>
+      <div class="figwrap">
+        <svg viewBox="0 0 960 340" role="img" aria-label="Data flow: sensors feed the panel over RF; the panel and Everspring hub talk U-Net; the hub's old path to the dead cloud is broken; instead it dials the Raspberry Pi bridge over UDP 5046; the Pi polls the event log every ten seconds and feeds Home Assistant, which sends phone alerts, answers Google voice, and is reachable remotely through a private tunnel." width="960" height="340" style="max-width:100%;height:auto;display:block;margin:0 auto">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+          <marker id="arA" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--amber)"/></marker>
+        </defs>
+        <g class="lab" font-size="12" fill="currentColor">
+          <rect x="14" y="128" width="120" height="84" rx="9" fill="var(--surface)" stroke="var(--line-strong)"/>
+          <text x="74" y="160" text-anchor="middle" font-weight="600">Sensors</text>
+          <text x="74" y="178" text-anchor="middle" font-size="10.5" fill="var(--muted)">PIRs · doors</text>
+          <text x="74" y="192" text-anchor="middle" font-size="10.5" fill="var(--muted)">keypads · remotes</text>
+          <rect x="184" y="128" width="118" height="84" rx="9" fill="var(--surface)" stroke="var(--line-strong)"/>
+          <text x="243" y="162" text-anchor="middle" font-weight="600">Panel</text>
+          <text x="243" y="182" text-anchor="middle" font-size="10.5" fill="var(--muted)">SC412</text>
+          <rect x="352" y="128" width="118" height="84" rx="9" fill="var(--surface)" stroke="var(--line-strong)"/>
+          <text x="411" y="162" text-anchor="middle" font-weight="600">Hub</text>
+          <text x="411" y="182" text-anchor="middle" font-size="10.5" fill="var(--muted)">HSC04</text>
+          <g opacity="0.5">
+            <rect x="352" y="20" width="118" height="60" rx="9" fill="none" stroke="var(--alert)" stroke-dasharray="4 4"/>
+            <text x="411" y="46" text-anchor="middle" font-size="11" fill="var(--alert)">☁ cloud</text>
+            <text x="411" y="63" text-anchor="middle" font-size="9.5" fill="var(--alert)">his2x.com · dead</text>
+          </g>
+          <line x1="411" y1="128" x2="411" y2="98" stroke="var(--alert)" stroke-width="1.4" stroke-dasharray="4 4"/>
+          <line x1="405" y1="106" x2="417" y2="118" stroke="var(--alert)" stroke-width="1.6"/>
+          <line x1="417" y1="106" x2="405" y2="118" stroke="var(--alert)" stroke-width="1.6"/>
+          <rect x="540" y="120" width="140" height="100" rx="11" fill="var(--amber-soft)" stroke="var(--amber)" stroke-width="1.6"/>
+          <text x="610" y="150" text-anchor="middle" font-weight="700" fill="var(--amber)">Pi bridge</text>
+          <text x="610" y="170" text-anchor="middle" font-size="10.5" fill="var(--amber)">gg-alarm poller</text>
+          <text x="610" y="188" text-anchor="middle" font-size="10" fill="var(--muted)">discovery · PIN</text>
+          <text x="610" y="202" text-anchor="middle" font-size="10" fill="var(--muted)">poll · decode · send</text>
+          <rect x="730" y="128" width="120" height="84" rx="9" fill="var(--surface)" stroke="var(--line-strong)"/>
+          <text x="790" y="162" text-anchor="middle" font-weight="600">Home</text>
+          <text x="790" y="180" text-anchor="middle" font-weight="600">Assistant</text>
+          <rect x="836" y="14" width="112" height="48" rx="8" fill="var(--surface)" stroke="var(--line)"/>
+          <text x="892" y="34" text-anchor="middle" font-size="11">📱 Phone</text>
+          <text x="892" y="50" text-anchor="middle" font-size="9.5" fill="var(--muted)">critical alerts</text>
+          <rect x="836" y="146" width="112" height="48" rx="8" fill="var(--surface)" stroke="var(--line)"/>
+          <text x="892" y="166" text-anchor="middle" font-size="11">🎙 Voice</text>
+          <text x="892" y="182" text-anchor="middle" font-size="9.5" fill="var(--muted)">arm · disarm</text>
+          <rect x="836" y="278" width="112" height="48" rx="8" fill="var(--surface)" stroke="var(--line)"/>
+          <text x="892" y="298" text-anchor="middle" font-size="11">🌐 Remote</text>
+          <text x="892" y="314" text-anchor="middle" font-size="9.5" fill="var(--muted)">private tunnel</text>
+          <g fill="none">
+            <line x1="134" y1="170" x2="180" y2="170" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar)"/>
+            <text x="157" y="160" text-anchor="middle" font-size="9.5" fill="var(--muted)">RF</text>
+            <line x1="302" y1="170" x2="348" y2="170" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar)"/>
+            <text x="325" y="160" text-anchor="middle" font-size="9.5" fill="var(--muted)">U-Net</text>
+            <line x1="470" y1="170" x2="536" y2="170" stroke="var(--amber)" stroke-width="2" marker-end="url(#arA)"/>
+            <text x="503" y="160" text-anchor="middle" font-size="9" fill="var(--amber)">dials back</text>
+            <text x="503" y="188" text-anchor="middle" font-size="9" fill="var(--amber)">UDP 5046</text>
+            <line x1="680" y1="170" x2="726" y2="170" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar)"/>
+            <text x="703" y="160" text-anchor="middle" font-size="9" fill="var(--muted)">10s poll</text>
+            <path d="M850,150 C880,120 878,70 834,50" stroke="currentColor" stroke-width="1.3" marker-end="url(#ar)"/>
+            <line x1="850" y1="170" x2="834" y2="170" stroke="currentColor" stroke-width="1.3" marker-end="url(#ar)"/>
+            <path d="M850,190 C880,230 878,282 834,300" stroke="currentColor" stroke-width="1.3" marker-end="url(#ar)"/>
+          </g>
+        </g>
+        </svg>
+      </div>
+      <figcaption>The red path is what broke; the amber path is what we built. The hub now dials the Pi.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- 04 BEFORE/AFTER + FEATURES -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">04 · What changed</span><h2>From a silent box to a system that talks back</h2></div>
+    <div class="ba">
+      <div class="ba-col before"><div class="cap">● Before</div><ul>
+        <li><span class="mk">—</span>Arms &amp; disarms from the keypad only</li>
+        <li><span class="mk">—</span>No alert of any kind when it trips</li>
+        <li><span class="mk">—</span>No history, no state, nothing to check</li>
+        <li><span class="mk">—</span>Invisible to the rest of the smart home</li>
+        <li><span class="mk">—</span>Nothing when you're away from the house</li>
+      </ul></div>
+      <div class="ba-col after"><div class="cap">● After</div><ul>
+        <li><span class="mk" style="color:var(--live)">✓</span><span><b>Critical phone alerts</b> that punch through Do-Not-Disturb — who armed it, which zone tripped</span></li>
+        <li><span class="mk" style="color:var(--live)">✓</span><span><b>Ten zones on the map</b>, each assigned to its real room</span></li>
+        <li><span class="mk" style="color:var(--live)">✓</span><span><b>Arm, day-mode &amp; disarm</b> from a phone, a dashboard, or your voice</span></li>
+        <li><span class="mk" style="color:var(--live)">✓</span><span><b>A live event log</b> and a hub-health heartbeat</span></li>
+        <li><span class="mk" style="color:var(--live)">✓</span><span><b>Reachable anywhere</b> through a private, outbound-only tunnel</span></li>
+      </ul></div>
+    </div>
+    <div class="grid-3" style="margin-top:1.4rem">
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/></svg></div><h3>Intruder alerts</h3><p>A trip on an armed zone fires a high-priority notification on its own alarm channel — full volume, past silent mode.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 8a6 6 0 0112 0c0 7 3 5 3 9H3c0-4 3-2 3-9z"/><path d="M10 21a2 2 0 004 0"/></svg></div><h3>Every room, named</h3><p>Ten sensors surface as proper HA entities — including three remotes tucked in the van, so a break-in there trips the house alarm.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg></div><h3>Voice &amp; app control</h3><p>Full arm, day-mode part-arm, and PIN-guarded disarm — spoken, tapped, or scheduled, running entirely on your own kit.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h6l2-8 4 16 2-8h2"/></svg></div><h3>Hub heartbeat</h3><p>The 30-second beacon that gave the game away now doubles as a liveness check — if the hub goes quiet, you hear about it.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg></div><h3>Remote access</h3><p>The whole dashboard travels with you over an outbound-only tunnel — no open ports on the home router, nothing exposed.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M19 5l-3 3M8 16l-3 3"/><circle cx="12" cy="12" r="3"/></svg></div><h3>Self-healing sends</h3><p>Every arm or disarm is checked against the panel, and the bridge presses the fob again if it didn't take — only nagging you to use the keypad if it still won't.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 05 WAR STORIES -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">05 · Hard-won fixes</span><h2>The bugs that fought back</h2><p class="lede">Half the work was in the surprises — an alarm mode wearing a disguise, a redirect that quietly ate every command, a cloud assistant that lied about failure.</p></div>
+    <div class="logs">
+      <div class="log"><h3><span class="no">#1</span> The day mode was hiding as "Sleep"</h3><dl class="grid">
+        <dt>Symptom</dt><dd>The part-arm we use every day did nothing when sent the obvious way.</dd>
+        <dt>Cause</dt><dd>On this panel, "Part Arm 1" is really the <b style="color:var(--ink)">Sleep</b> profile — a different command (<code>0x3D</code>), not the PARM1 <code>0x35</code> the label implies.</dd>
+        <dt class="fix">Fix</dt><dd class="fix">Pointed the daytime button at <code>0x3D</code>; the panel armed and reported straight back as part-armed.</dd>
+      </dl></div>
+      <div class="log"><h3><span class="no">#2</span> Every command silently vanished</h3><dl class="grid">
+        <dt>Symptom</dt><dd>Voice said "arming", the dashboard agreed — the panel never moved.</dd>
+        <dt>Cause</dt><dd>Home Assistant runs shell commands <b style="color:var(--ink)">without a shell</b>, so the <code>&gt;</code> that was meant to write the command file was treated as plain text. Nothing was ever written.</dd>
+        <dt class="fix">Fix</dt><dd class="fix">Routed the write through a one-line shell script. Commands started landing immediately — this one fix unblocked all of voice control.</dd>
+      </dl></div>
+      <div class="log"><h3><span class="no">#3</span> "Something went wrong with the alarm"</h3><dl class="grid">
+        <dt>Symptom</dt><dd>The command actually worked — Google still reported failure.</dd>
+        <dt>Cause</dt><dd>The panel takes seconds to respond, so HA's instant reply still carried the <b style="color:var(--ink)">old</b> state. Google reads that mismatch as an error.</dd>
+        <dt class="fix">Fix</dt><dd class="fix">Report the target state optimistically the moment a command is sent, then reconcile with the panel's real state a beat later.</dd>
+      </dl></div>
+      <div class="log"><h3><span class="no">#4</span> A chorus of disarm beeps</h3><dl class="grid">
+        <dt>Symptom</dt><dd>One "disarm" produced three or four tones from the panel.</dd>
+        <dt>Cause</dt><dd>A retry loop re-sent the command every few seconds — faster than the poll could confirm the first one had landed.</dd>
+        <dt class="fix">Fix</dt><dd class="fix">Poll every two seconds to confirm fast, and re-press only until the panel actually reports the change — a click or two, not a chorus.</dd>
+      </dl></div>
+      <div class="log"><h3><span class="no">#5</span> The alarm wouldn't arm — and it was the Wi-Fi all along</h3><dl class="grid">
+        <dt>Symptom</dt><dd>Arm and disarm silently did nothing — from the app, the dashboard, even Google. The relays never clicked.</dd>
+        <dt>Cause</dt><dd>The fob-pressing ESP had been moved next to the Pi, where the Wi-Fi is <b style="color:var(--ink)">−84&nbsp;dBm</b>. Too weak to finish the handshake, it looped on <span class="mono" style="font-size:.9em">Auth Expired</span> and never joined the network — so no command ever reached it. The hardware was fine the whole time.</dd>
+        <dt class="fix">Fix</dt><dd class="fix">Stop trusting the air. The ESP now talks to the Pi down a <b style="color:var(--ink)">hardwired USB-serial line</b> — no Wi-Fi in the control path — so arm and disarm can't be lost again. Full write-up on the <a href="technical.html#alarm" style="color:var(--accent)">Technical page</a>.</dd>
+      </dl></div>
+    </div>
+  </div>
+</section>
+
+<!-- 06 REMOTE & VOICE CONTROL -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">06 · Hands-free control</span><h2>Arm, disarm and panic — instantly, by voice</h2><p class="lede">Reading the alarm was half the job. The other half was <em>driving</em> it — without leaning on the panel's radio hub, which is slow to wake and can lag a spoken command by seconds.</p></div>
+    <div class="grid-3">
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="3"/><circle cx="12" cy="7.5" r="1.4"/><path d="M10 12h4M10 15.5h4"/></svg></div><h3>A finger on the fob</h3><p>An ESP32 and an <b style="color:var(--ink)">isolated relay</b> press the buttons of a spare, fully-enrolled key fob. Because it's a real remote, the alarm trusts it and the rolling code just works — <b style="color:var(--ink)">no RF to crack</b>.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg></div><h3>Instant, not the slow hub</h3><p>Arming used to wait on the panel's radio hub. Now every command fires the fob in an <b style="color:var(--ink)">instant</b> — the hub is only read for status.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></div><h3>By voice</h3><p>"Night Security", "Day Security" and "House Panic" through Google, plus a <b style="color:var(--ink)">PIN-gated</b> disarm — all landing on the fob, all local.</p></div>
+    </div>
+    <p style="color:var(--muted);max-width:46rem;margin-top:1.4rem">The full build — the isolated-relay wiring, the now-hardwired serial firmware, the confirm-and-retry failsafe and the finished photos — is on the <a href="technical.html#alarm" style="color:var(--accent)">Technical page</a>, along with a planned <a href="technical.html#tone" style="color:var(--accent)">tone-ACK</a> that will let the bridge hear the panel confirm.</p>
+  </div>
+</section>
+
+<!-- 07 THE RESPONSE (interactive demo) -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">07 · When it trips</span><h2>Now the whole house answers back</h2><p class="lede">A phone alert is easy to miss. So we went further — reverse-engineered the BroadLink BLE bulbs the same way, and wired the trip into a full sensory response. Break in while it's armed and every bulb throbs red, the lights flash, and the speakers say so out loud, on a loop. Still no cloud; all of it on the same Pi. <b style="color:var(--ink)">Try it below.</b></p></div>
+    <div class="demo-wrap">
+      <div class="demo-stage" id="gg-stage" data-state="idle" role="img" aria-label="A house at night. Use the controls below to arm the alarm (the upstairs windows glow dull red), disarm it (they pulse green), or trigger a break-in (every window strobes red, the outside lights flash, and a spoken warning plays).">
+        <div class="demo-badge"><span class="bdot"></span><span id="gg-statelabel">System idle</span></div>
+        <svg viewBox="0 0 680 420" width="680" height="420" style="max-width:100%;height:auto" aria-hidden="true">
+          <defs>
+            <linearGradient id="ggsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0c1220"/><stop offset="1" stop-color="#070a11"/></linearGradient>
+            <radialGradient id="ggmoon" cx="0.4" cy="0.4" r="0.6"><stop offset="0" stop-color="#f5f2e6"/><stop offset="1" stop-color="#cbcab5"/></radialGradient>
+          </defs>
+          <rect x="0" y="0" width="680" height="420" fill="url(#ggsky)"/>
+          <g fill="#c7d0dc">
+            <circle cx="78" cy="58" r="1.3" opacity=".7"/><circle cx="150" cy="104" r="1" opacity=".5"/>
+            <circle cx="214" cy="46" r="1.2" opacity=".6"/><circle cx="512" cy="140" r="1" opacity=".5"/>
+            <circle cx="628" cy="206" r="1.2" opacity=".55"/><circle cx="336" cy="54" r="1" opacity=".5"/>
+            <circle cx="58" cy="182" r="1" opacity=".45"/><circle cx="120" cy="240" r="1" opacity=".4"/>
+          </g>
+          <circle cx="590" cy="70" r="26" fill="url(#ggmoon)" opacity=".92"/>
+          <circle cx="600" cy="64" r="24" fill="#0c1220" opacity=".26"/>
+          <rect x="0" y="366" width="680" height="54" fill="#0a0f15"/>
+          <rect x="0" y="364" width="680" height="3" fill="#141c26"/>
+          <polygon points="182,182 340,92 498,182" fill="#161d27" stroke="#243141" stroke-width="1.5"/>
+          <rect x="428" y="112" width="26" height="48" fill="#141b24" stroke="#243141" stroke-width="1.2"/>
+          <rect x="206" y="180" width="268" height="186" fill="#121924" stroke="#26323f" stroke-width="1.5"/>
+          <ellipse class="exglow" cx="216" cy="198" rx="34" ry="26"/>
+          <ellipse class="exglow" cx="464" cy="198" rx="34" ry="26"/>
+          <rect class="exlight" x="210" y="186" width="12" height="8" rx="2"/>
+          <rect class="exlight" x="458" y="186" width="12" height="8" rx="2"/>
+          <rect class="win" id="w-attic" x="322" y="132" width="36" height="34" rx="2"/>
+          <line class="mullion" x1="340" y1="132" x2="340" y2="166"/><line class="mullion" x1="322" y1="149" x2="358" y2="149"/>
+          <rect class="win alarm" id="w-landing" x="236" y="206" width="58" height="52" rx="2"/>
+          <line class="mullion" x1="265" y1="206" x2="265" y2="258"/><line class="mullion" x1="236" y1="232" x2="294" y2="232"/>
+          <rect class="win alarm" id="w-hall" x="386" y="206" width="58" height="52" rx="2"/>
+          <line class="mullion" x1="415" y1="206" x2="415" y2="258"/><line class="mullion" x1="386" y1="232" x2="444" y2="232"/>
+          <rect class="win" id="w-dl" x="236" y="286" width="58" height="60" rx="2"/>
+          <line class="mullion" x1="265" y1="286" x2="265" y2="346"/><line class="mullion" x1="236" y1="316" x2="294" y2="316"/>
+          <ellipse class="exglow" cx="303" cy="304" rx="21" ry="26"/>
+          <rect class="exlight" x="299" y="288" width="8" height="12" rx="2"/>
+          <rect class="door2" id="gg-door" x="322" y="288" width="52" height="78" rx="3" fill="#0e151d" stroke="#26323f" stroke-width="1.4"/>
+          <circle cx="367" cy="330" r="2.4" fill="#3a4552"/>
+          <rect class="win" id="w-dr" x="386" y="286" width="58" height="60" rx="2"/>
+          <line class="mullion" x1="415" y1="286" x2="415" y2="346"/><line class="mullion" x1="386" y1="316" x2="444" y2="316"/>
+        </svg>
+      </div>
+      <div class="demo-controls">
+        <button class="dbtn play" id="gg-play" type="button">▶ Run the demo</button>
+        <button class="dbtn" id="gg-arm" type="button">Arm</button>
+        <button class="dbtn" id="gg-disarm" type="button">Disarm</button>
+        <button class="dbtn danger" id="gg-trigger" type="button">Trigger</button>
+        <button class="dbtn" id="gg-stop" type="button">Reset</button>
+        <button class="dbtn" id="gg-mute" type="button" aria-pressed="false">🔊&nbsp;<span class="mlabel">Sound on</span></button>
+      </div>
+      <div class="chanrow" aria-hidden="true">
+        <span class="chan" id="gg-ch-bulbs"><i></i>Bulbs strobe red</span>
+        <span class="chan white" id="gg-ch-lights"><i></i>Lights flash</span>
+        <span class="chan voice" id="gg-ch-voice"><i></i>Voice warning</span>
+      </div>
+      <p class="demo-note">⚠&nbsp;<span><b>Contains flashing lights and sound.</b> Audio is kept low — use "Sound on/off" to watch silently. Browsers set to reduced motion get a steady red glow instead of the strobe.</span></p>
+    </div>
+    <div class="grid-3" style="margin-top:1.9rem">
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18h6M10 21h4M12 2a7 7 0 00-4 12c.7.6 1 1.2 1 2h6c0-.8.3-1.4 1-2A7 7 0 0012 2z"/></svg></div><h3>Every bulb, blood red</h3><p>The BroadLink FastCon BLE mesh, reverse-engineered — a lifted broadcast key, raw Bluetooth advertising straight off the Pi. Dedicated alarm lights are the status lamp now: arming pulses red and quickens for the final seven seconds of the exit delay, then settles to a low red hold; a disarm is a slow green pulse that fades out after a minute. And on a trip, every coloured bulb in the house snaps to a hard red strobe.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg></div><h3>The house lights up</h3><p>Every switchable light plus the Nanoleaf snap into a randomised flash the instant a zone trips — a scene nobody outside can miss — then restore to exactly how they were.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 8a5 5 0 010 8M19.5 5.5a9 9 0 010 13"/></svg></div><h3>A voice in the dark</h3><p>The speakers announce — on repeat, at full volume — that the intruder is being recorded and the police notified, then hand every speaker back the volume it was at before. It plays on every speaker in the house bar the main bedroom, so a small-hours trip doesn't blast someone asleep.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- CLOSING -->
+<section>
+  <div class="wrap reveal">
+    <div class="close">
+      <span class="eyebrow" style="color:var(--amber-bright)">The system today</span>
+      <h2 style="margin-top:1rem">A cloud-dead alarm, now local, private, and fully in the loop.</h2>
+      <p>The panel and remotes work exactly as before — nobody had to learn anything new. But now the house tells you when it's armed, when it trips, and which room did it; you can arm it on the way out and disarm it with a word on the way in; and none of it depends on a company's server that stopped answering years ago. And when it trips, nobody can miss it — every bulb turns red, the lights flash, and the house says so out loud. Everything runs on one Raspberry Pi that was already on the network.</p>
+      <div class="sig"><span class="dot"></span><span>gg-alarm · gg-heartbeat · brmesh-bridge — all live</span><span>·</span><span>built 29–30 Aug · sensory layer 31 Aug · hardwired control 6 Sep 2026</span></div>
+    </div>
+  </div>
+</section>
+
+<footer>GlobalGuard revival · reverse-engineered U-Net bridge → Home Assistant · lights, strobe &amp; voice on a trip · no cloud, no new hardware · <a href="index.html">DECS Home Systems</a></footer>
+
+<script src="app.js"></script>
+<script>
+/* interactive intruder-response demo */
+(function(){
+  var stage=document.getElementById('gg-stage'); if(!stage) return;
+  var wins=[].slice.call(stage.querySelectorAll('.win'));
+  var alarmWins=[].slice.call(stage.querySelectorAll('.win.alarm'));
+  var normalWins=wins.filter(function(w){return !w.classList.contains('alarm');});
+  var door=document.getElementById('gg-door');
+  var exlights=[].slice.call(stage.querySelectorAll('.exlight'));
+  var exglows=[].slice.call(stage.querySelectorAll('.exglow'));
+  var label=document.getElementById('gg-statelabel');
+  var chB=document.getElementById('gg-ch-bulbs'),chL=document.getElementById('gg-ch-lights'),chV=document.getElementById('gg-ch-voice');
+  var muteBtn=document.getElementById('gg-mute');
+  var reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  var timers=[],strobe=null,voiceTimer=null,state='idle',muted=false;
+  var A={ctx:null,osc:null,lfo:null,gain:null};
+  var WARN="Warning. An intruder has been detected. The police have been notified. You are being recorded.";
+  function clearTimers(){timers.forEach(clearTimeout);timers=[];}
+  function after(ms,fn){var t=setTimeout(fn,ms);timers.push(t);return t;}
+  function clearWins(){wins.forEach(function(w){w.classList.remove('warm','dull','green','red');});if(door)door.classList.remove('red');}
+  function exOff(){exlights.forEach(function(e){e.classList.remove('on');});exglows.forEach(function(e){e.classList.remove('on');});}
+  function chan(el,on){if(el)el.classList.toggle('on',!!on);}
+  function stopStrobe(){if(strobe){clearInterval(strobe);strobe=null;}}
+  function startStrobe(){
+    stopStrobe();
+    if(reduce){wins.forEach(function(w){w.classList.remove('warm','dull','green');w.classList.add('red');});if(door)door.classList.add('red');exlights.forEach(function(e){e.classList.add('on');});exglows.forEach(function(e){e.classList.add('on');});return;}
+    strobe=setInterval(function(){
+      wins.forEach(function(w){w.classList.toggle('red',Math.random()<0.6);});
+      if(door)door.classList.toggle('red',Math.random()<0.5);
+      var white=Math.random()<0.42;
+      exlights.forEach(function(e){e.classList.toggle('on',white);});
+      exglows.forEach(function(e){e.classList.toggle('on',white);});
+    },120);
+  }
+  function ensureAudio(){if(A.ctx)return;try{var AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;A.ctx=new AC();A.gain=A.ctx.createGain();A.gain.gain.value=0;A.gain.connect(A.ctx.destination);}catch(e){A.ctx=null;}}
+  function speakNow(){if(muted)return;try{if(!('speechSynthesis' in window))return;var u=new SpeechSynthesisUtterance(WARN);u.volume=1;u.rate=1;u.pitch=1;window.speechSynthesis.cancel();window.speechSynthesis.speak(u);}catch(e){}}
+  function audioStart(){
+    if(muted)return;ensureAudio();
+    try{if(A.ctx){if(A.ctx.state==='suspended')A.ctx.resume();if(!A.osc){var o=A.ctx.createOscillator();o.type='sawtooth';o.frequency.value=680;var lfo=A.ctx.createOscillator();lfo.type='sine';lfo.frequency.value=2.2;var lg=A.ctx.createGain();lg.gain.value=210;lfo.connect(lg);lg.connect(o.frequency);o.connect(A.gain);o.start();lfo.start();A.osc=o;A.lfo=lfo;}A.gain.gain.cancelScheduledValues(A.ctx.currentTime);A.gain.gain.linearRampToValueAtTime(0.05,A.ctx.currentTime+0.2);}}catch(e){}
+    speakNow();if(voiceTimer)clearInterval(voiceTimer);voiceTimer=setInterval(speakNow,5200);
+  }
+  function audioStop(){
+    if(voiceTimer){clearInterval(voiceTimer);voiceTimer=null;}
+    try{if('speechSynthesis' in window)window.speechSynthesis.cancel();}catch(e){}
+    try{if(A.ctx&&A.gain){A.gain.gain.cancelScheduledValues(A.ctx.currentTime);A.gain.gain.linearRampToValueAtTime(0,A.ctx.currentTime+0.15);}}catch(e){}
+    if(A.osc){try{A.osc.stop(A.ctx.currentTime+0.25);}catch(e){}A.osc=null;}
+    if(A.lfo){try{A.lfo.stop(A.ctx.currentTime+0.25);}catch(e){}A.lfo=null;}
+  }
+  function setState(s){
+    state=s;clearWins();exOff();stopStrobe();stage.setAttribute('data-state',s);
+    if(s==='idle'){if(normalWins[0])normalWins[0].classList.add('warm');label.textContent='System idle';chan(chB,0);chan(chL,0);chan(chV,0);audioStop();}
+    else if(s==='armed'){alarmWins.forEach(function(w){w.classList.add('dull');});label.textContent='Armed · watching';chan(chB,0);chan(chL,0);chan(chV,0);audioStop();}
+    else if(s==='disarmed'){alarmWins.forEach(function(w){w.classList.add('green');});label.textContent='Disarmed · all clear';chan(chB,0);chan(chL,0);chan(chV,0);audioStop();}
+    else if(s==='intruder'){label.textContent='Intruder · full response';startStrobe();chan(chB,1);chan(chL,1);chan(chV,!muted);audioStart();}
+  }
+  function bind(id,fn){var b=document.getElementById(id);if(b)b.addEventListener('click',fn);}
+  bind('gg-arm',function(){clearTimers();setState('armed');});
+  bind('gg-disarm',function(){clearTimers();setState('disarmed');after(4500,function(){if(state==='disarmed')setState('idle');});});
+  bind('gg-trigger',function(){clearTimers();setState('intruder');});
+  bind('gg-stop',function(){clearTimers();setState('idle');});
+  bind('gg-play',function(){clearTimers();setState('armed');after(1800,function(){setState('intruder');});after(9800,function(){setState('disarmed');});after(14300,function(){setState('idle');});});
+  if(muteBtn)muteBtn.addEventListener('click',function(){muted=!muted;muteBtn.setAttribute('aria-pressed',String(muted));var lab=muteBtn.querySelector('.mlabel');if(lab)lab.textContent=muted?'Sound off':'Sound on';muteBtn.firstChild.textContent=muted?'🔇 ':'🔊 ';if(muted){audioStop();chan(chV,0);}else if(state==='intruder'){audioStart();chan(chV,1);}});
+  document.addEventListener('visibilitychange',function(){if(document.hidden)audioStop();});
+  setState('idle');
+})();
+</script>
+</body>
+</html>

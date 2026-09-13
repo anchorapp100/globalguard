@@ -1,0 +1,722 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Technical Notes — DECS Home Systems</title>
+<meta name="description" content="The hardware mods in full: a battery-eliminator bypass that keeps the tablet's own management board, an isolated-relay bridge that lets Home Assistant press the alarm key fob's buttons — now over a hardwired USB-serial link, not Wi-Fi — and a planned tone-ACK ear that hears the panel's own confirmation beep. Wiring, schematics, annotated photos and the code.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+/* ---------- Technical page: local additions ---------- */
+.tech-link{color:var(--accent);font-weight:600;font-family:"IBM Plex Mono",monospace;font-size:.85rem;letter-spacing:.02em}
+.subhead{font-family:"IBM Plex Mono",monospace;font-size:.72rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:0 0 .9rem}
+
+/* code blocks */
+.code{background:#0b0f14;border:1px solid #1b2431;border-radius:12px;padding:1.05rem 1.15rem;overflow-x:auto;color:#cdd7e2;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.82rem;line-height:1.6;white-space:pre;margin:0;-webkit-text-size-adjust:100%}
+.code .cm{color:#6a7a88}
+.code .kw{color:#f4b159}
+.code-head{display:flex;justify-content:space-between;align-items:center;font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin:0 0 .6rem}
+
+/* wire colour map */
+.wtab-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.wtab{border-collapse:collapse;width:100%;min-width:40rem;font-size:.9rem;background:var(--surface)}
+.wtab th{text-align:left;font-family:"IBM Plex Mono",monospace;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);padding:.7rem 1rem;border-bottom:1px solid var(--line);font-weight:600}
+.wtab td{padding:.62rem 1rem;border-bottom:1px solid var(--line);color:var(--muted);vertical-align:top}
+.wtab tr:last-child td{border-bottom:0}
+.wtab td b{color:var(--ink);font-weight:600}
+.wtab .wire{display:inline-flex;align-items:center;gap:.5rem;white-space:nowrap;font-family:"IBM Plex Mono",monospace;font-size:.82rem;color:var(--ink)}
+.wtab .grp td{background:var(--surface-2);font-family:"IBM Plex Mono",monospace;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.sw{width:.9rem;height:.9rem;border-radius:3px;border:1px solid rgba(0,0,0,.25);flex:none}
+
+/* terminal maps */
+.tmap{display:grid;grid-template-columns:repeat(3,1fr);gap:1.1rem}
+@media(max-width:860px){.tmap{grid-template-columns:1fr}}
+.tmap .card{padding:1.3rem}
+.tmap ul{list-style:none;margin:.7rem 0 0;padding:0;display:flex;flex-direction:column;gap:.5rem}
+.tmap li{display:flex;gap:.6rem;align-items:baseline;font-size:.9rem;color:var(--muted)}
+.tmap li .pin{font-family:"IBM Plex Mono",monospace;font-size:.78rem;color:var(--ink);font-weight:600;min-width:3.1rem;flex:none}
+.tmap li.skip{opacity:.5}
+
+/* annotated photos */
+.shots{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-top:1.4rem}
+@media(max-width:760px){.shots{grid-template-columns:1fr}}
+.shots figure{margin:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface);box-shadow:var(--shadow)}
+.shots.one{grid-template-columns:1fr;max-width:44rem}
+.shots img{width:100%;height:auto;display:block;background:#0b0f14}
+.shots figcaption{padding:.85rem 1.1rem;font-size:.88rem;color:var(--muted);border-top:1px solid var(--line)}
+.shots figcaption b{color:var(--ink);font-weight:600}
+
+/* schematic stage (committed-dark) */
+.sch{background:#070a11;border:1px solid #1b2431;border-radius:16px;padding:1rem;box-shadow:0 30px 60px -30px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.03)}
+.sch svg{display:block;width:100%;height:auto}
+.sch-t{font-family:"IBM Plex Mono",ui-monospace,monospace;fill:#9aa7b3}
+.sch-box{fill:#0e151f;stroke:#26333f;stroke-width:1.4}
+.sch-box.hi{fill:#101b28;stroke:#f4b159;stroke-width:1.6}
+.sch-box.iso{fill:#0e1712;stroke:#2f6b45;stroke-width:1.6}
+.sch-title{fill:#e7edf3;font-weight:600}
+.sch-cap{fill:#7c8a97}
+.sch-wire{fill:none;stroke:#3a4a5c;stroke-width:2.2;stroke-linecap:round}
+.sch-flow{fill:none;stroke-width:3;stroke-linecap:round;stroke-dasharray:2 10;animation:schmove 1s linear infinite}
+.sch-bar{stroke:#d1495b;stroke-width:1.6;stroke-dasharray:5 5}
+@keyframes schmove{to{stroke-dashoffset:-12}}
+@media (prefers-reduced-motion:reduce){.sch-flow{animation:none}}
+.callout{display:flex;gap:.9rem;align-items:flex-start;background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);border-radius:14px;padding:1.1rem 1.3rem;margin-top:1.4rem}
+.callout .ic{color:var(--accent);flex:none;margin-top:.15rem}
+.callout p{color:var(--ink);font-size:.94rem}
+.callout b{font-weight:700}
+.warn{background:var(--alert-soft);border-color:color-mix(in srgb,var(--alert) 45%,transparent)}
+.warn .ic{color:var(--alert)}
+.good{background:var(--live-soft,rgba(58,167,87,.12));border-color:color-mix(in srgb,var(--live,#3aa757) 45%,transparent)}
+.good .ic{color:var(--live,#3aa757)}
+.dl-row{display:flex;flex-wrap:wrap;gap:.55rem;margin-top:1.1rem}
+.dl-row a{font-family:"IBM Plex Mono",monospace;font-size:.74rem;text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:.45rem .85rem;color:var(--ink);background:var(--surface)}
+.dl-row a:hover{border-color:var(--accent);color:var(--accent)}
+/* ---------- Part C: tone-ACK (planned upgrade) ---------- */
+.plan-badge{display:inline-flex;align-items:center;gap:.45rem;font-family:"IBM Plex Mono",monospace;font-size:.62rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--info);background:var(--info-soft);border:1px solid color-mix(in srgb,var(--info) 40%,transparent);border-radius:999px;padding:.3rem .64rem;line-height:1}
+.plan-badge::before{content:"";width:.46rem;height:.46rem;border-radius:50%;background:currentColor;box-shadow:0 0 7px currentColor;flex:none}
+.callout.info{background:var(--info-soft);border-color:color-mix(in srgb,var(--info) 40%,var(--line))}
+.callout.info .ic{color:var(--info)}
+
+/* ============================================================
+   SPA shell — sidebar + hash-routed views (as in presence / rada)
+   ============================================================ */
+.app{display:grid;grid-template-columns:272px minmax(0,1fr);max-width:98rem;margin:0 auto;min-height:100vh}
+.side{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;border-right:1px solid var(--line);background:var(--surface);padding:1.15rem 1.05rem 1.1rem;display:flex;flex-direction:column;gap:.65rem}
+.side .site-brand{display:flex;align-items:center;gap:.5rem;font-family:"Archivo",sans-serif;font-weight:800;font-size:1.02rem;color:var(--ink);text-decoration:none;letter-spacing:-.02em;padding-bottom:.9rem;border-bottom:1px solid var(--line)}
+.side .site-brand .dot{width:.6rem;height:.6rem;border-radius:50%;background:var(--live);flex:none;box-shadow:0 0 8px var(--live);animation:none}
+.sitenav{display:flex;flex-wrap:wrap;gap:.32rem}
+.sitenav a{font-family:"IBM Plex Mono",monospace;font-size:.67rem;color:var(--muted);padding:.28rem .5rem;border-radius:999px;border:1px solid var(--line);background:var(--surface);text-decoration:none;white-space:nowrap;transition:color .15s,border-color .15s,background .15s}
+.sitenav a:hover{color:var(--ink);border-color:var(--line-strong)}
+.sitenav a.here{color:var(--accent);border-color:var(--accent);background:var(--accent-soft);font-weight:600}
+.side .proj{font-family:"Archivo",sans-serif;font-weight:800;font-size:1.3rem;line-height:1.08;color:var(--ink);letter-spacing:-.02em;margin-top:.3rem}
+.side .proj small{display:block;font-family:"IBM Plex Mono",monospace;font-weight:500;font-size:.63rem;letter-spacing:.01em;line-height:1.5;color:var(--muted);margin-top:.5rem}
+.secnav{display:flex;flex-direction:column;gap:.1rem}
+.secnav .grp{font-family:"IBM Plex Mono",monospace;font-size:.6rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:.5rem 0 .22rem;padding-left:.25rem}
+.secnav .grp:first-child{margin-top:.2rem}
+.secnav a{display:flex;align-items:baseline;gap:.55rem;font-size:.88rem;color:var(--muted);text-decoration:none;padding:.32rem .55rem;border-radius:8px;border:1px solid transparent;transition:background .15s,color .15s,border-color .15s}
+.secnav a .n{font-family:"IBM Plex Mono",monospace;font-size:.68rem;color:var(--faint);min-width:1rem;flex:none}
+.secnav a:hover{background:var(--surface-2);color:var(--ink)}
+.secnav a.active{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 40%,transparent);color:var(--accent);font-weight:600}
+.secnav a.active .n{color:var(--accent)}
+.side .tools{margin-top:auto;padding-top:1rem;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:.5rem}
+.side .tools button{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:.5rem .7rem;cursor:pointer;text-align:left;display:inline-flex;align-items:center;gap:.45rem}
+.side .tools button:hover{border-color:var(--accent);color:var(--accent)}
+main#main{min-width:0;padding:clamp(1.5rem,3.5vw,2.8rem) clamp(1.2rem,4vw,3.4rem) 4rem}
+.view{display:none;max-width:62rem;padding-block:0}
+.view.on{display:block;animation:vfade .28s ease}
+@keyframes vfade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.view .wrap{max-width:none;margin:0;padding:0}
+.view .hero,.view .col{max-width:none}
+.reveal{opacity:1 !important;transform:none !important}
+body.all .view{display:block;margin-bottom:3rem;padding-bottom:2.6rem;border-bottom:1px solid var(--line)}
+body.all .view:last-child{border-bottom:0}
+@media (prefers-reduced-motion:reduce){.view.on{animation:none}}
+@media (max-width:900px){
+  .app{grid-template-columns:1fr}
+  .side{position:static;height:auto;overflow:visible;border-right:0;border-bottom:1px solid var(--line)}
+  main#main{padding-top:1.5rem}
+  .view{max-width:none}
+}
+</style>
+</head>
+<body class="p-tech">
+
+<div class="app">
+<aside class="side">
+  <a class="site-brand" href="index.html"><span class="dot"></span>DECS&nbsp;Home&nbsp;Systems</a>
+  <nav class="sitenav">
+    <a href="index.html">Overview</a>
+    <a href="globalguard.html">GlobalGuard</a>
+    <a href="homeassistant.html">Home&nbsp;Assistant</a>
+    <a href="wallpanel.html">Wall&nbsp;panel</a>
+    <a href="cameras.html">Cameras</a>
+    <a href="presence.html">Presence</a>
+    <a href="roomscribe.html">Roomscribe</a>
+    <a href="traccar.html">Traccar</a>
+    <a href="finance.html">Finance</a>
+    <a href="fan.html">Fan</a>
+    <a href="rada.html">Rada</a>
+    <a href="technical.html" class="here">Technical</a>
+    <a href="roadmap.html">Roadmap</a>
+  </nav>
+  <div class="proj">Technical notes<small>The hardware mods in full — battery, the hardwired alarm-fob bridge, and the planned tone-ACK ear.</small></div>
+  <nav class="secnav" id="nav">
+    <div class="grp">Battery</div>
+    <a href="#battery"><span class="n">1</span>Battery bypass</a>
+    <div class="grp">Alarm remote bridge</div>
+    <a href="#alarm"><span class="n">2</span>The bridge &amp; isolation</a>
+    <a href="#wiring"><span class="n">3</span>Wiring &amp; pinout</a>
+    <a href="#hardware"><span class="n">4</span>The hardware</a>
+    <a href="#build"><span class="n">5</span>Build order</a>
+    <a href="#serial"><span class="n">6</span>Serial control</a>
+    <div class="grp">Tone-ACK · planned</div>
+    <a href="#tone"><span class="n">7</span>Hearing the panel</a>
+    <a href="#tone-build"><span class="n">8</span>Circuit &amp; firmware</a>
+  </nav>
+  <div class="tools">
+    <button id="btnAll" type="button">Show every section on one page</button>
+    <button id="tt" type="button" aria-label="Toggle colour theme"><span id="ttic">◐</span> Toggle theme</button>
+  </div>
+</aside>
+
+<main id="main">
+
+<!-- ============ PART A: BATTERY BYPASS ============ -->
+<section class="view" id="battery">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">A · Battery bypass</span><h2>Run the tablet with no battery — the right way</h2><p class="lede">An eleven-year-old lithium pouch, sealed to a wall, permanently warm, is the one genuine hazard in this whole build. The fix is to remove the cell and feed the tablet directly. The trick that makes it reliable — and the part I got wrong the first time — is to keep the pack's own little circuit board.</p></div>
+
+    <div class="grid-2">
+      <div class="col">
+        <p style="color:var(--muted)">That PCB glued to the cell is the pack's <b style="color:var(--ink)">BMS</b> — battery management. It carries three things the tablet depends on: a <b style="color:var(--ink)">protection circuit</b> (over/under-voltage and over-current MOSFETs in series with the cell), an <b style="color:var(--ink)">NTC thermistor</b> for temperature, and usually a small <b style="color:var(--ink)">fuel-gauge or ID chip</b>. The one thing it does <em>not</em> contain is the charger itself — that CC/CV charging IC lives on the tablet's mainboard.</p>
+        <p style="color:var(--muted);margin-top:1rem">So feeding the bare mainboard connector is flaky: the tablet misses its thermistor and gauge and often refuses to boot, which is why the crude version needs a faked 10&nbsp;kΩ resistor. Keep the BMS in circuit instead and feed your supply into <b style="color:var(--ink)">its</b> cell pads, and the tablet sees a completely normal battery — nothing to fake.</p>
+      </div>
+      <div class="sch" role="img" aria-label="Battery-bypass schematic: a bench/buck supply set to about 4.0 volts feeds the cell pads of the retained BMS board; the pouch cell is removed; the BMS output connector goes to the tablet mainboard exactly as before, carrying power, the thermistor and the gauge signals.">
+        <svg viewBox="0 0 420 230">
+          <rect class="sch-box hi" x="14" y="86" width="96" height="58" rx="9"/>
+          <text class="sch-t sch-title" x="62" y="112" text-anchor="middle" font-size="12">Buck</text>
+          <text class="sch-t sch-cap" x="62" y="128" text-anchor="middle" font-size="10">≈ 4.0 V</text>
+          <path class="sch-wire" d="M110 115 H150"/>
+          <path class="sch-flow" d="M110 115 H150" stroke="#f4b159"/>
+          <rect class="sch-box" x="150" y="60" width="120" height="110" rx="10"/>
+          <text class="sch-t sch-title" x="210" y="84" text-anchor="middle" font-size="12">BMS board</text>
+          <text class="sch-t sch-cap" x="210" y="102" text-anchor="middle" font-size="9.5">protection · thermistor</text>
+          <text class="sch-t sch-cap" x="210" y="116" text-anchor="middle" font-size="9.5">· gauge / ID</text>
+          <text class="sch-t sch-cap" x="210" y="140" text-anchor="middle" font-size="9">cell pads ← feed here</text>
+          <rect x="168" y="148" width="84" height="14" rx="3" fill="none" stroke="#3a4a5c" stroke-dasharray="3 3"/>
+          <text class="sch-t sch-cap" x="210" y="159" text-anchor="middle" font-size="8.5">pouch removed</text>
+          <path class="sch-wire" d="M270 115 H310"/>
+          <path class="sch-flow" d="M270 115 H310" stroke="#5cb3f2"/>
+          <rect class="sch-box" x="310" y="86" width="96" height="58" rx="9"/>
+          <text class="sch-t sch-title" x="358" y="108" text-anchor="middle" font-size="12">Tablet</text>
+          <text class="sch-t sch-cap" x="358" y="124" text-anchor="middle" font-size="10">charger + system</text>
+          <text class="sch-t sch-cap" x="210" y="205" text-anchor="middle" font-size="9">the tablet sees a normal battery — power, temperature and gauge all present</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="steps" style="margin-top:1.8rem">
+      <div class="step"><span class="idx">01</span><div><h3>Keep the management board; lose the pouch</h3><p>Open the pack and separate the lithium pouch from its BMS PCB, leaving the board and its mainboard connector intact. The pouch is done — discharge and dispose of it safely. Everything the tablet talks to stays on that board.</p></div></div>
+      <div class="step"><span class="idx">02</span><div><h3>Feed ~4.0 V into the cell pads</h3><p>Wire a regulated supply to the two pads where the pouch's + and − were soldered — <b style="color:var(--ink)">not</b> the mainboard connector. Set it to about <b style="color:var(--ink)">4.0&nbsp;V</b>: above the 3.8&nbsp;V nominal, safely below the 4.2&nbsp;V ceiling. The board passes it through its protection FETs to the tablet exactly as the cell would, and the mainboard charger sees a "nearly full" battery and simply idles.</p></div></div>
+      <div class="step"><span class="idx">03</span><div><h3>Size the supply for the peaks</h3><p>Use a buck converter that can source the tablet's <b style="color:var(--ink)">&gt;2&nbsp;A</b> current spikes (screen + CPU), fed from a beefy 5&nbsp;V / 3&nbsp;A or a 9–12&nbsp;V brick — never the tablet's own micro-USB port, which can't run the system directly and browns out.</p></div></div>
+      <div class="step"><span class="idx">04</span><div><h3>Know what changes</h3><p>Don't exceed ~4.2&nbsp;V or the board's own over-voltage protection cuts out (that's a safety feature working). And the fuel gauge now reads a <b style="color:var(--ink)">fixed percentage forever</b> — cosmetic, but it means the charge-trend tile and the whole power-management system on the wall panel become optional. With nothing left to drain, the panel just runs bright all day.</p></div></div>
+    </div>
+
+    <div class="callout warn">
+      <svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+      <p><b>Advanced, and at your own risk.</b> This means opening the tablet and soldering to a live lithium battery's board. Confirm polarity with a meter before you connect anything — the two pads reading 3.7–4.2&nbsp;V are + and −. Disconnect and tape off the old pouch before it goes anywhere near the wall. Done right, there's no battery left to drain or swell — which is exactly why wall-panel builders do it.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PART B: ALARM REMOTE RELAY BRIDGE ============ -->
+<section class="view" id="alarm">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">B · Alarm remote relay bridge</span><h2>Letting software press the key fob</h2><p class="lede">The alarm's radio hub is slow to wake, so a voice "disarm" can lag. The fix is to press the buttons on a spare enrolled key fob electronically — an ESP32 drives four <b style="color:var(--ink)">isolated relays</b>, each closing across one button, so Home&nbsp;Assistant and Google can Arm, Disarm, Part-arm and Panic. The fob keeps floating on its own power; nothing on its side ever touches the ESP32's ground.</p></div>
+
+    <p class="subhead">How it works</p>
+    <p style="color:var(--muted);max-width:46rem">Each relay is an electronic finger. A GPIO goes high, the relay's coil pulls in, and its contact closes across the two pads of one button — electrically identical to pressing it. The contact is a <b style="color:var(--ink)">dry, isolated</b> switch: it shares no copper with the coil or the ESP32, so it bridges the fob's button without dragging the fob's ground onto anything else. That isolation isn't a nicety here — as the note below explains, it's the whole reason this works.</p>
+
+    <div class="sch" style="margin-top:1.4rem" role="img" aria-label="System overview: a 12 volt supply feeds a buck converter that powers the ESP32, and also powers the relay board's coils. The ESP32's four GPIOs drive the relay inputs. A dashed isolation barrier runs through the relay board, separating the coil side from the contact side. On the far side of the barrier the isolated relay contacts close across the buttons of the alarm remote, which stays on its own power and floats — no shared ground.">
+      <svg viewBox="0 0 780 270">
+        <!-- isolation barrier -->
+        <line class="sch-bar" x1="540" y1="26" x2="540" y2="246"/>
+        <text class="sch-t" x="540" y="18" text-anchor="middle" font-size="9" fill="#d1495b">ISOLATION — nothing crosses</text>
+        <!-- control side -->
+        <rect class="sch-box" x="16" y="96" width="92" height="48" rx="8"/>
+        <text class="sch-t sch-title" x="62" y="117" text-anchor="middle" font-size="11">12 V PSU</text>
+        <text class="sch-t sch-cap" x="62" y="132" text-anchor="middle" font-size="9">mains adapter</text>
+        <path class="sch-wire" d="M108 120 H132" stroke="#d1495b"/><path class="sch-flow" d="M108 120 H132" stroke="#d1495b"/>
+        <rect class="sch-box" x="132" y="96" width="92" height="48" rx="8"/>
+        <text class="sch-t sch-title" x="178" y="117" text-anchor="middle" font-size="11">Buck 12→5 V</text>
+        <text class="sch-t sch-cap" x="178" y="132" text-anchor="middle" font-size="9">USB-C out</text>
+        <path class="sch-wire" d="M224 120 H248" stroke="#f4b159"/><path class="sch-flow" d="M224 120 H248" stroke="#f4b159"/>
+        <rect class="sch-box hi" x="248" y="92" width="104" height="56" rx="9"/>
+        <text class="sch-t sch-title" x="300" y="115" text-anchor="middle" font-size="11">ESP32</text>
+        <text class="sch-t sch-cap" x="300" y="131" text-anchor="middle" font-size="9">USB serial ↔ Pi</text>
+        <path class="sch-wire" d="M352 116 H460" stroke="#4696f0"/><path class="sch-flow" d="M352 116 H460" stroke="#4696f0"/>
+        <text class="sch-t sch-cap" x="406" y="108" text-anchor="middle" font-size="8.5">IN1–4</text>
+        <!-- relay board straddles barrier -->
+        <rect class="sch-box" x="460" y="64" width="160" height="140" rx="10"/>
+        <text class="sch-t sch-title" x="540" y="56" text-anchor="middle" font-size="10">Relay board ×4</text>
+        <text class="sch-t sch-cap" x="500" y="92" text-anchor="middle" font-size="9">coil + IN</text>
+        <text class="sch-t sch-cap" x="583" y="92" text-anchor="middle" font-size="9">contacts</text>
+        <circle cx="500" cy="120" r="12" fill="none" stroke="#4696f0" stroke-width="1.3"/>
+        <text class="sch-t sch-cap" x="500" y="144" text-anchor="middle" font-size="8">coil</text>
+        <path d="M572 112 l24 -10" stroke="#e7edf3" stroke-width="1.6"/>
+        <circle cx="572" cy="112" r="2.6" fill="#7c8a97"/><circle cx="596" cy="102" r="2.6" fill="#3aa757"/>
+        <text class="sch-t sch-cap" x="584" y="140" text-anchor="middle" font-size="8">COM · NO</text>
+        <!-- coil power from 12V -->
+        <path class="sch-wire" d="M62 144 V232 H500 V132" stroke="#d1495b"/>
+        <text class="sch-t sch-cap" x="250" y="246" text-anchor="middle" font-size="9">12 V also powers the relay coils (DC+ / DC−) · shared 0 V on this side only</text>
+        <!-- shared ground -->
+        <path d="M300 148 v34 m-12 0 h24 m-19 6 h14 m-9 6 h4" stroke="#3a4a5c" stroke-width="1.4" fill="none"/>
+        <!-- isolated side -->
+        <path class="sch-wire" d="M620 116 H650" stroke="#e0e6ec"/><path class="sch-flow" d="M620 116 H650" stroke="#e0e6ec"/>
+        <rect class="sch-box iso" x="650" y="64" width="118" height="140" rx="10"/>
+        <text class="sch-t sch-title" x="709" y="90" text-anchor="middle" font-size="10" fill="#8fd6a8">Alarm remote</text>
+        <text class="sch-t sch-cap" x="709" y="110" text-anchor="middle" font-size="9">● Arm  ● Disarm</text>
+        <text class="sch-t sch-cap" x="709" y="124" text-anchor="middle" font-size="9">● Part  ● Panic</text>
+        <text class="sch-t sch-cap" x="709" y="150" text-anchor="middle" font-size="8.5">own cell · floats</text>
+        <text class="sch-t sch-cap" x="709" y="163" text-anchor="middle" font-size="8.5">no shared ground</text>
+      </svg>
+    </div>
+
+    <div class="callout good">
+      <svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>
+      <p><b>Why a relay — and not an optocoupler or a transistor.</b> This is the lesson that cost the most bench time. The fob <b>floats</b>: its button "common" sits behind a reverse-protection diode, not at true ground. Anything that shares a ground with the ESP32 — a common-ground opto board, or a bare transistor — bonds the fob's common to the system ground the moment it switches, and that <b>jams the remote dead</b> every time. We proved it twice before the penny dropped. A relay's contacts are galvanically isolated from its coil and the ESP32, so they bridge a button's two pads exactly like a fingertip, with nothing shared. Isolation here is the whole trick, not an optional extra.</p>
+    </div>
+
+    </div></section>
+
+<!-- B · wiring & pinout -->
+<section class="view" id="wiring">
+  <div class="wrap">
+    <div class="sec-head col"><span class="eyebrow">B · Wiring</span><h2>Two worlds, one press</h2></div>
+    <p class="subhead" style="margin-top:.4rem">Wire colour map</p>
+    <p style="color:var(--muted);max-width:46rem;margin-bottom:1rem">Two worlds that never meet. On the <b style="color:var(--ink)">control side</b> the colours are triggers and everything shares one ground. On the <b style="color:var(--ink)">isolated fob side</b> the same colour is that button's signal and one grey serves the shared common. Red and black are power only.</p>
+    <div class="wtab-wrap">
+      <table class="wtab">
+        <thead><tr><th>From</th><th>Wire</th><th>To</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr class="grp"><td colspan="4">Control side — shares the ESP32 / 12 V ground</td></tr>
+          <tr><td><b>12 V PSU +</b></td><td><span class="wire"><span class="sw" style="background:#d1495b"></span>red</span></td><td>Relay DC+ and buck input +</td><td>Coil power</td></tr>
+          <tr><td><b>12 V PSU −</b></td><td><span class="wire"><span class="sw" style="background:#111"></span>black</span></td><td>Relay DC− and buck input −</td><td>0 V (= ESP32 GND)</td></tr>
+          <tr><td><b>Buck Type-C</b></td><td><span class="wire"><span class="sw" style="background:#8a94a0"></span>USB-C</span></td><td>ESP32 USB-C port</td><td>5 V for the ESP32</td></tr>
+          <tr><td><b>ESP32 D23</b></td><td><span class="wire"><span class="sw" style="background:#f4c430"></span>yellow</span></td><td>Relay IN1</td><td>Arm trigger</td></tr>
+          <tr><td><b>ESP32 D22</b></td><td><span class="wire"><span class="sw" style="background:#3aa757"></span>green</span></td><td>Relay IN2</td><td>Disarm trigger</td></tr>
+          <tr><td><b>ESP32 D21</b></td><td><span class="wire"><span class="sw" style="background:#3b7dd8"></span>blue</span></td><td>Relay IN3</td><td>Part-arm trigger</td></tr>
+          <tr><td><b>ESP32 D19</b></td><td><span class="wire"><span class="sw" style="background:#eef1f4"></span>white</span></td><td>Relay IN4</td><td>Panic trigger</td></tr>
+          <tr><td><b>ESP32 GND</b></td><td><span class="wire"><span class="sw" style="background:#111"></span>black</span></td><td>Relay DC−</td><td>Logic ground (shared)</td></tr>
+          <tr class="grp"><td colspan="4">Isolated fob side — floats, touches nothing above</td></tr>
+          <tr><td><b>Relay COM1</b></td><td><span class="wire"><span class="sw" style="background:#f4c430"></span>yellow</span></td><td>Arm button, signal pad</td><td>One side of the press</td></tr>
+          <tr><td><b>Relay COM2</b></td><td><span class="wire"><span class="sw" style="background:#3aa757"></span>green</span></td><td>Disarm button, signal pad</td><td>One side of the press</td></tr>
+          <tr><td><b>Relay COM3</b></td><td><span class="wire"><span class="sw" style="background:#3b7dd8"></span>blue</span></td><td>Part-arm button, signal pad</td><td>One side of the press</td></tr>
+          <tr><td><b>Relay COM4</b></td><td><span class="wire"><span class="sw" style="background:#eef1f4"></span>white</span></td><td>Panic button, signal pad</td><td>One side of the press</td></tr>
+          <tr><td><b>Relay NO1–4</b></td><td><span class="wire"><span class="sw" style="background:#9aa0a6"></span>grey</span></td><td>The fob's shared common "G" pad</td><td>Other side of the press</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout warn">
+      <svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+      <p><b>The one rule that makes or breaks it:</b> the fob's grey "G" wires (relay NO) go only to the fob's own common pad — <b>never</b> to the 12&nbsp;V −, the ESP32 GND, or the relay's DC−. The instant those grounds meet, the remote jams. Leave the fob on its own cell (or give it a completely separate, isolated 12&nbsp;V supply) so its ground stays its own.</p>
+    </div>
+
+    <p class="subhead" style="margin-top:2.2rem">One channel, end to end</p>
+    <div class="sch" role="img" aria-label="One relay channel: ESP32 D23 goes high, driving relay input IN1; the relay coil, powered from 12 volts, pulls in. A dashed isolation barrier separates the coil from the contact. On the far side the contact closes COM to NO, bridging the Arm button's signal pad to the fob's shared common pad — exactly what a fingertip does.">
+      <svg viewBox="0 0 780 220">
+        <line class="sch-bar" x1="372" y1="34" x2="372" y2="196"/>
+        <text class="sch-t" x="372" y="26" text-anchor="middle" font-size="8.5" fill="#d1495b">isolated — no shared ground</text>
+        <rect class="sch-box hi" x="16" y="76" width="92" height="66" rx="9"/>
+        <text class="sch-t sch-title" x="62" y="103" text-anchor="middle" font-size="11">ESP32</text>
+        <text class="sch-t sch-cap" x="62" y="120" text-anchor="middle" font-size="9">D23 · GND</text>
+        <path class="sch-wire" d="M108 98 H252" stroke="#f4c430"/><path class="sch-flow" d="M108 98 H252" stroke="#f4c430"/>
+        <text class="sch-t sch-cap" x="176" y="90" text-anchor="middle" font-size="8.5">yellow → IN1</text>
+        <rect class="sch-box" x="252" y="52" width="240" height="120" rx="10"/>
+        <text class="sch-t sch-title" x="312" y="46" text-anchor="middle" font-size="10">Relay · channel 1</text>
+        <!-- coil side -->
+        <circle cx="312" cy="104" r="16" fill="none" stroke="#4696f0" stroke-width="1.5"/>
+        <text class="sch-t sch-cap" x="312" y="140" text-anchor="middle" font-size="8.5">coil · IN1</text>
+        <text class="sch-t sch-cap" x="312" y="152" text-anchor="middle" font-size="8">12 V (DC+/DC−)</text>
+        <!-- contact side -->
+        <circle cx="404" cy="104" r="3" fill="#7c8a97"/><circle cx="452" cy="88" r="3" fill="#3aa757"/>
+        <path d="M404 104 l46 -14" stroke="#e7edf3" stroke-width="1.8"/>
+        <text class="sch-t sch-cap" x="404" y="128" text-anchor="middle" font-size="8">COM</text>
+        <text class="sch-t sch-cap" x="456" y="112" text-anchor="middle" font-size="8">NO</text>
+        <path class="sch-wire" d="M492 92 H560" stroke="#f4c430"/><path class="sch-flow" d="M492 92 H560" stroke="#f4c430"/>
+        <text class="sch-t sch-cap" x="526" y="84" text-anchor="middle" font-size="8.5">COM → signal</text>
+        <path class="sch-wire" d="M492 120 H560" stroke="#9aa0a6"/>
+        <text class="sch-t sch-cap" x="526" y="134" text-anchor="middle" font-size="8.5">NO → common G</text>
+        <rect class="sch-box iso" x="560" y="66" width="200" height="82" rx="9"/>
+        <text class="sch-t sch-title" x="660" y="94" text-anchor="middle" font-size="11" fill="#8fd6a8">Arm button</text>
+        <text class="sch-t sch-cap" x="660" y="112" text-anchor="middle" font-size="9">signal pad + shared common</text>
+      </svg>
+    </div>
+    <p style="color:var(--muted);max-width:46rem;margin-top:1rem;font-size:.95rem">D23 high → IN1 → the coil pulls in → the contact closes COM-to-NO, bridging the Arm button's signal pad to the fob's common pad. That's exactly the short a continuity probe makes across those two points to press the button. The other three channels are identical, each with its own colour.</p>
+
+    <p class="subhead" style="margin-top:2.2rem">Where everything plugs in</p>
+    <div class="tmap">
+      <div class="card">
+        <p class="mono" style="font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)">ESP32 · right-hand header</p>
+        <ul>
+          <li><span class="pin">D23</span><span><span class="sw" style="background:#f4c430;display:inline-block;vertical-align:-1px"></span> yellow → IN1 · Arm</span></li>
+          <li><span class="pin">D22</span><span><span class="sw" style="background:#3aa757;display:inline-block;vertical-align:-1px"></span> green → IN2 · Disarm</span></li>
+          <li class="skip"><span class="pin">TX0/RX0</span><span>skip — used for flashing</span></li>
+          <li><span class="pin">D21</span><span><span class="sw" style="background:#3b7dd8;display:inline-block;vertical-align:-1px"></span> blue → IN3 · Part-arm</span></li>
+          <li><span class="pin">D19</span><span><span class="sw" style="background:#eef1f4;display:inline-block;vertical-align:-1px"></span> white → IN4 · Panic</span></li>
+          <li><span class="pin">GND</span><span><span class="sw" style="background:#111;display:inline-block;vertical-align:-1px"></span> black → relay DC−</span></li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="mono" style="font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)">Relay module (4-ch, 12 V)</p>
+        <ul>
+          <li><span class="pin">DC+</span><span>red → +12 V (coil power)</span></li>
+          <li><span class="pin">DC−</span><span>black → 0 V = ESP32 GND</span></li>
+          <li><span class="pin">IN1-4</span><span>colour in from D23/D22/D21/D19</span></li>
+          <li><span class="pin">COMx</span><span>that button's signal pad (colour)</span></li>
+          <li><span class="pin">NOx</span><span>grey → the shared common "G"</span></li>
+          <li><span class="pin">jumper</span><span>set High-level trigger (3.3 V high = on)</span></li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="mono" style="font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)">Remote PCB</p>
+        <ul>
+          <li><span class="pin">SW1</span><span>Arm · top</span></li>
+          <li><span class="pin">SW2</span><span>Disarm</span></li>
+          <li><span class="pin">SW3</span><span>Part-arm</span></li>
+          <li><span class="pin">SW4</span><span>Panic · bottom</span></li>
+          <li><span class="pin">press</span><span>signal pad → COM · shared common → NO</span></li>
+          <li><span class="pin">power</span><span>own cell / isolated 12 V — ground stays apart</span></li>
+        </ul>
+      </div>
+    </div>
+
+    </div></section>
+
+<!-- B · the hardware -->
+<section class="view" id="hardware">
+  <div class="wrap">
+    <div class="sec-head col"><span class="eyebrow">B · Hardware</span><h2>The build, in photographs</h2></div>
+    <p class="subhead" style="margin-top:.4rem">Your hardware, annotated</p>
+    <p style="color:var(--muted);max-width:46rem">The two ends of the isolated side, drawn onto your own photos. Positions are close, but always confirm against the silkscreen and a continuity check before you commit a joint.</p>
+    <div class="shots">
+      <figure><img src="images/alarm-remote-1.jpg" alt="Alarm remote: fob case and opened PCB, coloured markers on the four button solder points" loading="lazy"><figcaption><b>The remote.</b> Each button has a <b>signal pad</b> and a shared <b>common "G"</b>; a continuity probe across those two presses the button — that's the pair each relay closes. Function colour to the signal pad → relay COM; one grey to any common pad → relay NO (all four share it). Top switch is Arm, bottom is Panic. Leave the fob floating on its own power.</figcaption></figure>
+      <figure><img src="images/alarm-remote-2.jpg" alt="ESP32 DevKit with D23, D22, D21, D19 and GND marked on the right-hand header" loading="lazy"><figcaption><b>The ESP32.</b> All five control connections on the right-hand header, USB-C at the bottom. D23 and D22 at the top, skip TX0/RX0, then D21 and D19. GND goes to the relay board's DC− — check the silkscreen so black lands on GND, not 3V3.</figcaption></figure>
+    </div>
+
+    <p class="subhead" style="margin-top:2.2rem">The finished bridge</p>
+    <p style="color:var(--muted);max-width:46rem">Built, wired, and driving the real alarm — the isolated relay quietly presses the fob on command.</p>
+    <div class="shots">
+      <figure><img src="images/alarm-final-1.jpg" alt="The full bridge on the bench: 12 V supply, alarm key fob, four-channel relay board and ESP32 all wired together, one relay LED lit" loading="lazy"><figcaption><b>The whole bridge.</b> The 12&nbsp;V supply (left) feeds the fob and, through a buck, the ESP32 (right). The ESP's four GPIOs drive the isolated relay board in the centre, whose contacts press the fob's four buttons. A lit green channel LED is a button being held.</figcaption></figure>
+      <figure><img src="images/alarm-final-2.jpg" alt="Close-up of the four-channel SONGLE 12 V relay board with coloured signal wires on the screw terminals and one channel LED lit green" loading="lazy"><figcaption><b>The isolated relay board.</b> Four SONGLE 12&nbsp;V relays. Each colour lands on a COM, its grey on NO; the dry contact bridges a button to its common exactly like a fingertip — with the fob's ground kept completely separate. Green LED&nbsp;= that channel energised.</figcaption></figure>
+      <figure><img src="images/alarm-final-3.jpg" alt="The opened 868 MHz key fob PCB with yellow, blue, white and grey signal wires soldered to the four button pads plus power leads" loading="lazy"><figcaption><b>The fob, tapped.</b> A colour on each button's signal pad (yellow, blue, white, grey) and its own 12&nbsp;V power. The 868&nbsp;MHz transmitter, crystal and coil antenna do the rest — it's a real enrolled remote, so the alarm trusts it and the rolling code just works.</figcaption></figure>
+      <figure><img src="images/alarm-final-4.jpg" alt="Close-up of the ESP32 dev board, USB-C connected, red power LED lit, GPIO labels visible" loading="lazy"><figcaption><b>The ESP32.</b> The brain. D23/D22/D21/D19 drive the relay inputs; the USB-C lead now carries both power <em>and</em> the serial control link to the Pi — there's no Wi-Fi in the control path any more.</figcaption></figure>
+    </div>
+    <div class="callout good">
+      <svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>
+      <p><b>Wired in — and it talks.</b> The bridge is tied into the GlobalGuard panel in Home&nbsp;Assistant, so <b>arm</b>, <b>part-arm</b>, <b>disarm</b> and <b>panic</b> all fire the fob <b>instantly</b> — from the wall dashboard, and by voice through Google ("Night Security", "Day Security", "House Panic", and a PIN-gated disarm). The alarm's own radio hub is only read for status now; every command goes the fast way, through the remote.</p>
+    </div>
+
+    <p class="subhead" style="margin-top:2.2rem">The road here</p>
+    <div class="shots one">
+      <figure><img src="images/alarm-remote-3.jpg" alt="The four-channel PC817 optocoupler board that was tried first and abandoned" loading="lazy"><figcaption><b>The dead end.</b> The first attempt used this 4-channel PC817 optocoupler board. On this unit all eight ground screws proved to be one net — a common-ground board, not truly isolating — so bridging a button dragged the fob's common onto the system ground and jammed the remote. The phototransistor outputs metered open even when driven. The fix was to stop chasing the opto and switch to a genuinely isolated <b>relay</b> contact. Kept here because the "why" matters more than the win.</figcaption></figure>
+    </div>
+
+    </div></section>
+
+<!-- B · build order -->
+<section class="view" id="build">
+  <div class="wrap">
+    <div class="sec-head col"><span class="eyebrow">B · Build</span><h2>Building the bridge</h2></div>
+    <p class="subhead" style="margin-top:.4rem">Build order</p>
+    <div class="steps">
+      <div class="step"><span class="idx">01</span><div><h3>Set the relay board, then bench-test a click</h3><p>Set the High/Low jumper to <b style="color:var(--ink)">High-level trigger</b>. Power DC+/DC− from 12&nbsp;V, tie DC− to the ESP32 GND, and touch IN1 to 3V3 — the relay should <b style="color:var(--ink)">click</b> and a meter across COM–NO should close. Repeat for all four before anything goes near the fob.</p></div></div>
+      <div class="step"><span class="idx">02</span><div><h3>Keep the fob floating</h3><p>Leave the fob on its own cell (or a separate, isolated 12&nbsp;V supply). Its ground must never bond to the ESP32/PSU ground — that single mistake is what jams it. Nothing you wire on the isolated side touches the control side's 0&nbsp;V.</p></div></div>
+      <div class="step"><span class="idx">03</span><div><h3>Find each button's two press points</h3><p>For each button, identify the <b style="color:var(--ink)">signal pad</b> and the shared <b style="color:var(--ink)">common "G"</b> — a continuity probe across the two triggers that button. Those two points are the relay's COM and NO. On this remote the common sits behind a reverse-protection diode, which is exactly why it must stay isolated.</p></div></div>
+      <div class="step"><span class="idx">04</span><div><h3>Wire the isolated side</h3><p>Per channel: COMx → the signal pad in its function colour; NOx → the shared common with grey (one grey serves all four). Screw terminals, or short solder tails if you tap the pads directly. Keep joints small so the case still closes.</p></div></div>
+      <div class="step"><span class="idx">05</span><div><h3>Wire the control side</h3><p>DC+ → 12&nbsp;V, DC− → 0&nbsp;V. IN1←D23, IN2←D22, IN3←D21, IN4←D19, one black from ESP32 GND to DC−. Every colour is one clean trigger from a GPIO to an IN.</p></div></div>
+      <div class="step"><span class="idx">06</span><div><h3>Power up in order</h3><p>12&nbsp;V to the relay DC+/DC− and to the buck. Meter the buck's USB-C output — confirm ~5&nbsp;V — <em>before</em> plugging the ESP32. Then buck USB-C → ESP32.</p></div></div>
+      <div class="step"><span class="idx">07</span><div><h3>Flash the firmware</h3><p>Load the ESPHome config below over USB once, then adopt in Home&nbsp;Assistant — four <span class="mono" style="font-size:.9em">button.alarm_remote_bridge_*</span> entities appear. After that it's fully over-the-air.</p></div></div>
+      <div class="step"><span class="idx">08</span><div><h3>Test each in a safe state</h3><p>Press each button in HA where a stray Arm or Panic won't wake the street. You should hear the relay click, see the fob's own LED blink, and watch the alarm respond. Panic holds the relay closed for 3.5&nbsp;s (a sustained press) — the panel needs that; the other three are a quick 600&nbsp;ms tap.</p></div></div>
+    </div>
+
+    <div class="callout">
+      <svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+      <p><b>Panic is a held press, not a tap.</b> Arm, Disarm and Part-arm register from a single clean 600&nbsp;ms press. Panic is different: the panel wants the button held down for a few seconds before it trips, so Panic <b>latches the relay for 3.5&nbsp;s</b> — a real thumb-on-the-button hold — then releases.</p>
+    </div>
+
+    </div></section>
+
+<!-- B · serial control -->
+<section class="view" id="serial">
+  <div class="wrap">
+    <div class="sec-head col"><span class="eyebrow">B · Control</span><h2>Driven over a wire, not Wi-Fi</h2></div>
+    <p class="subhead" style="margin-top:.4rem">How it's driven now — a hardwired serial link</p>
+    <div class="callout warn">
+      <svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+      <p><b>The Wi-Fi had to go.</b> For weeks the bridge talked to Home&nbsp;Assistant over Wi-Fi, and for weeks it kept dropping — blamed in turn on the mesh, the channel, a reboot timer. The real cause only showed on the ESP's own serial console: parked next to the Pi, the Wi-Fi there is <span class="mono" style="font-size:.9em">−84&nbsp;dBm</span>, too weak to finish the auth handshake, so it looped on <span class="mono" style="font-size:.9em">Auth&nbsp;Expired</span> and never reached the network. Every arm and disarm needed that network, so nothing landed — while the relays, fob and wiring were fine the whole time. <b>The fix: keep the ESP plugged into the Pi's USB and make the wire the control path.</b> No Wi-Fi, no API, no OTA — a serial line can't silently fall off the network.</p>
+    </div>
+    <p style="color:var(--muted);max-width:46rem;margin-top:1.2rem">The firmware became a pure serial build. <span class="mono" style="font-size:.9em">logger: baud_rate: 0</span> frees UART0 — the same GPIO1/GPIO3 the USB port uses — and a 30&nbsp;ms loop reads whole-line commands (<span class="mono" style="font-size:.9em">ARM</span>, <span class="mono" style="font-size:.9em">DISARM</span>, <span class="mono" style="font-size:.9em">PART</span>, <span class="mono" style="font-size:.9em">PANIC</span>, <span class="mono" style="font-size:.9em">PING</span>), presses the matching button and acknowledges each (<span class="mono" style="font-size:.9em">OK&nbsp;ARM</span>, <span class="mono" style="font-size:.9em">PONG</span>, or <span class="mono" style="font-size:.9em">ERR</span>). The hold times live here too: a 600&nbsp;ms tap for arm and part-arm, a longer <b style="color:var(--ink)">2&nbsp;s</b> for disarm (the fob wants ~1.5&nbsp;s), and a 3.5&nbsp;s hold for panic.</p>
+    <div class="code-head"><span>alarm-remote-bridge.yaml</span><span>USB serial · no Wi-Fi</span></div>
+    <pre class="code"><span class="kw">esphome</span>:
+  name: alarm-remote-bridge
+  on_boot:
+    priority: -100
+    then: [ lambda: 'id(cmd_uart).write_str("READY\n");' ]
+<span class="kw">esp32</span>:
+  board: esp32dev
+  framework: { type: arduino }
+
+<span class="cm"># NO wifi / api / ota — the control path is the wired USB serial line to the Pi.</span>
+<span class="kw">logger</span>:
+  baud_rate: 0            <span class="cm"># free UART0 (GPIO1/3 = the USB port) for our own use</span>
+
+<span class="kw">uart</span>:
+  id: cmd_uart
+  tx_pin: GPIO1
+  rx_pin: GPIO3
+  baud_rate: 115200
+
+<span class="kw">globals</span>:
+  - { id: cmd_buf, type: std::string }
+
+<span class="cm"># relay outputs — LOW at boot, so a reset can never fire the alarm.</span>
+<span class="kw">output</span>:
+  - { platform: gpio, id: out_arm,    pin: GPIO23 }
+  - { platform: gpio, id: out_disarm, pin: GPIO22 }
+  - { platform: gpio, id: out_part,   pin: GPIO21 }
+  - { platform: gpio, id: out_panic,  pin: GPIO19 }
+
+<span class="cm"># each button carries an id so the serial loop can press it</span>
+<span class="kw">button</span>:
+  - { platform: template, id: btn_arm,    name: Arm,      on_press: [ output.turn_on: out_arm,    delay: 600ms,  output.turn_off: out_arm ] }
+  - { platform: template, id: btn_disarm, name: Disarm,   on_press: [ output.turn_on: out_disarm, delay: 2000ms, output.turn_off: out_disarm ] }
+  - { platform: template, id: btn_part,   name: Part-arm, on_press: [ output.turn_on: out_part,   delay: 600ms,  output.turn_off: out_part ] }
+  - { platform: template, id: btn_panic,  name: Panic,    on_press: [ output.turn_on: out_panic,  delay: 3500ms, output.turn_off: out_panic ] }
+
+<span class="cm"># read whole-line commands off USB serial and act on them, acking each one</span>
+<span class="kw">interval</span>:
+  - interval: 30ms
+    then:
+      - lambda: |-
+          while (id(cmd_uart).available()) {
+            uint8_t c; id(cmd_uart).read_byte(&amp;c);
+            if (c == '\n' || c == '\r') {
+              std::string cmd = id(cmd_buf); id(cmd_buf) = "";
+              if      (cmd == "ARM")    { id(btn_arm).press();    id(cmd_uart).write_str("OK ARM\n"); }
+              else if (cmd == "DISARM") { id(btn_disarm).press(); id(cmd_uart).write_str("OK DISARM\n"); }
+              else if (cmd == "PART")   { id(btn_part).press();   id(cmd_uart).write_str("OK PART\n"); }
+              else if (cmd == "PANIC")  { id(btn_panic).press();  id(cmd_uart).write_str("OK PANIC\n"); }
+              else if (cmd == "PING")   { id(cmd_uart).write_str("PONG\n"); }
+              else if (!cmd.empty())    { id(cmd_uart).write_str(("ERR " + cmd + "\n").c_str()); }
+            } else if (id(cmd_buf).size() &lt; 16) {
+              id(cmd_buf) += (char) c;
+            }
+          }</pre>
+    <p class="subhead" style="margin-top:2.2rem">The Pi side — a presser daemon, with a failsafe</p>
+    <p style="color:var(--muted);max-width:46rem">One small Python service on the Pi (<span class="mono" style="font-size:.9em">gg-esp-presser</span>) is the only thing that holds the serial port. Home&nbsp;Assistant publishes <span class="mono" style="font-size:.9em">arm</span> / <span class="mono" style="font-size:.9em">disarm</span> / <span class="mono" style="font-size:.9em">part</span> / <span class="mono" style="font-size:.9em">panic</span> to an MQTT topic; the daemon writes the command down the wire, waits for the ESP's <span class="mono" style="font-size:.9em">OK</span> (three tries), and pings every 30&nbsp;s so a <span class="mono" style="font-size:.9em">binary_sensor</span> shows the link live. Opening the port resets the ESP, so it's opened once and kept.</p>
+    <div class="callout good">
+      <svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>
+      <p><b>And a failsafe on top.</b> A fob press is instant, but the panel only <em>reports</em> the new state to the hub six to nine seconds later — so after every arm or disarm the daemon re-reads the panel and, if it hasn't complied, presses again (up to three times). Disarm re-presses eagerly: a spare disarm is harmless and getting in fast matters most. Arm waits for the panel's report before retrying, so it can't disturb the exit countdown. Only if it still fails does your phone get a plain <b>"use the keypad"</b> alert. A truly instant (~1&nbsp;s) confirmation is exactly what the <a href="#tone" style="color:var(--accent)">tone-ACK mod below</a> is for.</p>
+    </div>
+    <div class="dl-row">
+      <a href="alarm-remote-bridge.yaml" download>⬇ alarm-remote-bridge.yaml</a>
+    </div>
+    <p style="color:var(--muted);max-width:46rem;margin-top:1rem;font-size:.95rem"><b style="color:var(--ink)">Flashing:</b> because the control path <em>is</em> the serial port, there's no OTA — reflash over USB, and <b>stop the <span class="mono" style="font-size:.9em">gg-esp-presser</span> service first</b> (it holds the port). D23/D22/D21/D19 are still chosen deliberately: they sit low at boot, so the ESP can never ghost-press a button while it resets.</p>
+
+    <div class="callout warn">
+      <svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+      <p><b>Think twice about voice disarm.</b> Anyone your speaker can hear — including someone shouting through a letterbox — could say "disarm". Keep Disarm app- and dashboard-only, or require Google's PIN confirmation for it. Arm, Part-arm and Panic carry no such risk.</p>
+    </div>
+
+    <p class="subhead" style="margin-top:2.2rem">Sanity checklist before the first live press</p>
+    <div class="grid-2">
+      <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.6rem">
+        <li style="display:flex;gap:.6rem;color:var(--muted);font-size:.95rem"><span style="color:var(--live)">✓</span> Fob left floating — its ground touches nothing on the ESP32/PSU side</li>
+        <li style="display:flex;gap:.6rem;color:var(--muted);font-size:.95rem"><span style="color:var(--live)">✓</span> Relay board on High-level trigger; every channel clicks on the bench</li>
+        <li style="display:flex;gap:.6rem;color:var(--muted);font-size:.95rem"><span style="color:var(--live)">✓</span> COM → signal pad, NO → the shared common "G"</li>
+      </ul>
+      <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.6rem">
+        <li style="display:flex;gap:.6rem;color:var(--muted);font-size:.95rem"><span style="color:var(--live)">✓</span> DC+ = 12 V, DC− = ESP32 GND; buck 5 V metered before the ESP32</li>
+        <li style="display:flex;gap:.6rem;color:var(--muted);font-size:.95rem"><span style="color:var(--live)">✓</span> Each trigger is one colour GPIO → INx; each press is COMx → NOx</li>
+        <li style="display:flex;gap:.6rem;color:var(--muted);font-size:.95rem"><span style="color:var(--live)">✓</span> Alarm in a safe state for the first live press</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PART C: TONE ACK (PLANNED) ============ -->
+<section class="view" id="tone">
+  <div class="wrap reveal">
+    <div class="sec-head col">
+      <span class="eyebrow">C · Tone ACK</span>
+      <h2 style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">Hear the panel confirm <span class="plan-badge">planned · parts to order</span></h2>
+      <p class="lede">The relay presses the fob in milliseconds — but the alarm's hub only <em>reports</em> the new state six to nine seconds later, so even the failsafe above can't be <em>certain</em> an arm or disarm landed until then. The panel itself says so instantly, out loud: a quick chirp on arm, a longer tone on disarm. This mod gives the bridge an electrical ear on the panel's own sounder, so Home&nbsp;Assistant learns the truth in tens of milliseconds instead of seconds. It's drawn and costed — it just isn't built yet.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="col">
+        <p style="color:var(--muted)">Every "arm" today is a small act of faith for a few long seconds. Voice, dashboard or fob fires the press; Home&nbsp;Assistant paints the house armed; and if the radio hop was missed, the fob cell was flat, or the panel was already mid-delay, you don't find out until the hub finally reports — or until you come home to a surprise. The failsafe re-presses to cover it, but it's working blind against a 6–9&nbsp;second clock.</p>
+        <p style="color:var(--muted);margin-top:1rem">The panel already broadcasts the one fact we want. Its little internal sounder chirps the instant it accepts a command. If we can <em>hear</em> that, the loop closes: press, hear the beep, done — or hear nothing, and press again within a second. The blind timer becomes a real acknowledgement.</p>
+      </div>
+      <div class="card" style="align-self:start">
+        <p class="subhead" style="margin:0 0 .9rem">The measured floor</p>
+        <div style="display:flex;gap:1.6rem;flex-wrap:wrap">
+          <div><div class="num-strong" style="font-family:Archivo,sans-serif;font-weight:800;font-size:1.9rem;line-height:1;color:var(--accent)">6–9 s</div><div class="mono" style="font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:.35rem">hub report lag</div></div>
+          <div><div class="num-strong" style="font-family:Archivo,sans-serif;font-weight:800;font-size:1.9rem;line-height:1;color:var(--live)">&lt;100 ms</div><div class="mono" style="font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:.35rem">beep → HA · target</div></div>
+        </div>
+        <p style="color:var(--muted);font-size:.9rem;margin-top:1.1rem">A fob press is instant; the hub only sees the event 6–9&nbsp;seconds later. No software check can beat that — the sounder can.</p>
+      </div>
+    </div>
+
+    <div class="callout info">
+      <svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
+      <p><b>Why the speaker, and not the fob.</b> A two-way fob would flash a confirm LED we could simply tap — but this fob is <b>one-way</b>: it transmits and never hears back, so its LED only means "sending", not "the panel agreed". The sounder is the only local evidence the panel actually accepted anything, so that's what we listen to. And it stays a <b>second</b> ESP, at the panel — the relay bridge now lives at the Pi on its wire, and the tap has to be where the sounder is. Wi-Fi is fine for <em>this</em> job: a missed beep just falls back to the hub poll, so it can never block an arm or disarm the way weak Wi-Fi did on the control path.</p>
+    </div>
+
+    <p class="subhead" style="margin-top:2.2rem">The tones on this panel</p>
+    <p style="color:var(--muted);max-width:46rem;margin-bottom:.6rem">Measured at the panel: <b style="color:var(--ink)">arm</b> is three quick blips, then the exit-delay countdown settles into a slower, evenly-spaced bleep; <b style="color:var(--ink)">disarm</b> is a single longer tone. Everything else — a key press, the long countdown, a full siren — has to be told apart and ignored. We classify the <em>shape</em> of the sound, not its pitch.</p>
+    <div class="sch" role="img" aria-label="Sound-envelope shapes. Arm: three short pulses close together, then slower evenly-spaced countdown bleeps. Disarm: one long solid tone of roughly a second. Exit or entry delay: bleeps that keep going for tens of seconds, ignored. Siren: a long continuous tone, ignored. Keyclick: a single very short blip, ignored.">
+      <svg viewBox="0 0 900 300">
+        <text class="sch-t" x="20" y="26" font-size="11" fill="#f4b159">SOUND ENVELOPE — SHAPE, NOT PITCH</text>
+        <text class="sch-t sch-cap" x="20" y="58" font-size="11" fill="#43D98A">ARM · three quick blips, then the slow countdown</text>
+        <path d="M20 92 H40 V72 H54 V92 H70 V72 H84 V92 H100 V72 H114 V92 H150 V72 H172 V92 H236 V72 H258 V92 H322 V72 H344 V92 H420" fill="none" stroke="#43D98A" stroke-width="2"/>
+        <text class="sch-t sch-cap" x="20" y="132" font-size="11" fill="#f4b159">DISARM · one longer tone</text>
+        <path d="M20 166 H60 V138 H150 V166 H420" fill="none" stroke="#f4b159" stroke-width="2"/>
+        <text class="sch-t sch-cap" x="470" y="58" font-size="11" fill="#5cb3f2">EXIT / ENTRY DELAY · keeps bleeping past ~4.5 s → ignore</text>
+        <path d="M470 92 H490 V74 H508 V92 H528 V74 H546 V92 H566 V74 H584 V92 H604 V74 H622 V92 H642 V74 H660 V92 H680 V74 H698 V92 H718 V74 H736 V92 H860" fill="none" stroke="#5cb3f2" stroke-width="2"/>
+        <text class="sch-t sch-cap" x="470" y="132" font-size="11" fill="#ff6b63">SIREN · long continuous → ignore</text>
+        <path d="M470 166 H500 V138 H860" fill="none" stroke="#ff6b63" stroke-width="2"/>
+        <text class="sch-t sch-cap" x="470" y="200" font-size="11" fill="#7c8a97">KEYCLICK · one short blip → ignore</text>
+        <path d="M470 220 H512 V208 H524 V220 H860" fill="none" stroke="#7c8a97" stroke-width="2"/>
+        <line x1="20" y1="244" x2="880" y2="244" stroke="#26333f" stroke-width="1"/>
+        <text class="sch-t sch-cap" x="20" y="266" font-size="11">Rule: ≥3 short pulses inside ~1.5 s then quiet → ARM · one tone ~0.6–1.5 s → DISARM · anything still sounding at 4.5 s → ignore.</text>
+        <text class="sch-t sch-cap" x="20" y="286" font-size="11">Three numbers, tuned once on the bench from this panel — then it stays consistent.</text>
+      </svg>
+    </div>
+
+    <p class="subhead" style="margin-top:2.2rem">The tap — high-Z, then a wall of plastic</p>
+    <p style="color:var(--muted);max-width:46rem">Same discipline as the relay bridge: the panel's copper and the ESP's copper never share a ground. Sense the sounder in parallel through a high-impedance envelope detector, then cross an optocoupler — nothing else ever touches the panel.</p>
+    <div class="sch" style="margin-top:1.2rem" role="img" aria-label="Speaker-tap schematic. On the panel side the internal piezo feeds a 100 nF coupling capacitor, a 4.7 k series resistor and a Schottky diode, with a 100 nF capacitor and 100 k resistor forming an envelope detector that drives the LED of an optocoupler. A dashed isolation barrier separates the panel side from the ESP side. On the ESP side the optocoupler's transistor pulls GPIO27 low, with a 10 k pull-up to 3.3 volts; an optional LM393 comparator sharpens a weak tone.">
+      <svg viewBox="0 0 900 260">
+        <line class="sch-bar" x1="470" y1="22" x2="470" y2="238"/>
+        <text class="sch-t" x="470" y="14" text-anchor="middle" font-size="9" fill="#d1495b">ISOLATION — nothing crosses</text>
+        <text class="sch-t" x="24" y="40" font-size="10" fill="#f4b159">PANEL SIDE · floats with the sounder</text>
+        <rect class="sch-box" x="24" y="72" width="92" height="52" rx="9"/>
+        <text class="sch-t sch-title" x="70" y="94" text-anchor="middle" font-size="11">Piezo</text>
+        <text class="sch-t sch-cap" x="70" y="110" text-anchor="middle" font-size="9">internal sounder</text>
+        <path class="sch-wire" d="M116 90 H300"/>
+        <path class="sch-flow" d="M116 90 H300" stroke="#f4b159"/>
+        <text class="sch-t sch-cap" x="150" y="82" text-anchor="middle" font-size="8.5">C1 100n</text>
+        <text class="sch-t sch-cap" x="205" y="82" text-anchor="middle" font-size="8.5">R1 4k7</text>
+        <text class="sch-t sch-cap" x="258" y="82" text-anchor="middle" font-size="8.5">D1 ▸|</text>
+        <path class="sch-wire" d="M300 90 V128"/>
+        <text class="sch-t sch-cap" x="336" y="116" text-anchor="middle" font-size="8.5">C2 100n · R2 100k</text>
+        <text class="sch-t sch-cap" x="300" y="146" text-anchor="middle" font-size="8.5">envelope</text>
+        <rect class="sch-box" x="356" y="68" width="96" height="56" rx="9"/>
+        <text class="sch-t sch-title" x="404" y="92" text-anchor="middle" font-size="10">Opto LED</text>
+        <text class="sch-t sch-cap" x="404" y="108" text-anchor="middle" font-size="9">PC817 · 1–2</text>
+        <text class="sch-t" x="486" y="40" font-size="10" fill="#8fd6a8">ESP SIDE · at the panel · own ground</text>
+        <rect class="sch-box iso" x="486" y="68" width="112" height="56" rx="9"/>
+        <text class="sch-t sch-title" x="542" y="92" text-anchor="middle" font-size="10" fill="#8fd6a8">Opto transistor</text>
+        <text class="sch-t sch-cap" x="542" y="108" text-anchor="middle" font-size="9">PC817 · 3–4</text>
+        <path class="sch-wire" d="M598 96 H650" stroke="#e0e6ec"/><path class="sch-flow" d="M598 96 H650" stroke="#e0e6ec"/>
+        <rect class="sch-box hi" x="650" y="64" width="124" height="80" rx="10"/>
+        <text class="sch-t sch-title" x="712" y="90" text-anchor="middle" font-size="11">Tone ESP32</text>
+        <text class="sch-t sch-cap" x="712" y="108" text-anchor="middle" font-size="9">GPIO27 · 10k↑ 3V3</text>
+        <text class="sch-t sch-cap" x="712" y="124" text-anchor="middle" font-size="9">GPIO34 ADC · tuning</text>
+        <rect class="sch-box" x="356" y="170" width="150" height="50" rx="9"/>
+        <text class="sch-t sch-title" x="431" y="190" text-anchor="middle" font-size="10" fill="#5cb3f2">LM393 · optional</text>
+        <text class="sch-t sch-cap" x="431" y="206" text-anchor="middle" font-size="9">sharpens a weak tone</text>
+        <text class="sch-t sch-cap" x="24" y="196" font-size="9">R1 keeps the tap high-Z so it can't mute the panel · C1 blocks DC bias · C2+R2 rebuild the envelope</text>
+        <text class="sch-t sch-cap" x="24" y="214" font-size="9">the opto LED is the only thing the panel is ever asked to light</text>
+      </svg>
+    </div>
+    <div class="callout warn">
+      <svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+      <p><b>Never put a pin straight across the sounder.</b> The driver is a few volts of 2–4&nbsp;kHz square wave on a confirm, and a lot more on a full alarm. Sense it in parallel through the high-impedance envelope, then isolate — the same rule that stopped the fob jamming when we first tried a common-ground opto on its buttons. The panel's sounder ground must never meet the ESP ground.</p>
+    </div>
+
+    </div></section>
+
+<!-- C · circuit, parts & firmware -->
+<section class="view" id="tone-build">
+  <div class="wrap">
+    <div class="sec-head col"><span class="eyebrow">C · Build</span><h2>Circuit, parts &amp; firmware</h2></div>
+    <p class="subhead" style="margin-top:.4rem">Parts — pennies on top of a spare ESP32</p>
+    <div class="wtab-wrap">
+      <table class="wtab">
+        <thead><tr><th>Qty</th><th>Part</th><th>Why</th><th>UK ballpark</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><b>ESP32 dev board</b></td><td>A second one, living at the panel</td><td>£4–£7</td></tr>
+          <tr><td>1</td><td>PC817 optocoupler</td><td>The isolation wall</td><td>~£0.50</td></tr>
+          <tr><td>1</td><td>1N5819 Schottky (or 1N4148)</td><td>Rectify the tone</td><td>pennies</td></tr>
+          <tr><td>2</td><td>100 nF ceramic ("104")</td><td>C1 couple · C2 envelope</td><td>pennies</td></tr>
+          <tr><td>1 ea</td><td>4.7 k · 100 k · 10 k · 1 k resistor</td><td>Series · bleed · pull-up · LED limit</td><td>pennies</td></tr>
+          <tr><td>opt</td><td>LM393 + 10 k pot</td><td>Cleaner threshold if the confirm tone is shy</td><td>£1–£2</td></tr>
+          <tr><td>—</td><td>Wire, heatshrink, 2-pin plug</td><td>So the tap unplugs when the panel comes off the wall</td><td>~£2</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="subhead" style="margin-top:2.2rem">The idea, in firmware</p>
+    <p style="color:var(--muted);max-width:46rem;margin-bottom:1rem">This ESP sits at the panel with Wi-Fi, so — unlike the serial bridge — it can run ordinary ESPHome and publish straight to Home&nbsp;Assistant. It doesn't decide on the first edge: it counts pulse widths, waits for the sound to stop, then classifies. Three tuned numbers, learnt once from the log.</p>
+    <div class="code-head"><span>alarm-tone-ack.yaml</span><span>classify on the silence</span></div>
+    <pre class="code"><span class="kw">substitutions</span>:
+  disarm_min_ms: "600"      <span class="cm"># one solid tone this long &rarr; DISARM</span>
+  disarm_max_ms: "1500"
+  pulse_min_ms:  "40"       <span class="cm"># a "blip" is between these</span>
+  pulse_max_ms:  "300"
+  arm_pulses:    "3"        <span class="cm"># &ge;3 blips in the window &rarr; ARM</span>
+  window_ms:     "1500"
+  ignore_after:  "4500"     <span class="cm"># still sounding? countdown / siren &rarr; ignore</span>
+
+<span class="cm"># GPIO27 = opto collector (inverted, debounced)</span>
+<span class="cm">#   rising edge  &rarr; start / continue a burst</span>
+<span class="cm">#   falling edge &rarr; count a pulse if 40&ndash;300 ms wide</span>
+<span class="cm">#   ~1.5 s after the last edge, decide:</span>
+<span class="cm">#      one tone 600&ndash;1500 ms       &rarr; DISARM</span>
+<span class="cm">#      &ge;3 short pulses, then quiet &rarr; ARM</span>
+<span class="cm">#      anything past 4.5 s          &rarr; ignore</span>
+<span class="cm"># then a short cooldown so the alarm strobe can't retrigger it.</span>
+
+<span class="cm"># exposes to Home Assistant:</span>
+<span class="cm">#   binary_sensor.panel_confirmed_armed</span>
+<span class="cm">#   binary_sensor.panel_confirmed_disarmed</span>
+<span class="cm">#   text_sensor.last_tone_decision   (ARM / DISARM / ignored)</span></pre>
+
+    <div class="callout good">
+      <svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>
+      <p><b>The beep leads; the hub reconciles.</b> When the tone fires, Home&nbsp;Assistant commits the alarm state and the status lights immediately — and the slow hub poll becomes a back-check only: accept it when it agrees, log it when it doesn't, but never let a late reading overwrite a beep that just said DISARM. Fast <em>and</em> certain, instead of one or the other.</p>
+    </div>
+
+    <p class="subhead" style="margin-top:2.2rem">When it's built — the bench order</p>
+    <div class="steps">
+      <div class="step"><span class="idx">01</span><div><h3>Put the alarm in service mode</h3><p>You're working on a live panel. Put the wirefree siren into service mode from the menu so a slip doesn't wake the street, and keep the fob bridge powered so Home&nbsp;Assistant can disarm if it trips.</p></div></div>
+      <div class="step"><span class="idx">02</span><div><h3>Find the sounder pads</h3><p>Slide the panel off its bracket and locate the small internal piezo — two short wires or pads near the front of the board. Confirm with a meter on AC while you disarm from the fob: a burst of a couple of volts. It's not the 868&nbsp;MHz antenna, and not the battery pack.</p></div></div>
+      <div class="step"><span class="idx">03</span><div><h3>Solder a parallel tap</h3><p>Two flying leads across the sounder pads to a 2-pin plug — sense only, never cut the loop, so the panel can still come off the wall later.</p></div></div>
+      <div class="step"><span class="idx">04</span><div><h3>Build the envelope off the board</h3><p>C1&nbsp;→&nbsp;R1&nbsp;→&nbsp;D1&nbsp;→&nbsp;C2/R2&nbsp;→&nbsp;opto&nbsp;LED, on a scrap of protoboard that lives with the ESP, not inside the panel. If a disarm tone reads under ~1.2&nbsp;V at the diode, add the LM393.</p></div></div>
+      <div class="step"><span class="idx">05</span><div><h3>Meter the isolation, then flash</h3><p>Continuity from the panel's sounder ground to ESP GND must read <b style="color:var(--ink)">open</b> before power. Then flash the YAML, open the log, and read <span class="mono" style="font-size:.9em">span</span> / <span class="mono" style="font-size:.9em">high</span> / <span class="mono" style="font-size:.9em">pulses</span> off a real disarm and a real arm.</p></div></div>
+      <div class="step"><span class="idx">06</span><div><h3>Write the three numbers</h3><p>Drop your panel's real windows into the substitutions, watch a few arms and disarms confirm in the log, then hand the tone the job of committing HA state — with the hub demoted to reconciliation.</p></div></div>
+    </div>
+
+    <div class="callout">
+      <svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+      <p><b>Status:</b> designed, costed, and waiting on a parts order — nothing built yet, so there are no annotated photos here <em>yet</em>. Until it's in, the 6–9&nbsp;second failsafe on the relay bridge stands. If day-to-day the failsafe proves nuisance-free, this stays a nice-to-have; the day the confirm lag grates, this is the upgrade that erases it.</p>
+    </div>
+  </div>
+</section>
+
+</main>
+</div><!-- /.app -->
+
+<footer>Technical notes · battery bypass · hardwired relay bridge · tone-ACK (planned) · part of <a href="index.html">DECS Home Systems</a></footer>
+
+<script src="app.js"></script>
+<script>
+/* sidebar SPA routing — one view at a time, or all on one page */
+(function(){
+  var views=[].slice.call(document.querySelectorAll('section.view'));
+  var links=[].slice.call(document.querySelectorAll('#nav a'));
+  function show(id){
+    if(!document.getElementById(id)) id='battery';
+    views.forEach(function(v){v.classList.toggle('on',v.id===id);});
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+id);});
+    if(!document.body.classList.contains('all')) window.scrollTo(0,0);
+    else { var el=document.getElementById(id); if(el) el.scrollIntoView(); }
+  }
+  window.addEventListener('hashchange',function(){show(location.hash.slice(1)||'battery');});
+  show(location.hash.slice(1)||'battery');
+  var btnAll=document.getElementById('btnAll');
+  if(btnAll) btnAll.addEventListener('click',function(){
+    var on=document.body.classList.toggle('all');
+    btnAll.textContent=on?'Back to one section at a time':'Show every section on one page';
+    if(!on) show(location.hash.slice(1)||'battery');
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Claude Code — DECS Home Systems</title>
+<meta name="description" content="How this whole build actually got made: one human orchestrating — the vision, the wiring, the judgement calls — and Claude Code driving the keyboard, over SSH into the Pi, reverse-engineering, configuring and debugging in the loop. The collaboration, the method, and the war stories.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+  body.p-claude{--accent:var(--teal);--accent-soft:var(--teal-soft)}
+  /* duo split: who does what */
+  .duo{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  @media(max-width:760px){.duo{grid-template-columns:1fr}}
+  .duo .card{position:relative;overflow:hidden}
+  .duo .role{font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem}
+  .duo .who{font-family:"Archivo";font-weight:800;font-size:1.35rem;letter-spacing:-.02em;margin-bottom:.7rem}
+  .duo ul{list-style:none;margin:.4rem 0 0;padding:0;display:flex;flex-direction:column;gap:.55rem}
+  .duo li{display:grid;grid-template-columns:1.1rem 1fr;gap:.55rem;font-size:.95rem;color:var(--muted);align-items:baseline}
+  .duo li b{color:var(--ink);font-weight:600}
+  .duo .mk{color:var(--accent)}
+  .duo .human .mk{color:var(--amber)}
+  .split-note{text-align:center;font-family:"IBM Plex Mono",monospace;font-size:.74rem;color:var(--faint);letter-spacing:.04em;margin:1.1rem auto 0;max-width:40rem}
+  /* handshake band */
+  .band{display:flex;align-items:center;justify-content:center;gap:1.2rem;flex-wrap:wrap;background:var(--surface-2);border:1px solid var(--line);border-radius:16px;padding:1.2rem 1.4rem;margin-top:1.2rem}
+  .band .n{font-family:"Archivo";font-weight:800;font-size:1.05rem}
+  .band .arrows{font-family:"IBM Plex Mono",monospace;color:var(--accent);font-size:1.1rem;letter-spacing:.1em}
+  .band small{display:block;font-family:"IBM Plex Mono",monospace;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:400;margin-top:.2rem}
+  .quotebox{border-left:2px solid var(--accent);padding:.2rem 0 .2rem 1.1rem;margin:1.3rem 0;color:var(--ink);font-size:1.05rem;font-style:italic}
+  .quotebox span{display:block;margin-top:.4rem;font-style:normal;font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.06em;color:var(--faint)}
+  .log .grid dd.q{color:var(--ink);font-style:italic}
+</style>
+</head>
+<body class="p-claude">
+
+<header class="nav"><div class="wrap">
+  <a class="brand" href="index.html"><span class="dot"></span> DECS&nbsp;Home&nbsp;Systems</a>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="globalguard.html">GlobalGuard</a>
+    <a href="homeassistant.html">Home&nbsp;Assistant</a>
+    <a href="wallpanel.html">Wall&nbsp;panel</a>
+    <a href="cameras.html">Cameras</a>
+    <a href="presence.html">Presence</a>
+    <a href="roomscribe.html">Roomscribe</a>
+    <a href="traccar.html">Traccar</a>
+    <a href="finance.html">Finance</a>
+    <a href="fan.html">Fan</a>
+    <a href="rada.html">Rada&nbsp;shower</a>
+    <a href="theme.html">HA&nbsp;Theme</a>
+    <a href="technical.html">Technical</a>
+    <a href="roadmap.html">Roadmap</a>
+    <a href="claude.html" class="active">Claude&nbsp;Code</a>
+    <button class="themebtn" id="tt" aria-label="Toggle colour theme"><span id="ttic">◐</span> theme</button>
+  </nav>
+</div></header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">Claude Code · the agent on the keyboard</span>
+        <h1 class="title">One <em>orchestrating</em>,<br>one <em>driving</em>.</h1>
+        <p class="lede">Every page on this site describes something that got built. This one is about <em>how</em>. Kevin orchestrates — the vision, the soldering iron, the calls only a person can make. Claude Code drives — on the keyboard and over SSH into the Pi, reverse-engineering protocols, writing the config, and debugging live until the thing actually works. This is the working relationship, the method, and the war stories.</p>
+        <div class="meta-row">
+          <span class="chip">Human + agent</span>
+          <span class="chip">SSH into the Pi</span>
+          <span class="chip">Reverse-engineered live</span>
+          <span class="chip">Debugged in the loop</span>
+        </div>
+      </div>
+      <div class="panel" role="img" aria-label="Collaboration status: Kevin orchestrating the direction and the physical world; Claude Code driving the keyboard, the config and the debugging; working together over SSH into one Raspberry Pi.">
+        <div class="head"><span>Session · live</span><span>human ⇄ agent</span></div>
+        <div class="rows">
+          <div class="prow"><span class="led warn"></span><span class="k">Kevin</span><span class="v">orchestrating · direction &amp; hands</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">Claude</span><span class="v">driving · keyboard &amp; SSH</span></div>
+          <div class="prow"><span class="led info"></span><span class="k">Target</span><span class="v">one Pi · 40+ devices · local</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">Method</span><span class="v">read · change · verify · repeat</span></div>
+          <div class="prow gone"><span class="led dead"></span><span class="k">Guardrail</span><span class="v">back up before every risky change</span></div>
+        </div>
+        <div class="beacon">
+          <span class="lbl">iterate</span>
+          <svg viewBox="0 0 220 30" preserveAspectRatio="none" aria-hidden="true">
+            <line x1="0" y1="15" x2="220" y2="15" stroke="#26313d" stroke-width="1"/>
+            <polyline class="trace" points="0,15 40,15 46,15 50,6 56,24 62,15 102,15 108,15 112,6 118,24 124,15 164,15 170,15 174,6 180,24 186,15 220,15" fill="none" stroke="#3FCBD6" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+            <circle class="pulse-dot" cx="56" cy="15" r="2.2" style="fill:#3FCBD6"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- STATS -->
+<section style="padding-block:clamp(2.2rem,5vw,3.2rem)">
+  <div class="wrap reveal">
+    <div class="stats">
+      <div class="stat"><span class="big num-strong">1 + 1</span><span class="lab">human + agent</span></div>
+      <div class="stat"><span class="big num-strong">7</span><span class="lab">strands shipped</span></div>
+      <div class="stat"><span class="big num-strong">40+</span><span class="lab">devices freed</span></div>
+      <div class="stat"><span class="big num-strong">0</span><span class="lab">of it in the cloud</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 01 HOW WE WORK -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">01 · How we work</span><h2>Orchestrating, and driving</h2><p class="lede">It's a clean division of labour. One side sets the direction and does everything that happens in the physical world; the other side lives on the keyboard and makes the software real. Neither could ship this alone.</p></div>
+    <div class="duo">
+      <div class="card human">
+        <div class="role"><span class="mk">◆</span> The human · orchestrating</div>
+        <div class="who">Kevin</div>
+        <ul>
+          <li><span class="mk">→</span><span><b>The vision.</b> What to build, what it should feel like, and when it's good enough — the brief every session starts from.</span></li>
+          <li><span class="mk">→</span><span><b>The physical world.</b> Soldering the relay, wiring the ESP32, tapping the fob, printing and mounting the case, turning a TV on so it can be found.</span></li>
+          <li><span class="mk">→</span><span><b>The accounts.</b> His Google Home, the Harmony app, the phone that captures the app's traffic — logins an agent shouldn't hold.</span></li>
+          <li><span class="mk">→</span><span><b>The judgement.</b> The calls with real-world stakes — "add a no-PIN disarm", "leave the lounge TV alone for now", "that's a win, bank it".</span></li>
+          <li><span class="mk">→</span><span><b>Ground truth.</b> The eyes in the room: <em>the volume went up from mute</em>, <em>the blue LED self-extinguishes</em>. The feedback that closes the loop.</span></li>
+        </ul>
+      </div>
+      <div class="card agent">
+        <div class="role"><span class="mk">▲</span> The agent · driving</div>
+        <div class="who">Claude Code</div>
+        <ul>
+          <li><span class="mk">→</span><span><b>The keyboard.</b> SSH into the Pi, into the Home Assistant container, into the ESPHome build — reading state, writing config, restarting services.</span></li>
+          <li><span class="mk">→</span><span><b>Reverse-engineering.</b> Decoding the alarm's radio, pulling a bulb mesh's keys out of captured traffic, fingerprinting the network to find what's really there.</span></li>
+          <li><span class="mk">→</span><span><b>The build.</b> The YAML dashboards and the Python that generates them, the ESPHome firmware, the templates, the automations, the scans.</span></li>
+          <li><span class="mk">→</span><span><b>The debugging.</b> Chasing a symptom through the logs to a root cause, forming a theory, testing it, and not stopping at "it returned success".</span></li>
+          <li><span class="mk">→</span><span><b>The write-up.</b> This site, the memory of what's been done and why, and the honest report at the end of each thread — including what didn't work.</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="band">
+      <span class="n">Kevin<small>direction · hands</small></span>
+      <span class="arrows">⇄</span>
+      <span class="n">Claude Code<small>keyboard · SSH</small></span>
+      <span class="arrows">→</span>
+      <span class="n">One Pi<small>the whole house</small></span>
+    </div>
+    <p class="split-note">The rule that makes it safe: the agent proposes and executes on software; the human owns anything physical, irreversible, or account-bound — and every risky change is backed up before it's made.</p>
+  </div>
+</section>
+
+<!-- 02 THE JOURNEY -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">02 · The journey</span><h2>What we drove, in order</h2><p class="lede">It didn't arrive as a plan. It grew — one thread pulling the next — from a dead alarm to a house that answers to its own voice, its own wall, and nothing in the cloud.</p></div>
+    <div class="steps">
+      <div class="step"><div class="idx">01</div><div><h3>Raising a cloud-dead alarm</h3><p>The GlobalGuard's manufacturer cloud died years ago and took its alerts with it. We read its local radio protocol off the LAN and gave it a new brain in Home Assistant — phone alerts, a full sensory intruder response, and a template alarm panel — without touching a single sensor.</p></div></div>
+      <div class="step"><div class="idx">02</div><div><h3>Freeing forty devices from their apps</h3><p>Tuya plugs and lights pulled local, a whole <b>Bluetooth bulb mesh reverse-engineered</b> from its app's own traffic, Nanoleaf, Ring, and a 12.6&nbsp;kWp Victron solar array read live over Modbus — every one talking to the LAN, none to a vendor cloud.</p></div></div>
+      <div class="step"><div class="idx">03</div><div><h3>Turning a dead tablet into the best screen in the house</h3><p>A 2014 Galaxy Note, dead in a drawer, became a no-scroll wall panel: a hand-written grid generated by a Python builder, live solar at five-second resolution, and a tile that measures its own charge trend because the tablet won't report current. Housed in a two-part printed clamshell generated by constructive solid geometry, verified by fifty geometric assertions.</p></div></div>
+      <div class="step"><div class="idx">04</div><div><h3>Giving the house warmth it can show</h3><p>A Wunda heating system brought in fully locally, then a Heating tab where eight rooms tint from cool blue to warm amber by temperature, each with a 24-hour trend, humidity, and a hot-water boost. The four solar tiles merged into one card to make room.</p></div></div>
+      <div class="step"><div class="idx">05</div><div><h3>Routing the alarm through a real remote</h3><p>An ESP32 driving an <b>opto-isolated relay</b> taps the alarm's own key fob — so arm, part-arm, disarm and a held panic all fire instantly through the panel's genuine radio, from Home Assistant and from Google voice with Kevin's own trigger words, including a no-PIN "disarm security".</p></div></div>
+      <div class="step"><div class="idx">06</div><div><h3>Wiring in the screens</h3><p>Both Samsung TVs, the Shield, the Nest displays and Linda's cast TV pulled into a Media tab that shows a room's album art the moment it starts playing — after a genuinely stubborn fight to make a Samsung wake over Wi-Fi, and a networking dead-end that turned out to be nothing of the sort.</p></div></div>
+      <div class="step"><div class="idx">07</div><div><h3>Scanning the house for what's next</h3><p>A full network sweep to inventory every device and find the gaps — which surfaced a Harmony hub for the IR-only set-top boxes, and research confirming a set of cheap mesh bulbs would extend the reverse-engineered bulb network rather than fragment it.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 03 WAR STORIES -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">03 · War stories</span><h2>The bugs that earned their keep</h2><p class="lede">The interesting part of driving isn't the config that works first time — it's the config that lies to you. A few that took a theory, a test, and a refusal to accept "success" at face value.</p></div>
+    <div class="logs">
+      <div class="log"><h3><span class="no">01</span>The remote that only worked with its ground cut off</h3><dl class="grid">
+        <dt>Symptom</dt><dd class="q">"With the design you gave me, the remote doesn't work — I take the ground off the remote, then it works."</dd>
+        <dt>Cause</dt><dd>The fob's electronics <b>float</b>. Bonding its ground to the ESP32's — as a simple transistor switch demands — jams it solid.</dd>
+        <dt>Fix</dt><dd class="fix">Scrap the transistor for a fully <b>opto-isolated relay</b>: dry contacts across the fob's button, no shared ground anywhere. Kevin's observation was the whole diagnosis.</dd>
+      </dl></div>
+      <div class="log"><h3><span class="no">02</span>A panic that had to be <em>held</em></h3><dl class="grid">
+        <dt>Symptom</dt><dd>A rapid pulse-train on the panic channel did nothing.</dd>
+        <dt>Cause</dt><dd>The panel wants a sustained hold, not a tap — <em>"a 3–4 second latched signal, not a repeated pulse."</em></dd>
+        <dt>Fix</dt><dd class="fix">Re-flashed the ESPHome firmware: momentary taps for arm and disarm, a clean <b>3.5-second latch</b> for panic.</dd>
+      </dl></div>
+      <div class="log"><h3><span class="no">03</span>Solar reading zero while the sun was out</h3><dl class="grid">
+        <dt>Symptom</dt><dd>The whole solar feed frozen at zero, though the array was plainly generating and every Victron app said "online".</dd>
+        <dt>Cause</dt><dd>The Cerbo GX is Wi-Fi-only and had quietly <b>hopped networks</b> — the integration was still polling its old wired address into the void.</dd>
+        <dt>Fix</dt><dd class="fix">Repointed it at the address it had wandered to, cleared the retry-backoff, and it came straight back to life.</dd>
+      </dl></div>
+      <div class="log"><h3><span class="no">04</span>The Samsung that said "on" but stayed dark</h3><dl class="grid">
+        <dt>Symptom</dt><dd>"Turn on Kev's TV" reached Home Assistant and returned <code>SUCCESS</code> in the logs — and the screen stayed off.</dd>
+        <dt>Cause</dt><dd>Two layers. The Pi is dual-homed, so the wake packet went out the wrong network leg; and even fixed, a Wi-Fi <b>mesh won't forward a broadcast</b> wake to a sleeping TV.</dd>
+        <dt>Fix</dt><dd class="fix">Send the magic packet as a <b>unicast</b> straight to the TV's own address — proven by watching it wake from cold in four seconds — and read on/off from the media player, not an unreliable ping.</dd>
+      </dl></div>
+      <div class="log"><h3><span class="no">05</span>A switch that refused to exist</h3><dl class="grid">
+        <dt>Symptom</dt><dd>The new TV switch showed permanently <b>offline</b> in Google, and Home Assistant reported it "unavailable" no matter what.</dd>
+        <dt>Cause</dt><dd>The version of Home Assistant had just <b>removed the old template-switch format</b> entirely; every attempt was being silently rejected, leaving a ghost.</dd>
+        <dt>Fix</dt><dd class="fix">Read it from the logs, switched to a native wake-on-LAN switch — a real entity that can't go offline — and it worked.</dd>
+      </dl></div>
+      <div class="log"><h3><span class="no">06</span>A ghost in Google Home</h3><dl class="grid">
+        <dt>Symptom</dt><dd>Voice control of the TV kept failing even once everything downstream was proven working.</dd>
+        <dt>Cause</dt><dd>A dead <b>Harmony device</b>, orphaned in Google's backend, was quietly intercepting the command.</dd>
+        <dt>Fix</dt><dd class="fix">Gave the real device a distinct name so voice couldn't confuse the two — and it obeyed.</dd>
+      </dl></div>
+    </div>
+  </div>
+</section>
+
+<!-- 04 THE BOUNDARY -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">04 · The boundary</span><h2>What an agent should — and shouldn't — touch</h2><p class="lede">Driving fast only works with clear lines. Some things belong to the person, and a good agent asks rather than assumes.</p></div>
+    <div class="grid-2">
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div><h3>Claude drives</h3><p>Reading and writing config and firmware, reverse-engineering protocols, scanning the network, debugging through logs, backing things up, and reporting honestly — including the parts that failed. Software all the way down.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></div><h3>Kevin owns</h3><p>The soldering iron and the wall drill, the physical taps and mounts, the app and account logins, and every irreversible or judgement call. The agent surfaces the options and waits for a real yes.</p></div>
+    </div>
+    <div class="demo-note"><b>Why it holds:</b> instructions come from Kevin, not from a web page, a device, or a file the agent happened to read; risky changes are backed up first and validated before they go live; and when something is the human's call — a no-PIN disarm, powering the servers down for the night — the agent stops and asks. Fast, but not reckless.</div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- CLOSING -->
+<section>
+  <div class="wrap reveal">
+    <div class="close">
+      <span class="eyebrow" style="color:#3FCBD6">The workshop</span>
+      <h2 style="margin-top:1rem">A house rebuilt by two hands and a keyboard that never gets tired.</h2>
+      <p>Kevin brought the vision, the soldering iron, and the eyes in the room. Claude Code brought the keyboard, the patience for a five-restart debugging session, and a memory of every wire. Between them: a dead alarm answering the door again, forty devices off the cloud, and the oldest tablet in the house lit up on the wall — none of it phoning home.</p>
+      <div class="sig"><span class="dot" style="background:#3FCBD6;box-shadow:0 0 8px #3FCBD6"></span><span>orchestrated by Kevin</span><span>·</span><span>driven by Claude Code</span><span>·</span><span>one Pi · £0 / month</span></div>
+    </div>
+  </div>
+</section>
+
+<footer>Claude Code · the agent on the keyboard · orchestrated by Kevin, driven in the loop · <a href="index.html">DECS Home Systems</a> · <a href="homeassistant.html">Home Assistant</a> · <a href="wallpanel.html">Wall panel</a></footer>
+
+<script src="app.js"></script>
+</body>
+</html>

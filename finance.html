@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Finance tab — DECS Home Systems</title>
+<meta name="description" content="A crypto dashboard tab on the wall panel: six coins with live prices, 24h→all-time change, sparklines, a featured chart and a live news feed with an in-panel reader — all from keyless public APIs and a small server-side RSS fetcher. No paid data feed, no key in the browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* ---- finance page: local additions ---- */
+  .pl-wire{fill:none;stroke:#243040;stroke-width:3;stroke-linecap:round;opacity:.35}
+  .pl-flow{fill:none;stroke-width:4;stroke-linecap:round;stroke-dasharray:2 12;opacity:.95;animation:plmove .9s linear infinite}
+  @keyframes plmove{to{stroke-dashoffset:-14}}
+  .pl-node{fill:#0e151f;stroke:#26333f;stroke-width:1.4}
+  .pl-node.hi{fill:#101b28;stroke:#39d98a;stroke-width:1.6}
+  .pl-t{font-family:"IBM Plex Mono",ui-monospace,monospace;fill:#9aa7b3}
+  .pl-title{fill:#e7edf3;font-weight:600}
+  .pl-cap{fill:#7c8a97}
+  .pl-badge{fill:#39d98a;font-weight:600}
+  @media (prefers-reduced-motion:reduce){.pl-flow{animation:none}}
+  /* coin legend */
+  .coins{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin-top:1.3rem}
+  @media(max-width:720px){.coins{grid-template-columns:1fr}}
+  .coin{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:.9rem 1rem;position:relative;overflow:hidden}
+  .coin::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--cc)}
+  .coin .ch{display:flex;align-items:center;gap:.55rem;font-weight:700;color:var(--ink);font-family:"Archivo",sans-serif}
+  .coin .cbadge{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:.66rem;font-weight:800;color:#0b111a;background:var(--cc)}
+  .coin .csym{font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.05em;color:var(--faint);margin-left:auto}
+  .coin .cv{color:var(--muted);font-size:.9rem;margin-top:.4rem;line-height:1.45}
+</style>
+</head>
+<body class="p-finance">
+
+<header class="nav"><div class="wrap">
+  <a class="brand" href="index.html"><span class="dot"></span> DECS&nbsp;Home&nbsp;Systems</a>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="globalguard.html">GlobalGuard</a>
+    <a href="homeassistant.html">Home&nbsp;Assistant</a>
+    <a href="wallpanel.html">Wall&nbsp;panel</a>
+    <a href="cameras.html">Cameras</a>
+    <a href="presence.html">Presence</a>
+    <a href="roomscribe.html">Roomscribe</a>
+    <a href="traccar.html">Traccar</a>
+    <a href="finance.html" class="active">Finance</a>
+    <a href="fan.html">Fan</a>
+    <a href="rada.html">Rada&nbsp;shower</a>
+    <a href="theme.html">HA&nbsp;Theme</a>
+    <a href="technical.html">Technical</a>
+    <a href="roadmap.html">Roadmap</a>
+    <a href="claude.html">Claude&nbsp;Code</a>
+    <button class="themebtn" id="tt" aria-label="Toggle colour theme"><span id="ttic">◐</span> theme</button>
+  </nav>
+</div></header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">Crypto dashboard · keyless public APIs</span>
+        <h1 class="title">Six coins, a chart<br>and the <em>news</em> — no data tax.</h1>
+        <p class="lede">A finance tab on the same wall panel that runs the house: Bitcoin, Ethereum, Solana, XRP, Dogecoin and Shiba&nbsp;Inu, each with a live price, change over 24&nbsp;hours to all-time, and a sparkline. A featured chart you can scrub from a day to the whole history, and a live crypto news feed you can actually read <em>on the panel</em>. Prices come straight from public exchange APIs that need no key; the news is gathered by a tiny script on the Pi. Nothing paid, no key ever shipped to the browser.</p>
+        <div class="meta-row">
+          <span class="chip">Binance public API</span>
+          <span class="chip">no API key</span>
+          <span class="chip">server-side RSS</span>
+          <span class="chip">in-panel reader</span>
+        </div>
+      </div>
+      <div class="panel" role="img" aria-label="Finance status: six coins live from a keyless exchange API, a featured chart across six timeframes, and thirty news stories fetched server-side; no paid data feed and no key in the browser.">
+        <div class="head"><span>Markets · live</span><span>6 coins</span></div>
+        <div class="rows">
+          <div class="prow"><span class="led on"></span><span class="k">Prices</span><span class="v">Binance · keyless · 60s</span></div>
+          <div class="prow"><span class="led info"></span><span class="k">Chart</span><span class="v">24H · 7D · 30D · 1Y · 5Y · ALL</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">News</span><span class="v">30 stories · RSS · in-panel</span></div>
+          <div class="prow gone"><span class="led dead"></span><span class="k">Paid feed</span><span class="v">no key, no subscription</span></div>
+        </div>
+        <div class="beacon">
+          <span class="lbl">BTC</span>
+          <svg viewBox="0 0 220 30" preserveAspectRatio="none" aria-hidden="true">
+            <line x1="0" y1="15" x2="220" y2="15" stroke="#26313d" stroke-width="1"/>
+            <polyline class="trace" points="0,24 30,22 55,18 80,20 105,12 130,15 155,7 180,10 205,5 220,6" fill="none" stroke="#f7931a" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+            <circle class="pulse-dot" cx="205" cy="5" r="2.6" style="fill:#f7931a"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- STATS -->
+<section style="padding-block:clamp(2.2rem,5vw,3.2rem)">
+  <div class="wrap reveal">
+    <div class="stats">
+      <div class="stat"><span class="big num-strong">6</span><span class="lab">coins tracked</span></div>
+      <div class="stat"><span class="big num-strong">£0</span><span class="lab">data API cost</span></div>
+      <div class="stat"><span class="big num-strong">6</span><span class="lab">chart timeframes</span></div>
+      <div class="stat"><span class="big num-strong">3</span><span class="lab">news sources</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 01 THE CARDS -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">01 · The cards</span><h2>Six coins, colour-keyed at a glance</h2><p class="lede">A strip of cards across the top — each in the coin's own brand colour, with its price, the move over four windows (24&nbsp;hours, 7&nbsp;days, 30&nbsp;days, 1&nbsp;year) tinted green or red, and a one-year sparkline. Tap a card and it becomes the featured chart below.</p></div>
+    <div class="coins">
+      <div class="coin" style="--cc:#f7931a"><div class="ch"><span class="cbadge">B</span>Bitcoin<span class="csym">BTC</span></div><div class="cv">Price, 24h→1y change and a sparkline — the same shape drawn big in the featured chart when selected.</div></div>
+      <div class="coin" style="--cc:#8a92ff"><div class="ch"><span class="cbadge">E</span>Ethereum<span class="csym">ETH</span></div><div class="cv">Live from the exchange's 24-hour ticker; longer windows computed from daily candles.</div></div>
+      <div class="coin" style="--cc:#2ee6a6"><div class="ch"><span class="cbadge">S</span>Solana<span class="csym">SOL</span></div><div class="cv">Green up, red down — a glance says whether the week's been kind.</div></div>
+      <div class="coin" style="--cc:#5cc8ff"><div class="ch"><span class="cbadge">X</span>XRP<span class="csym">XRP</span></div><div class="cv">Same treatment for every coin, so the strip reads as one instrument.</div></div>
+      <div class="coin" style="--cc:#ffcf5c"><div class="ch"><span class="cbadge">D</span>Dogecoin<span class="csym">DOGE</span></div><div class="cv">Sub-penny prices formatted so the digits that matter still show.</div></div>
+      <div class="coin" style="--cc:#ff7a45"><div class="ch"><span class="cbadge">S</span>Shiba&nbsp;Inu<span class="csym">SHIB</span></div><div class="cv">Prices to eight decimals handled without turning into a wall of zeros.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 02 KEYLESS DATA (diagram) -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">02 · Where the data comes from</span><h2>Live markets without a data subscription</h2><p class="lede">Market-data APIs love to charge. This tab avoids all of it. Prices and candles come straight from <b>Binance's public endpoints</b> — no account, no key, and they allow cross-origin calls, so the browser reads them directly. The <b>news</b> is the tricky bit: crypto news APIs want keys and block browsers with CORS, so a tiny Python service on the Pi fetches a few RSS feeds every fifteen minutes and writes a small JSON file the panel reads locally.</p></div>
+    <figure>
+      <div class="demo-stage" role="img" aria-label="Data path: the panel reads prices and candles directly from Binance's keyless public API in the browser; separately, a Python service on the Pi fetches Cointelegraph, CoinDesk and Decrypt RSS every fifteen minutes and writes a local JSON file that the panel reads same-origin. No paid feed and no key in the browser.">
+        <svg viewBox="0 0 960 300" aria-hidden="true">
+          <path class="pl-wire" d="M236 92 C 320 92 360 92 452 92"/><path class="pl-flow" d="M236 92 C 320 92 360 92 452 92" stroke="#f7931a"/>
+          <path class="pl-wire" d="M236 214 C 300 214 330 214 396 214"/><path class="pl-flow" d="M236 214 C 300 214 330 214 396 214" stroke="#39d98a"/>
+          <path class="pl-wire" d="M636 214 C 690 214 700 214 748 214"/><path class="pl-flow" d="M636 214 C 690 214 700 214 748 214" stroke="#39d98a"/>
+          <path class="pl-wire" d="M612 96 C 700 110 720 150 760 196"/><path class="pl-flow" d="M612 96 C 700 110 720 150 760 196" stroke="#f7931a"/>
+          <!-- binance -->
+          <rect class="pl-node hi" x="26" y="52" width="210" height="80" rx="12" style="stroke:#f7931a"/>
+          <text class="pl-t pl-title" x="131" y="82" text-anchor="middle" font-size="12">Binance public API</text>
+          <text class="pl-t pl-cap" x="131" y="101" text-anchor="middle" font-size="10">ticker + klines · keyless</text>
+          <text class="pl-t pl-cap" x="131" y="117" text-anchor="middle" font-size="10">CORS-open</text>
+          <!-- pi fetcher -->
+          <rect class="pl-node" x="26" y="176" width="210" height="80" rx="12"/>
+          <text class="pl-t pl-title" x="131" y="206" text-anchor="middle" font-size="12">Pi news fetcher</text>
+          <text class="pl-t pl-cap" x="131" y="225" text-anchor="middle" font-size="10">Python · systemd · 15 min</text>
+          <text class="pl-t pl-cap" x="131" y="241" text-anchor="middle" font-size="10">Cointelegraph·CoinDesk·Decrypt</text>
+          <text class="pl-t pl-badge" x="344" y="200" text-anchor="middle" font-size="10">RSS</text>
+          <text class="pl-t pl-cap" x="344" y="230" text-anchor="middle" font-size="10">no CORS server-side</text>
+          <!-- json -->
+          <rect class="pl-node" x="396" y="176" width="240" height="80" rx="12"/>
+          <text class="pl-t pl-title" x="516" y="206" text-anchor="middle" font-size="12">crypto_news.json</text>
+          <text class="pl-t pl-cap" x="516" y="225" text-anchor="middle" font-size="10">30 stories · title · image</text>
+          <text class="pl-t pl-cap" x="516" y="241" text-anchor="middle" font-size="10">served from /local</text>
+          <text class="pl-t pl-badge" x="344" y="86" text-anchor="middle" font-size="10">direct</text>
+          <text class="pl-t pl-cap" x="344" y="72" text-anchor="middle" font-size="10">in the browser</text>
+          <!-- panel -->
+          <rect class="pl-node hi" x="748" y="150" width="186" height="96" rx="12"/>
+          <text class="pl-t pl-title" x="841" y="188" text-anchor="middle" font-size="12">Finance tab</text>
+          <text class="pl-t pl-cap" x="841" y="207" text-anchor="middle" font-size="10">cards · chart · news</text>
+          <text class="pl-t pl-cap" x="841" y="223" text-anchor="middle" font-size="10">on the wall panel</text>
+        </svg>
+      </div>
+      <figcaption>Two independent paths: prices in the browser from a keyless exchange API, news through a server-side fetch that sidesteps both API keys and CORS. Same self-contained web-app-in-an-iframe pattern as the other panel tabs.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- 03 CHART + NEWS -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">03 · Chart &amp; news</span><h2>Scrub the history, read the story in place</h2><p class="lede">The selected coin gets a big area chart with six timeframes — a day, a week, a month, a year, five years, and the coin's whole history on the exchange — each built from the right candle resolution so the line stays smooth. Alongside it, the news.</p></div>
+    <div class="grid-3">
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></div><h3>24H → ALL</h3><p>Hourly candles for the day, two-hourly for the week, daily out to a year, weekly for five years and the full history — so <b>ALL</b> reaches right back to the coin's first day on the exchange (Bitcoin to 2017), still in one clean line.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16M4 5h16M8 5v14M16 5v14"/></svg></div><h3>Live news feed</h3><p>Thirty of the latest stories from Cointelegraph, CoinDesk and Decrypt — headline, source, how long ago, and the coin/topic tags — refreshed on the panel every few minutes.</p></div>
+      <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></div><h3>Read it on the panel</h3><p>Tapping a headline opens a <b>full-page reader card inside the tab</b> — image, summary and an "open original" button — instead of navigating the wall panel off to a news site with no way back. A small thing that makes a wall-mounted screen usable.</p></div>
+    </div>
+    <div class="demo-note" style="margin-top:1.4rem"><b>An honest limit.</b> The reader shows each story's <b>summary and image</b>, not the full article: the feeds only publish a teaser, and the publishers block scraping their full text (one even blocks it through a reader proxy). So the card gives you the gist and a one-tap way to the full piece — reliable beats broken on a screen you can't easily rescue.</div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- CLOSING -->
+<section>
+  <div class="wrap reveal">
+    <div class="close">
+      <span class="eyebrow" style="color:#f7931a">Markets, at home</span>
+      <h2 style="margin-top:1rem">A Bloomberg-lite tab that costs nothing to run.</h2>
+      <p>Six coins, a scrubable chart back to day one, and a news feed you can read without leaving the wall — all from public endpoints and a fifteen-line fetcher on the Pi, with no data subscription and no key ever leaving the house. The same self-hosted, no-cloud rule as everything else here, applied to money.</p>
+      <div class="sig"><span class="dot" style="background:#f7931a;box-shadow:0 0 8px #f7931a"></span><span>Binance · keyless</span><span>·</span><span>RSS · server-side</span><span>·</span><span>see it on the <a href="wallpanel.html" style="color:#f7931a">Wall panel</a></span></div>
+    </div>
+  </div>
+</section>
+
+<footer>Finance tab · keyless exchange API · server-side RSS news · in-panel reader · <a href="wallpanel.html">Wall panel</a> · <a href="index.html">DECS Home Systems</a></footer>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -134,6 +134,26 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
 .vcard p{color:var(--muted);font-size:.9rem;margin-top:.3rem;line-height:1.55}
 .sheet{margin-top:1.4rem;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#0e1621}
 .sheet img{display:block;width:100%;height:auto}
+
+/* better ears: wake-score chart (one 0-1 scale per group; dashed line = the cutoff that group had to beat) */
+.scores h3{font-size:1.05rem;margin-bottom:1rem}
+.sc-group+.sc-group{margin-top:1.3rem;padding-top:1.1rem;border-top:1px solid var(--line)}
+.sc-group h4{font-family:"IBM Plex Mono",monospace;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 .55rem}
+.sc-row,.sc-axis{display:grid;grid-template-columns:6.4rem 1fr 5.6rem;gap:.7rem;align-items:center;font-family:"IBM Plex Mono",monospace}
+.sc-row{font-size:.74rem;color:var(--muted);margin:.4rem 0}
+.sc-track{position:relative;height:.8rem;background:var(--surface-2);border:1px solid var(--line);border-radius:4px}
+.sc-track i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:var(--live)}
+.sc-row.miss .sc-track i{background:var(--alert)}
+.sc-track b{position:absolute;top:-.3rem;bottom:-.3rem;border-left:2px dashed var(--ink)}
+.sc-val{color:var(--ink);font-variant-numeric:tabular-nums}
+.sc-row.miss .sc-val{color:var(--alert)}
+.sc-axis{font-size:.64rem;color:var(--faint);margin-top:.2rem}
+.sc-axis span:nth-child(2){display:flex;justify-content:space-between}
+.scores figcaption{margin-top:1rem;text-align:left;color:var(--muted);font-size:.86rem;font-family:"Hanken Grotesk",sans-serif;letter-spacing:0}
+@media(max-width:560px){.sc-row,.sc-axis{grid-template-columns:5.2rem 1fr 4.9rem;gap:.5rem}}
+.ears-side{display:flex;flex-direction:column;gap:1.1rem}
+.ears-side .callout{margin-top:0}
+.cmd.wrap{white-space:pre-wrap;overflow-wrap:anywhere}
 </style>
 </head>
 <body class="p-echo">
@@ -487,7 +507,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
       <div class="log"><h3><span class="no">04</span>It only heard you up close</h3><dl class="grid">
         <dt>Symptom</dt><dd>Perfect when leaning over it; nothing from across the room.</dd>
         <dt>Cause</dt><dd>The microphone mixing was set to <code>center</code> — one microphone out of seven — at 20&nbsp;dB of gain, with wake thresholds tuned for close range. The logs showed "hey luna" scoring 0.95 up close but under 0.6 at distance.</dd>
-        <dt>Fix</dt><dd class="fix"><code>beamformer</code> mixing (the whole array, steered, with noise rejection — Alexa's own far-field mode), gain up to 28&nbsp;dB, and thresholds lowered to 0.5 and 0.45. "Hey luna" now works from across the room; "okay computer" is limited by its model, not the tuning, so a better model is on the list.</dd></dl></div>
+        <dt>Fix</dt><dd class="fix"><code>beamformer</code> mixing (the whole array, steered, with noise rejection — Alexa's own far-field mode), gain up to 28&nbsp;dB, and thresholds lowered to 0.5 and 0.45. "Hey luna" now works from across the room; "okay computer" is limited by its model, not the tuning, so a better model is on the list. <a href="#better-ears" style="color:var(--accent)">How we got there, step by step ↓</a></dd></dl></div>
       <div class="log"><h3><span class="no">05</span>"Session expired" on the panel</h3><dl class="grid">
         <dt>Symptom</dt><dd>Every day or two the wall panel dropped its login.</dd>
         <dt>Cause</dt><dd>An ordinary token lapse on a kiosk that nobody ever signs back into.</dd>
@@ -500,10 +520,68 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
   </div>
 </section>
 
-<!-- 05 THE PANEL SEES THE VOICE -->
-<section>
+<!-- 05 BETTER EARS -->
+<section id="better-ears">
   <div class="wrap reveal">
-    <div class="sec-head col"><span class="eyebrow">05 · The panel sees the voice</span><h2>A screen for a speaker that has none</h2><p class="lede">When the Dot starts a conversation, the wall panel — a laptop in kiosk mode — fades to a full-screen visual with the transcript, and fades back five seconds after Luna finishes. It follows the Dot's state live: listening, thinking, replying.</p></div>
+    <div class="sec-head col"><span class="eyebrow">05 · Better ears</span><h2>From leaning over it to across the room</h2><p class="lede">At first Luna only heard you from arm's length. Three settings on the Dot fixed that: which microphones it listens with, how much it amplifies them, and how sure it has to be before it wakes. Each change was checked against the Dot's own logs rather than guessed. If your Echo, or any voice satellite, only hears you up close, work through them in this order.</p></div>
+    <div class="twocol">
+      <div class="steps wide">
+        <div class="step"><span class="idx">Look first</span><div class="body"><h3>Read the settings and the wake scores</h3>
+          <p>EchoLocal keeps its settings in <code>/data/misc/echolocal/state.json</code> on the Dot, and the same controls appear on the device's page in Home&nbsp;Assistant. Ours showed the problem straight away: microphone mixing on <code>Center mic</code>, 20&nbsp;dB of gain and a wake cutoff of 0.85.</p>
+          <p>The Dot also logs every wake attempt with the score its wake-word model gave the phrase, from 0 to 1, and the cutoff it had to beat. That one line tells you whether the fault is the microphones, the cutoff or the model:</p>
+<pre class="cmd wrap"><span class="p">&gt;</span> adb shell "logcat -d | grep echolocal | grep -i wake"
+<span class="o">wake detected slot=2 id=hey_luna peak=0.988 crossing=0.870 cutoff=0.85</span></pre>
+          <p>Reading the logs and the file needs adb: over USB, or over Wi-Fi once EchoLocal's remote-adb switch is on.</p></div></div>
+        <div class="step"><span class="idx">Change 1</span><div class="body"><h3>Listen with the whole array</h3>
+          <p><code>Center mic</code> means one microphone out of the Dot's seven. We switched mixing to <code>Beamformer</code>, which combines the whole ring, steers towards the voice and turns down sound from other directions: the same far-field trick a stock Alexa relies on. Home&nbsp;Assistant offers <i>Center mic</i>, <i>Delay and sum</i> (a simpler way of combining them) and <i>Beamformer</i>.</p></div></div>
+        <div class="step"><span class="idx">Change 2</span><div class="body"><h3>A little more gain, in steps</h3>
+          <p>20&nbsp;dB went to 24, then 28, with a test from across the room after each. More gain lifts a quiet, distant voice, but it lifts the room's hiss and the TV too, so we stopped at 28; the control goes to 59. Levelling and echo cancellation stayed on, and the separate noise-reduction switch stayed off.</p></div></div>
+        <div class="step"><span class="idx">Change 3</span><div class="body"><h3>Set the cutoff from the far-away scores</h3>
+          <p>With the whole array listening, "hey luna" still scored 0.99 up close but only 0.59 and 0.62 from further back, against a cutoff of 0.85: the Dot was hearing the phrase and throwing it away. At a cutoff of 0.55 every attempt woke it, but the two furthest only just (they crossed at 0.553 and 0.554), so it went down to 0.50 for some margin. "Okay computer" sits at 0.45.</p>
+          <p>Two traps. Despite the name <i>wake word sensitivity</i>, a lower number is more sensitive, because it is the score the phrase has to beat. And Home&nbsp;Assistant's slider stops at 0.50, so anything lower has to go in <code>state.json</code>.</p></div></div>
+        <div class="step"><span class="idx">Every time</span><div class="body"><h3>Make it stick, then prove it</h3>
+          <p>echod reads <code>state.json</code> only when it starts, so every edit was followed by a reboot and two checks: the new value is still in the file (echod quietly resets an invalid one, such as a misspelt mixing mode, to <code>center</code>), and the uptime is a few seconds, proving the Dot really restarted. Then test again from the far spot and read the scores.</p>
+<pre class="cmd wrap"><span class="o">"microphone": { "gain": 28, "mixing": "beamformer",
+                "leveling": true, "cancel": true, "denoise": false },
+"wake": { "words": [
+  { "id": "okay_computer", "threshold": 0.45 },
+  { "id": "hey_luna",      "threshold": 0.5 } ] }</span>
+<span class="p">&gt;</span> adb reboot
+<span class="p">&gt;</span> adb shell cat /proc/uptime
+<span class="o">18.00 46.08</span></pre></div></div>
+      </div>
+      <div class="ears-side">
+        <figure class="card scores">
+          <h3>What the logs said</h3>
+          <div class="sc-group">
+            <h4>Whole array, 24&nbsp;dB, cutoff 0.85</h4>
+            <div class="sc-row"><span>up close</span><span class="sc-track" aria-hidden="true"><i style="width:98.8%"></i><b style="left:85%"></b></span><span class="sc-val">0.99 woke</span></div>
+            <div class="sc-row miss"><span>further</span><span class="sc-track" aria-hidden="true"><i style="width:62.1%"></i><b style="left:85%"></b></span><span class="sc-val">0.62 missed</span></div>
+            <div class="sc-row miss"><span>further</span><span class="sc-track" aria-hidden="true"><i style="width:58.8%"></i><b style="left:85%"></b></span><span class="sc-val">0.59 missed</span></div>
+            <div class="sc-axis" aria-hidden="true"><span></span><span><span>0</span><span>0.5</span><span>1.0</span></span><span></span></div>
+          </div>
+          <div class="sc-group">
+            <h4>28&nbsp;dB, cutoff 0.55 (now 0.50)</h4>
+            <div class="sc-row"><span>up close</span><span class="sc-track" aria-hidden="true"><i style="width:94%"></i><b style="left:55%"></b></span><span class="sc-val">0.94 woke</span></div>
+            <div class="sc-row"><span>further</span><span class="sc-track" aria-hidden="true"><i style="width:80%"></i><b style="left:55%"></b></span><span class="sc-val">0.80 woke</span></div>
+            <div class="sc-row"><span>further</span><span class="sc-track" aria-hidden="true"><i style="width:77%"></i><b style="left:55%"></b></span><span class="sc-val">0.77 woke</span></div>
+            <div class="sc-row"><span>far side</span><span class="sc-track" aria-hidden="true"><i style="width:70%"></i><b style="left:55%"></b></span><span class="sc-val">0.70 woke</span></div>
+            <div class="sc-row"><span>far edge</span><span class="sc-track" aria-hidden="true"><i style="width:62%"></i><b style="left:55%"></b></span><span class="sc-val">0.62 woke</span></div>
+            <div class="sc-axis" aria-hidden="true"><span></span><span><span>0</span><span>0.5</span><span>1.0</span></span><span></span></div>
+          </div>
+          <figcaption>Real "hey luna" attempts from the Dot's logs, up close to the far side of the bedroom. Each bar is the wake-word model's peak score; the dashed line is the cutoff it had to beat.</figcaption>
+        </figure>
+        <div class="callout"><b class="h">What tuning can't fix</b>"Okay computer" barely registered at a distance, even with the whole array: its wake-word model is simply weaker than the one for "hey luna". No cutoff rescues a score that isn't there, so the real fix is a better model from EchoLocal's wake-word library, which is on the list. And every step down in cutoff invites more false wake-ups from the TV; 0.50 is where this room settled.</div>
+        <div class="callout"><b class="h">Two things that look like range problems</b>If another device listens for the same wake word, it can answer first and make your satellite look deaf: the wall panel kept winning "okay computer" until it was given a word nobody says (field note 02). And once awake, the hearing is Whisper's job: the large model on the RTX&nbsp;5070 copes with a distant, echoey voice far better than the small one a Pi can run.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 06 THE PANEL SEES THE VOICE -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">06 · The panel sees the voice</span><h2>A screen for a speaker that has none</h2><p class="lede">When the Dot starts a conversation, the wall panel — a laptop in kiosk mode — fades to a full-screen visual with the transcript, and fades back five seconds after Luna finishes. It follows the Dot's state live: listening, thinking, replying.</p></div>
     <div class="steps wide">
       <div class="step"><span class="idx">first</span><div class="body"><h3>A faithful port of Lens Flares</h3><p>The look Kev wanted was the "Lens Flares" skin from the Voice Satellite card. The card can't show an ESPHome satellite's transcript, so its algorithm was lifted out of the card's JavaScript and rebuilt as a standalone canvas overlay: anamorphic blue and rose streaks, bokeh dots, and a three-pass blur for the bloom.</p></div></div>
       <div class="step"><span class="idx">your voice</span><div class="body"><h3>Reactive to you, through the panel's microphone</h3><p>Browsers only allow the microphone on a secure page, so the panel loads Home&nbsp;Assistant through a LAN-only HTTPS name: local DNS points it at the Pi, and Caddy serves it with a real Let's&nbsp;Encrypt certificate issued over a DNS challenge — nothing exposed to the internet. A Chromium "treat as secure" flag was tried first and simply didn't work in kiosk mode.</p></div></div>
@@ -623,10 +701,10 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
   </div>
 </section>
 
-<!-- 06 NEXT -->
-<section style="background:var(--surface-2)">
+<!-- 07 NEXT -->
+<section>
   <div class="wrap reveal">
-    <div class="sec-head col"><span class="eyebrow">06 · What's next</span><h2>One Dot works. Now a house full of them.</h2><p class="lede">The hard parts — the unlock, the local stack, per-person wake words, the fixes above — are solved, so every extra second-hand Dot drops into a working system in about twenty minutes.</p></div>
+    <div class="sec-head col"><span class="eyebrow">07 · What's next</span><h2>One Dot works. Now a house full of them.</h2><p class="lede">The hard parts — the unlock, the local stack, per-person wake words, the fixes above — are solved, so every extra second-hand Dot drops into a working system in about twenty minutes.</p></div>
     <div class="grid-2">
       <div class="card feat"><h3>A Dot in every room</h3><p>Kitchen, living room, Mom's room, the landing and the hall. Each one gets a Home&nbsp;Assistant area, so "turn the lights on" means <i>this</i> room — and with a wake word per person, every command carries who and where. Six speakers also means announcements, intercom and alarm audio everywhere.</p></div>
       <div class="card feat"><h3>Knowing where people are, indoors</h3><p>Every Dot is also a Bluetooth proxy that advertises its own beacon. Enough of them make BLE trilateration possible (Bermuda and the BLE Positioning System) — and the <a href="roomscribe.html" style="color:var(--accent)">Roomscribe</a> 3D scan gives each Dot's true position, so the Dots can calibrate against each other. Realistically room-level, not centimetres.</p></div>

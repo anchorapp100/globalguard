@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Echo Voice — DECS Home Systems</title>
-<meta name="description" content="A 2016 Amazon Echo Dot rooted, freed from Amazon and turned into a local Home Assistant voice satellite: on-device wake words, Whisper on an RTX 5070, Gemini for answers, Piper for Luna's voice, and eleven live visuals on the wall panel.">
+<meta name="description" content="A 2016 Amazon Echo Dot rooted, freed from Amazon and turned into a local Home Assistant voice satellite: on-device wake words, Whisper on an RTX 5070, Gemini for answers, Piper for Luna's voice, and fifteen live visuals on the wall panel.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
@@ -119,8 +119,8 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
 .s-you{background:#0B8FAE}.s-stt{background:#0E7C86}.s-llm{background:#A85708}.s-int{background:#1B7F49}.s-tts{background:#6D40C4}.s-luna{background:#A8327A}
 
 /* visual chips */
-.vgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:.9rem}
-@media(max-width:900px){.vgrid{grid-template-columns:repeat(2,1fr)}}
+.vgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:.9rem}
+@media(max-width:980px){.vgrid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:560px){.vgrid{grid-template-columns:1fr}}
 .vcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:1rem 1.1rem;text-align:left;cursor:pointer;font:inherit;color:inherit;transition:border-color .15s,transform .15s}
 .vcard:hover{border-color:var(--accent);transform:translateY(-2px)}
@@ -173,11 +173,11 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
           <span class="chip">Whisper on an RTX 5070</span>
           <span class="chip">Gemini 3.6 Flash</span>
           <span class="chip">Piper · en_GB</span>
-          <span class="chip">11 live visuals</span>
+          <span class="chip">15 live visuals</span>
         </div>
       </div>
       <div>
-        <div class="vstage" id="heroStage" role="img" aria-label="Live demo of the wall-panel voice visual, cycling through the eleven styles while a recorded conversation with Luna plays">
+        <div class="vstage" id="heroStage" role="img" aria-label="Live demo of the wall-panel voice visual, cycling through the fifteen styles while a recorded conversation with Luna plays">
           <span class="vbadge"><i></i><span id="heroName">Live</span></span>
           <button class="vplay" type="button" data-play>▶ Play the demo</button>
         </div>
@@ -200,7 +200,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
       <div class="stat"><span class="big num-strong">50</span><span class="lab">Amazon services stopped</span></div>
       <div class="stat"><span class="big num-strong">&lt;1&nbsp;s</span><span class="lab">speech-to-text on the GPU</span></div>
       <div class="stat"><span class="big num-strong">2</span><span class="lab">wake words · one per person</span></div>
-      <div class="stat"><span class="big num-strong">11</span><span class="lab">live visuals on the panel</span></div>
+      <div class="stat"><span class="big num-strong">15</span><span class="lab">live visuals on the panel</span></div>
     </div>
   </div>
 </section>
@@ -502,7 +502,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
       <div class="step"><span class="idx">first</span><div class="body"><h3>A faithful port of Lens Flares</h3><p>The look Kev wanted was the "Lens Flares" skin from the Voice Satellite card. The card can't show an ESPHome satellite's transcript, so its algorithm was lifted out of the card's JavaScript and rebuilt as a standalone canvas overlay: anamorphic blue and rose streaks, bokeh dots, and a three-pass blur for the bloom.</p></div></div>
       <div class="step"><span class="idx">your voice</span><div class="body"><h3>Reactive to you, through the panel's microphone</h3><p>Browsers only allow the microphone on a secure page, so the panel loads Home&nbsp;Assistant through a LAN-only HTTPS name: local DNS points it at the Pi, and Caddy serves it with a real Let's&nbsp;Encrypt certificate issued over a DNS challenge — nothing exposed to the internet. A Chromium "treat as secure" flag was tried first and simply didn't work in kiosk mode.</p></div></div>
       <div class="step"><span class="idx">her voice</span><div class="body"><h3>Luna's own audio, in sync with the Dot</h3><p>The panel's mic barely hears the Dot's small speaker across the room. But Home&nbsp;Assistant records every assist run, including the URL of the exact reply audio. The moment the Dot starts replying, the panel fetches that same audio, analyses it — a 20&nbsp;ms loudness envelope, a 32-band spectrum and the waveform — and plays the analysis back in time with the Dot, starting 0.3&nbsp;s after the audio is ready (measured against the Dot's own logs). Every syllable she speaks lands on screen.</p></div></div>
-      <div class="step"><span class="idx">then</span><div class="body"><h3>Eleven visuals and a way to choose</h3><p>Lens Flares became one skin of a small engine: shared audio analysis (512-point FFT, 32 bands from 80&nbsp;Hz to 7&nbsp;kHz, syllable-onset detection), a renderer with bloom, and eleven skins that each draw a frame in a few milliseconds. The choice is a Home&nbsp;Assistant helper, set from the Scenes tab or a gallery page with live previews and a full-screen demo — or <b>Surprise me</b>, a different one every conversation. A small loader checks for new versions and hot-swaps them between conversations, dodging Home&nbsp;Assistant's month-long cache on local files. If a skin ever errors, the panel falls back to Lens Flares.</p></div></div>
+      <div class="step"><span class="idx">then</span><div class="body"><h3>Fifteen visuals and a way to choose</h3><p>Lens Flares became one skin of a small engine: shared audio analysis (512-point FFT, 32 bands from 80&nbsp;Hz to 7&nbsp;kHz, syllable-onset detection), a renderer with bloom, and eleven skins that each draw a frame in a few milliseconds. Four more followed on request: a digital LED spectrum analyser, Paint Splash (after the wall panel's own paint-splash screensaver), Fireworks and Synthwave. The choice is a Home&nbsp;Assistant helper, set from the Scenes tab or a gallery page with live previews and a full-screen demo — or <b>Surprise me</b>, a different one every conversation. A small loader checks for new versions and hot-swaps them between conversations, dodging Home&nbsp;Assistant's month-long cache on local files. If a skin ever errors, the panel falls back to Lens Flares.</p></div></div>
     </div>
 
 
@@ -524,7 +524,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
     <figure class="figwrap pipe" style="margin-top:1.8rem">
       <svg viewBox="0 0 1000 350" role="img" aria-labelledby="ovT ovD">
         <title id="ovT">How the overlay is fed</title>
-        <desc id="ovD">Home Assistant state and transcript sensors feed the text layer and the state machine. The panel microphone and Luna's analysed reply audio feed the frame builder, which drives the eleven canvas skins.</desc>
+        <desc id="ovD">Home Assistant state and transcript sensors feed the text layer and the state machine. The panel microphone and Luna's analysed reply audio feed the frame builder, which drives the fifteen canvas skins.</desc>
         <path class="pp-wire" d="M304 46 H700"/><path class="pp-flow" stroke="#F7BE57" style="animation-duration:1.6s" d="M304 46 H700"/>
         <path class="pp-wire" d="M304 92 C340 92 346 118 380 118"/><path class="pp-flow" stroke="#F7BE57" style="animation-duration:1.6s" d="M304 92 C340 92 346 118 380 118"/>
         <path class="pp-wire" d="M304 170 H380"/><path class="pp-flow" stroke="#3fd0f0" d="M304 170 H380"/>
@@ -565,7 +565,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
         <text class="pp-t" x="718" y="104">placed per skin</text>
 
         <rect class="pp-node" x="700" y="206" width="276" height="112" rx="14"/>
-        <text class="pp-t pp-tag" x="718" y="230">CANVAS · 11 SKINS</text>
+        <text class="pp-t pp-tag" x="718" y="230">CANVAS · 15 SKINS</text>
         <text class="pp-t pp-title" x="718" y="254">The visual</text>
         <text class="pp-t" x="718" y="276">chosen in Home Assistant</text>
         <text class="pp-t" x="718" y="296">or "Surprise me"</text>
@@ -587,6 +587,10 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
         <tr><td>Phosphor</td><td>The waveform itself: a triggered trace for your voice, an X-Y figure for Luna's, a 3:2 Lissajous while she thinks.</td></tr>
         <tr><td>Tesla</td><td>Loudness sets how many filaments burn and how thick; syllables crackle off side branches.</td></tr>
         <tr><td>Luna Orb</td><td>The bands shape the sphere by latitude; syllables ripple across its surface; loudness lights the lines between its points.</td></tr>
+        <tr><td>Digital VU</td><td>The 32 bands on a 40&nbsp;dB LED scale, tilted toward the treble so every column moves with speech; red peak caps hold for 0.6&nbsp;s, then fall; a scanner sweeps across while she thinks.</td></tr>
+        <tr><td>Paint Splash</td><td>Every syllable throws a splash sized by its strength, and sustained loud speech adds spray; cool paint for you, hot paint for Luna; the paint swirls while she thinks and leaves fading stains where it settles.</td></tr>
+        <tr><td>Fireworks</td><td>Every syllable launches a shell; its strength sets how high it climbs and how big it bursts; loudness sets the pace of the barrage, with gold shells while she thinks.</td></tr>
+        <tr><td>Synthwave</td><td>The bands, mirrored out from the sun, raise the mountains; the bass thickens the sun's stripes; loudness speeds the grid; each syllable sends a bright wave rolling toward you.</td></tr>
       </tbody>
     </table></div>
 
@@ -602,10 +606,10 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
 
     <div class="grid-2" style="margin-top:2rem">
       <div class="card feat"><h3>Why Mercury nearly didn't make it</h3><p>Metaballs built from the usual <code>r²/d²</code> fields go flat wherever drops merge, so the chrome reflections broke into hard bands. A bounded kernel — <code>(1 − d²/R²)³</code> with R = 2.2&nbsp;r — gives a surface within a few percent of a true sphere for a lone drop, and bulges smoothly where drops join. Then the studio "environment" it reflects had to be made smooth, with a horizon that curves like a real camera's.</p></div>
-      <div class="card feat"><h3>Bloom that doesn't wash out</h3><p>Additive light saturates fast: the first Halo turned into a solid white disc and Ribbons blew out to white in the middle. Every skin was tuned frame by frame against its three states — listening, thinking, replying — with cyan for you, gold for thinking and rose for Luna running through all eleven.</p></div>
+      <div class="card feat"><h3>Bloom that doesn't wash out</h3><p>Additive light saturates fast: the first Halo turned into a solid white disc and Ribbons blew out to white in the middle. Every skin was tuned frame by frame against its three states — listening, thinking, replying — with cyan for you, gold for thinking and rose for Luna running through all fifteen.</p></div>
     </div>
-    <figure class="sheet"><img src="images/echo-visuals-sheet.jpg" width="1976" height="1694" alt="Contact sheet of the eleven voice visuals mid-conversation: Lens Flares, Classic VU, Aurora, Mercury, Ribbons, Galaxy, Halo, Pulsar, Phosphor, Tesla and Luna Orb" loading="lazy"></figure>
-    <p style="text-align:center;color:var(--muted);font-size:.85rem;margin-top:.8rem;font-family:'IBM Plex Mono',monospace">All eleven, each caught mid-conversation — the sheet that went to Kev's phone while he was at work.</p>
+    <figure class="sheet"><img src="images/echo-visuals-sheet.jpg" width="2630" height="1694" alt="Contact sheet of the fifteen voice visuals mid-conversation: Lens Flares, Classic VU, Aurora, Mercury, Ribbons, Galaxy, Halo, Pulsar, Phosphor, Tesla, Luna Orb, Digital VU, Paint Splash, Fireworks and Synthwave" loading="lazy"></figure>
+    <p style="text-align:center;color:var(--muted);font-size:.85rem;margin-top:.8rem;font-family:'IBM Plex Mono',monospace">All fifteen, each caught mid-conversation. The first eleven went to Kev's phone as a sheet like this while he was at work; the last four were his requests.</p>
   </div>
 </section>
 
@@ -649,7 +653,9 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
     "lens-flares": ["#2a82ff", "#7ac8ff", "#ff3c78"], "classic-vu": ["#f7e4b3", "#c8102e", "#15130f"], "aurora": ["#46ff9b", "#28dca5", "#be4bff"],
     "mercury": ["#c9d2de", "#3cc8ff", "#ff46c8"], "ribbons": ["#28d2ff", "#b96eff", "#ff3caa"], "galaxy": ["#a0c4ff", "#ff78c8", "#fff0d2"],
     "halo": ["#3ce1ff", "#5082ff", "#ff50be"], "pulsar": ["#ececec", "#8cdcff", "#ff96c8"], "phosphor": ["#5aff96", "#beffd7", "#0a1a10"],
-    "tesla": ["#5a96ff", "#b464ff", "#ff46c8"], "luna-orb": ["#46c8ff", "#ff50be", "#ffb450"]
+    "tesla": ["#5a96ff", "#b464ff", "#ff46c8"], "luna-orb": ["#46c8ff", "#ff50be", "#ffb450"],
+    "digital-vu": ["#22be28", "#fae21e", "#ff1e14"], "paint-splash": ["#19c3ff", "#ff28cd", "#ffd01e"], "fireworks": ["#78d2ff", "#ff5fcd", "#ffcd5f"],
+    "synthwave": ["#fff27a", "#ff4f7a", "#3cebff"]
   };
   var rm = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   function Live(host, skin, opts) {

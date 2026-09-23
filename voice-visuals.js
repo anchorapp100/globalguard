@@ -1,13 +1,13 @@
 /* =====================================================================
  * Voice Visuals \u2014 audio-reactive voice overlay for the Davis wall panel.
- *   A skin engine: shared audio analysis + renderer + bloom, eleven skins,
+ *   A skin engine: shared audio analysis + renderer + bloom, fifteen skins,
  *   a demo driver (real Luna speech data) and the Home Assistant overlay.
  *   Source: C:\envy\voice-visuals\src\*.js  \u00b7  built by build.py
  * ===================================================================== */
 (function () {
   "use strict";
   if (window.VoiceVisuals) return;
-  var VERSION = "20260923155155";
+  var VERSION = "20260923174301";
 
   var CFG = {
     stateEnt:  "assist_satellite.kevs_bedroom_assist_satellite",
@@ -1277,6 +1277,414 @@ var VV_DEMO = {"user": {"frames": 136, "dur": 2.705, "b64": "AzkLICYAKzQ5LhYyMil
     }
   });
 
+  /* ---------- Digital VU \u2014 an LED spectrum analyser: 32 segmented columns, red peak-hold caps, mirrored in a black floor ----------
+     LED-meter ballistics: near-instant attack, linear release; peaks hold 0.6 s then fall slowly. Highs get a tilt so every
+     column moves with speech (voice energy sits low). */
+  register({
+    id: "digital-vu", name: "Digital VU", layout: "bottom", text: "default", hiDpi: true,
+    blurb: "A glowing LED spectrum analyser \u2014 32 segmented columns with falling red peak caps, mirrored in a black glass floor.",
+    init: function (r) {
+      var S = r.S, W = r.w, H = r.h, k;
+      S.N = 32; S.SEG = 22;
+      S.h = new Float32Array(S.N); S.pk = new Float32Array(S.N); S.pkT = new Float32Array(S.N);
+      var areaW = Math.min(W * 0.86, H * 1.95);
+      S.x0 = (W - areaW) / 2; S.colW = areaW / S.N;
+      S.top = H * 0.1; S.base = H * 0.58; S.segH = (S.base - S.top) / S.SEG;
+      function colAt(p) {                                   // bottom -> top: green, lime, yellow, orange, red
+        var stops = [[0, [34, 190, 40]], [0.45, [120, 222, 30]], [0.62, [250, 226, 30]], [0.8, [255, 150, 22]], [0.9, [255, 72, 20]], [1, [255, 30, 20]]];
+        for (var i = 1; i < stops.length; i++) if (p <= stops[i][0]) return mixc(stops[i - 1][1], stops[i][1], (p - stops[i - 1][0]) / (stops[i][0] - stops[i - 1][0]));
+        return stops[stops.length - 1][1];
+      }
+      S.lit = []; S.dark = [];
+      for (k = 0; k < S.SEG; k++) { var c = colAt(k / (S.SEG - 1)); S.lit.push(rgba(c, 1)); S.dark.push(rgba(mixc([0, 0, 0], c, 0.15), 1)); }
+    },
+    draw: function (r, f) {
+      var S = r.S, W = r.w, H = r.h, u = r.u, dt = f.dt, t = f.t, st = f.state, i, k;
+      var talk = st === "listening" || st === "responding", proc = st === "processing";
+      for (i = 0; i < S.N; i++) {
+        var target;
+        if (talk) {                                         // bands are a 55 dB scale: show the top ~40 dB so speech sits mid-meter
+          var bi = i / (S.N - 1) * 30, b0 = bi | 0, bv = f.bands[b0] * (1 - (bi - b0)) + f.bands[Math.min(31, b0 + 1)] * (bi - b0);
+          target = clamp((bv - 0.28) / 0.72 * (0.9 + 0.35 * i / (S.N - 1)) * (0.55 + 0.55 * f.level), 0, 1);
+        } else if (proc) target = 0.1 + 0.55 * Math.pow(0.5 + 0.5 * Math.sin(t * 3.4 - i * 0.33), 3);   // a scanner sweep while she thinks
+        else target = 0.03 + 0.06 * noise1(i * 0.9 + t * 1.4);
+        if (target > S.h[i]) S.h[i] += (target - S.h[i]) * (1 - Math.pow(0.2, dt * 30));
+        else S.h[i] = Math.max(target, S.h[i] - dt * 1.3);
+        if (S.h[i] >= S.pk[i]) { S.pk[i] = S.h[i]; S.pkT[i] = t; }
+        else if (t - S.pkT[i] > 0.6) S.pk[i] = Math.max(S.h[i], S.pk[i] - dt * 0.5);
+      }
+      var bb = r.buf("dvbars", W, H), g = bb.getContext("2d");
+      g.globalCompositeOperation = "source-over"; g.clearRect(0, 0, W, H);
+      var gap = S.colW * 0.2, cw = S.colW - gap, sg = Math.max(1, S.segH * 0.26), shh = S.segH - sg;
+      var caps = new Path2D(), n = [], pki = [];
+      for (i = 0; i < S.N; i++) { n.push(Math.round(S.h[i] * S.SEG)); pki.push(Math.min(S.SEG - 1, Math.max(0, Math.ceil(S.pk[i] * S.SEG) - 1))); }
+      for (k = 0; k < S.SEG; k++) {
+        var on = new Path2D(), off = new Path2D(), y = S.base - (k + 1) * S.segH + sg / 2;
+        for (i = 0; i < S.N; i++) {
+          var x = S.x0 + i * S.colW + gap / 2;
+          if (k < n[i]) on.rect(x, y, cw, shh);
+          else if (k === pki[i] && S.pk[i] > 0.05) caps.rect(x, y, cw, shh);
+          else off.rect(x, y, cw, shh);
+        }
+        g.fillStyle = S.dark[k]; g.fill(off);
+        g.fillStyle = S.lit[k]; g.fill(on);
+      }
+      g.fillStyle = "#ff2618"; g.fill(caps);
+      var sc = r.scene(), s = sc.getContext("2d"), gapY = Math.max(4 * u, S.segH * 0.9), fl = S.base + gapY / 2;
+      s.globalCompositeOperation = "source-over"; s.globalAlpha = 1; s.fillStyle = "#000"; s.fillRect(0, 0, W, H);
+      // the black-glass floor: a clear mirror image just under the meter that dies away quickly
+      s.save(); s.translate(0, 2 * S.base + gapY); s.scale(1, -1); s.globalAlpha = 0.5; s.drawImage(bb, 0, 0); s.restore();
+      var fade = s.createLinearGradient(0, fl, 0, fl + (S.base - S.top) * 0.55);
+      fade.addColorStop(0, "rgba(0,0,0,0.3)"); fade.addColorStop(1, "rgba(0,0,0,1)");
+      s.fillStyle = fade; s.fillRect(0, fl, W, H - fl);
+      var edge = s.createLinearGradient(S.x0, 0, S.x0 + S.colW * S.N, 0);  // the glass edge catching the light
+      edge.addColorStop(0, "rgba(160,255,170,0)"); edge.addColorStop(0.5, "rgba(160,255,170,0.16)"); edge.addColorStop(1, "rgba(160,255,170,0)");
+      s.fillStyle = edge; s.fillRect(S.x0, fl - 0.5 * u, S.colW * S.N, Math.max(1, u));
+      s.drawImage(bb, 0, 0);
+      r.present(sc, 0.32 + 0.3 * f.level, 0.012, 2);
+    }
+  });
+
+  /* ---------- Paint Splash \u2014 liquid paint thrown on every syllable: glossy colour blobs that splash, merge and settle ----------
+     Same bounded-kernel metaball field as Mercury, but each blob carries a paint colour: colours blend by squared field weight
+     (distinct paint with soft seams), shaded as glossy wet paint (diffuse + Blinn highlight + darker creases). Dead blobs leave a
+     fading stain behind. Cool paint for your voice, hot paint for Luna's, a slow swirl while she thinks. */
+  register({
+    id: "paint-splash", name: "Paint Splash", layout: "left", text: "default",
+    blurb: "Liquid paint thrown on every syllable \u2014 glossy splashes that fly, merge and settle: cool colours for you, hot for Luna.",
+    init: function (r) {
+      var S = r.S, W = r.w, H = r.h, i;
+      S.fh = Math.round(clamp(H / 2.8 * (r.quality || 1), 60, 320)); S.fw = Math.max(8, Math.round(S.fh * W / H));
+      var n = S.fw * S.fh;
+      S.F = new Float32Array(n); S.Rw = new Float32Array(n); S.Hh = new Float32Array(n);
+      S.Cr = new Float32Array(n); S.Cg = new Float32Array(n); S.Cb = new Float32Array(n); S.Cw = new Float32Array(n);
+      S.img = new ImageData(S.fw, S.fh); S.cA = mkCanvas(S.fw, S.fh); S.stain = mkCanvas(S.fw, S.fh);
+      S.blobs = []; S.R = rng(71); S.cx = 0.62 * W / H; S.cy = 0.5; S.nextSpray = 0; S.nextIdle = 1.5; S.swirl = 0;
+      S.COOL = [[25, 195, 255], [30, 105, 255], [70, 222, 45], [255, 226, 28], [20, 226, 190]];
+      S.HOT = [[255, 40, 205], [255, 52, 30], [255, 138, 22], [255, 208, 30], [255, 88, 150]];
+      S.THINK = [[150, 70, 255], [255, 190, 40], [255, 120, 210]];
+      var bg = mkCanvas(W, H), g = bg.getContext("2d"), rg = g.createRadialGradient(W * 0.62, H * 0.5, 0, W * 0.62, H * 0.5, Math.max(W, H) * 0.75);
+      rg.addColorStop(0, "#15151b"); rg.addColorStop(1, "#050507"); g.fillStyle = rg; g.fillRect(0, 0, W, H);
+      S.bg = bg; S.seeded = false;
+    },
+    blob: function (x, y, vx, vy, r, c, t, life) { return { x: x, y: y, vx: vx, vy: vy, r: r, r0: r, c: c, t0: t, life: life }; },
+    splash: function (S, t, str, cols, x, y) {
+      var R = S.R, k, j, base = cols[(R() * cols.length) | 0];
+      S.blobs.push(this.blob(x, y, (R() - 0.5) * 0.08, (R() - 0.5) * 0.08, 0.035 + 0.045 * str, base, t, 6 + 4 * R()));
+      var arms = 3 + ((R() * 4) | 0);
+      for (k = 0; k < arms; k++) {                                     // splash arms: chains of shrinking blobs thrown outward
+        var th = R() * TAU, sp = (0.3 + 0.8 * str) * (0.6 + 0.8 * R()), c = R() < 0.65 ? base : cols[(R() * cols.length) | 0], seg = 3 + ((R() * 4) | 0);
+        for (j = 0; j < seg; j++) {
+          var fr = (j + 1) / seg, rr = (0.03 - 0.019 * fr) * (0.7 + 0.8 * str);
+          S.blobs.push(this.blob(x + Math.cos(th) * 0.012 * j, y + Math.sin(th) * 0.012 * j, Math.cos(th) * sp * fr, Math.sin(th) * sp * fr, rr, c, t, 5 + 4 * R()));
+        }
+      }
+      var nd = Math.round(5 + 14 * str);
+      for (k = 0; k < nd; k++) {                                       // spray: small fast droplets
+        var th2 = R() * TAU, sp2 = (0.35 + 1.25 * R()) * (0.5 + str);
+        S.blobs.push(this.blob(x, y, Math.cos(th2) * sp2, Math.sin(th2) * sp2, 0.005 + 0.011 * R(), cols[(R() * cols.length) | 0], t, 3 + 5 * R()));
+      }
+      while (S.blobs.length > 280) S.blobs.shift();
+    },
+    draw: function (r, f) {
+      var S = r.S, W = r.w, H = r.h, t = f.t, dt = f.dt, st = f.state, lv = f.level, i, k, x, y;
+      var fw = S.fw, fh = S.fh, F = S.F, Hh = S.Hh, Rw = S.Rw, Cr = S.Cr, Cg = S.Cg, Cb = S.Cb, Cw = S.Cw, D = S.img.data;
+      var talk = st === "listening" || st === "responding", proc = st === "processing", R = S.R;
+      var cols = st === "responding" ? S.HOT : st === "listening" ? S.COOL : proc ? S.THINK : S.COOL.concat(S.HOT);
+      if (!S.seeded) {                                                 // a resting splash so the first frame isn't empty
+        S.seeded = true; this.splash(S, t, 0.55, S.COOL.concat(S.HOT), S.cx, S.cy);
+        for (i = 0; i < S.blobs.length; i++) { S.blobs[i].vx *= 0.25; S.blobs[i].vy *= 0.25; }
+      }
+      var jx = function () { return S.cx + (R() - 0.5) * 0.3; }, jy = function () { return S.cy + (R() - 0.5) * 0.24; };
+      if (talk && f.onset) this.splash(S, t, 0.35 + 0.65 * f.voice, cols, jx(), jy());
+      if (talk && lv > 0.45 && t > S.nextSpray) { S.nextSpray = t + 0.14; this.splash(S, t, 0.18 + 0.2 * lv, cols, jx(), jy()); }
+      if (!talk && !proc && t > S.nextIdle) { S.nextIdle = t + 2.5 + 2 * R(); this.splash(S, t, 0.2, cols, jx(), jy()); }
+      S.swirl = follow(S.swirl, proc ? 1 : 0, 0.05, 0.05, dt);
+      var sc = S.stain.getContext("2d");
+      sc.globalCompositeOperation = "destination-out"; sc.fillStyle = "rgba(0,0,0," + (1 - Math.pow(0.992, dt * 30)).toFixed(4) + ")"; sc.fillRect(0, 0, fw, fh);
+      sc.globalCompositeOperation = "source-over";
+      for (i = S.blobs.length - 1; i >= 0; i--) {
+        var b = S.blobs[i], age = t - b.t0, dx = b.x - S.cx, dy = b.y - S.cy;
+        if (S.swirl > 0.01) { b.vx += (-dy * 1.6 - dx * 0.35) * S.swirl * dt; b.vy += (dx * 1.6 - dy * 0.35) * S.swirl * dt; }
+        var dr = Math.exp(-2.3 * dt); b.vx *= dr; b.vy *= dr; b.x += b.vx * dt; b.y += b.vy * dt;
+        if (age > b.life) {
+          var fade = (age - b.life) / 1.4;
+          if (fade >= 1) {                                             // leave a faint stain where it settled
+            sc.globalAlpha = 0.3; sc.fillStyle = rgba(b.c, 1); sc.beginPath(); sc.arc(b.x * fh, b.y * fh, b.r0 * fh * 1.25, 0, TAU); sc.fill(); sc.globalAlpha = 1;
+            S.blobs.splice(i, 1); continue;
+          }
+          b.r = b.r0 * (1 - fade);
+        }
+      }
+      F.fill(0); Rw.fill(0); Cr.fill(0); Cg.fill(0); Cb.fill(0); Cw.fill(0);
+      for (k = 0; k < S.blobs.length; k++) {
+        var bl = S.blobs[k], bx = bl.x * fh, by = bl.y * fh, br = bl.r * fh;
+        if (br < 0.35) continue;
+        var RR = br * 2.1, R2 = RR * RR, iR2 = 1 / R2, cr = bl.c[0], cg = bl.c[1], cb = bl.c[2];
+        var x0 = Math.max(0, Math.floor(bx - RR)), x1 = Math.min(fw - 1, Math.ceil(bx + RR)), y0 = Math.max(0, Math.floor(by - RR)), y1 = Math.min(fh - 1, Math.ceil(by + RR));
+        for (y = y0; y <= y1; y++) {
+          var ddy = y - by, dy2 = ddy * ddy, row = y * fw;
+          if (dy2 >= R2) continue;
+          for (x = x0; x <= x1; x++) {
+            var ddx = x - bx, d2 = ddx * ddx + dy2;
+            if (d2 < R2) { var q = 1 - d2 * iR2, c = q * q * q, w = c * c, p = row + x; F[p] += c; Rw[p] += c * br; Cr[p] += w * cr; Cg[p] += w * cg; Cb[p] += w * cb; Cw[p] += w; }
+          }
+        }
+      }
+      for (i = 0; i < F.length; i++) { var fv = F[i]; Hh[i] = fv > 0.5 ? Math.sqrt(fv - 0.5) * 1.35 * (Rw[i] / fv) : 0; }
+      var Lx = -0.47, Ly = -0.62, Lz = 0.63, hx0 = Lx, hy0 = Ly, hz0 = Lz + 1, hl = 1 / Math.sqrt(hx0 * hx0 + hy0 * hy0 + hz0 * hz0);
+      hx0 *= hl; hy0 *= hl; hz0 *= hl;
+      for (y = 0; y < fh; y++) {
+        var rw = y * fw;
+        for (x = 0; x < fw; x++) {
+          var ii = rw + x, j4 = ii << 2, fq = F[ii];
+          if (fq < 0.3 || x === 0 || y === 0 || x === fw - 1 || y === fh - 1) { D[j4 + 3] = 0; continue; }
+          var gx = (F[ii + 1] - F[ii - 1]) * 0.5, gy = (F[ii + fw] - F[ii - fw]) * 0.5, gm = Math.sqrt(gx * gx + gy * gy) + 1e-6;
+          var al = (fq - 0.5) / gm + 0.5;
+          if (al <= 0) { D[j4 + 3] = 0; continue; }
+          if (al > 1) al = 1;
+          var hx = (Hh[ii + 1] - Hh[ii - 1]) * 0.5, hy = (Hh[ii + fw] - Hh[ii - fw]) * 0.5;
+          var il = 1 / Math.sqrt(hx * hx + hy * hy + 1), nx = -hx * il, ny = -hy * il, nz = il;
+          var cw_ = Cw[ii] || 1e-6, pr = Cr[ii] / cw_, pg = Cg[ii] / cw_, pb = Cb[ii] / cw_;
+          var dif = nx * Lx + ny * Ly + nz * Lz; if (dif < 0) dif = 0;
+          var sp = nx * hx0 + ny * hy0 + nz * hz0, spec = 0;
+          if (sp > 0) { var s2 = sp * sp, s4 = s2 * s2, s8 = s4 * s4, s16 = s8 * s8; spec = s16 * s16 * 235; }
+          var edge = 1 - nz, crease = 1 - 0.55 * edge * edge, shade = (0.42 + 0.72 * dif) * crease;
+          D[j4] = pr * shade + spec; D[j4 + 1] = pg * shade + spec; D[j4 + 2] = pb * shade + spec; D[j4 + 3] = al * 255;
+        }
+      }
+      S.cA.getContext("2d").putImageData(S.img, 0, 0);
+      var g = r.ctx;
+      g.drawImage(S.bg, 0, 0);
+      g.imageSmoothingEnabled = true;
+      g.globalAlpha = 0.5; g.drawImage(S.stain, 0, 0, W, H); g.globalAlpha = 1;
+      g.drawImage(S.cA, 0, 0, W, H);
+      r.bloom(S.cA, 0.16 + 0.2 * lv, 0.02, 1);
+    }
+  });
+
+  /* ---------- Fireworks \u2014 every syllable launches a shell; loud words burst bigger; the sky and the skyline flash with them ----------
+     Rockets rise to a height set by the syllable's strength and burst as peony, ring or willow shells. Sparks fly with drag and a
+     little gravity into a fading trail buffer (long streaks), glitter as they die, and the whole buffer blooms. */
+  register({
+    id: "fireworks", name: "Fireworks", layout: "bottom", text: "default",
+    blurb: "A night-sky fireworks show \u2014 every syllable launches a shell, loud words burst bigger, and the whole sky blooms.",
+    init: function (r) {
+      var S = r.S, W = r.w, H = r.h, u = r.u, R = rng(404), i;
+      S.R = R; S.rockets = []; S.sparks = []; S.flashes = []; S.nextAuto = 0; S.mix = 0; S.gold = 0; S.max = r.thumb ? 700 : 1800;
+      S.ground = H * 0.86;
+      var bg = mkCanvas(W, H), g = bg.getContext("2d"), gr = g.createLinearGradient(0, 0, 0, H);
+      gr.addColorStop(0, "#010208"); gr.addColorStop(0.55, "#050a1a"); gr.addColorStop(0.86, "#0d1430"); gr.addColorStop(1, "#070a16");
+      g.fillStyle = gr; g.fillRect(0, 0, W, H);
+      for (i = 0; i < (r.thumb ? 120 : 260); i++) { var b = 0.15 + R() * R() * 0.7, s = (0.5 + R()) * u; g.fillStyle = "rgba(220,230,255," + b.toFixed(3) + ")"; g.fillRect(R() * W, R() * H * 0.7, s, s); }
+      S.bg = bg;
+      var sk = mkCanvas(W, H), q = sk.getContext("2d"), x = 0;
+      q.fillStyle = "#03040a";
+      var wins = [];
+      while (x < W) {                                                  // a city skyline, windows dimly lit
+        var bw = (26 + R() * 70) * u, bh = H * (0.05 + R() * R() * 0.13), top = S.ground - bh;
+        q.fillRect(x, top, bw + 1, H - top);
+        if (R() < 0.25) q.fillRect(x + bw * 0.4, top - bh * 0.25, bw * 0.12, bh * 0.25);
+        for (var wy = top + 6 * u; wy < S.ground - 4 * u; wy += 9 * u) for (var wx = x + 5 * u; wx < x + bw - 6 * u; wx += 8 * u) if (R() < 0.16) wins.push([wx, wy]);
+        x += bw + (R() < 0.3 ? R() * 16 * u : 0);
+      }
+      q.fillRect(0, S.ground, W, H - S.ground);
+      q.fillStyle = "rgba(255,200,110,0.55)"; for (i = 0; i < wins.length; i++) q.fillRect(wins[i][0], wins[i][1], 3 * u, 3.4 * u);
+      S.sky = sk;
+      S.PA = [[120, 210, 255], [70, 130, 255], [140, 255, 220], [235, 245, 255]];
+      S.PB = [[255, 95, 205], [255, 70, 120], [255, 205, 100], [200, 130, 255]];
+      S.PG = [[255, 205, 95], [255, 165, 60], [255, 235, 170], [255, 190, 110]];
+    },
+    launch: function (S, W, H, str, t) {
+      var R = S.R, y0 = S.ground, yb = H * (0.44 - 0.26 * str) + (R() - 0.5) * H * 0.06, gy = 0.55 * H;
+      var vy = -Math.sqrt(2 * gy * Math.max(10, y0 - yb)), x = W * (0.2 + 0.6 * R());
+      var r = R(), type = str > 0.7 && r < 0.3 ? "ring" : r < 0.22 ? "willow" : "peony";
+      S.rockets.push({ x: x, y: y0, vx: (R() - 0.5) * W * 0.05, vy: vy, str: str, type: type, ci: (R() * 4) | 0, t0: t });
+    },
+    burst: function (S, H, rk, cols, t) {
+      var R = S.R, n = Math.round((60 + 120 * rk.str) * (S.max < 1000 ? 0.5 : 1)), sp = H * (0.2 + 0.24 * rk.str), c = cols[rk.ci], c2 = cols[(rk.ci + 1) % cols.length], i;
+      for (i = 0; i < n && S.sparks.length < S.max; i++) {
+        var a = R() * TAU, v = rk.type === "ring" ? sp : sp * (0.35 + 0.65 * Math.sqrt(R())), willow = rk.type === "willow";
+        S.sparks.push({ x: rk.x, y: rk.y, vx: Math.cos(a) * v * (willow ? 0.7 : 1), vy: Math.sin(a) * v * (willow ? 0.7 : 1),
+          c: willow ? S.PG[(R() * 2) | 0] : (R() < 0.8 ? c : c2), t0: t, life: willow ? 2.4 + R() * 0.8 : 1.1 + R() * 0.8,
+          drag: willow ? 2.4 : 1.35, grav: willow ? 0.5 : 0.28, tw: R() < 0.45, s: willow ? 1 : 1.4 });
+      }
+      S.flashes.push({ x: rk.x, y: rk.y, t0: t, a: 0.1 + 0.2 * rk.str, c: c });
+    },
+    draw: function (r, f) {
+      var S = r.S, W = r.w, H = r.h, u = r.u, t = f.t, dt = f.dt, st = f.state, lv = f.level, i, k;
+      var talk = st === "listening" || st === "responding", proc = st === "processing", R = S.R;
+      S.mix = follow(S.mix, st === "responding" ? 1 : st === "listening" ? 0 : S.mix, 0.08, 0.08, dt);
+      S.gold = follow(S.gold, proc ? 1 : 0, 0.08, 0.05, dt);
+      var cols = []; for (k = 0; k < 4; k++) cols.push(mixc(mixc(S.PA[k], S.PB[k], S.mix), S.PG[k], S.gold));
+      if (talk && f.onset && S.rockets.length < 8) this.launch(S, W, H, 0.4 + 0.6 * f.voice, t);
+      if (t > S.nextAuto) {
+        if (talk) { S.nextAuto = t + 0.9 - 0.55 * lv; if (lv > 0.2) this.launch(S, W, H, 0.3 + 0.5 * lv, t); }
+        else if (proc) { S.nextAuto = t + 0.45; this.launch(S, W, H, 0.22, t); }
+        else { S.nextAuto = t + 2.6 + 2 * R(); this.launch(S, W, H, 0.3, t); }
+      }
+      var acc = r.buf("fwacc", W, H), a = acc.getContext("2d");
+      a.globalCompositeOperation = "source-over"; a.fillStyle = "rgba(0,0,0," + (1 - Math.pow(0.84, dt * 30)).toFixed(3) + ")"; a.fillRect(0, 0, W, H);
+      a.globalCompositeOperation = "lighter";
+      var gy = 0.55 * H, trail = new Path2D();
+      for (i = S.rockets.length - 1; i >= 0; i--) {
+        var rk = S.rockets[i];
+        var px = rk.x, py = rk.y;                                      // a continuous streak, not dots, at any frame rate
+        rk.vy += gy * dt; rk.x += rk.vx * dt; rk.y += rk.vy * dt;
+        trail.moveTo(px, py); trail.lineTo(rk.x, rk.y);
+        if (R() < 0.8) S.sparks.push({ x: rk.x, y: rk.y, vx: (R() - 0.5) * 30 * u, vy: 40 * u, c: [255, 220, 170], t0: t, life: 0.35, drag: 3, grav: 0.2, tw: false, s: 0.8 });
+        if (rk.vy > -0.06 * H) { this.burst(S, H, rk, cols, t); S.rockets.splice(i, 1); }
+      }
+      a.lineWidth = 1.6 * u; a.lineCap = "round"; a.strokeStyle = "rgba(255,205,140,0.6)"; a.stroke(trail);
+      var buckets = {}, keys = [];
+      for (i = S.sparks.length - 1; i >= 0; i--) {
+        var p = S.sparks[i], age = t - p.t0;
+        if (age > p.life) { S.sparks.splice(i, 1); continue; }
+        var d = Math.exp(-p.drag * dt); p.vx *= d; p.vy *= d; p.vy += gy * p.grav * dt; p.x += p.vx * dt; p.y += p.vy * dt;
+        var fade = 1 - age / p.life, al = fade * fade;
+        if (p.tw && fade < 0.45 && R() < 0.5) al *= 0.2;               // glitter as they die
+        var lvl = al > 0.66 ? 2 : al > 0.3 ? 1 : 0, key = p.c.join(",") + "|" + lvl;
+        if (!buckets[key]) { buckets[key] = { path: new Path2D(), c: p.c, lvl: lvl }; keys.push(key); }
+        var sz = p.s * (1.2 + 1.2 * fade) * u;
+        buckets[key].path.rect(p.x - sz / 2, p.y - sz / 2, sz, sz);
+      }
+      var alv = [0.3, 0.62, 1];
+      for (k = 0; k < keys.length; k++) { var bk = buckets[keys[k]]; a.fillStyle = rgba(mixc(bk.c, [255, 255, 255], bk.lvl * 0.18), alv[bk.lvl]); a.fill(bk.path); }
+      a.globalCompositeOperation = "source-over";
+      var g = r.ctx;
+      g.drawImage(S.bg, 0, 0);
+      g.globalCompositeOperation = "lighter";
+      var sky = 0;
+      for (i = S.flashes.length - 1; i >= 0; i--) {
+        var fl = S.flashes[i], fa = 1 - (t - fl.t0) / 0.45;
+        if (fa <= 0) { S.flashes.splice(i, 1); continue; }
+        sky = Math.max(sky, fa * fl.a);
+        var rad = H * 0.55, fg = g.createRadialGradient(fl.x, fl.y, 0, fl.x, fl.y, rad);
+        fg.addColorStop(0, rgba(fl.c, fl.a * fa)); fg.addColorStop(1, rgba(fl.c, 0));
+        g.fillStyle = fg; g.fillRect(fl.x - rad, fl.y - rad, rad * 2, rad * 2);
+      }
+      g.drawImage(acc, 0, 0);
+      g.globalCompositeOperation = "source-over";
+      g.drawImage(S.sky, 0, 0);
+      g.save(); g.beginPath(); g.rect(0, S.ground, W, H - S.ground); g.clip();   // the harbour mirrors the show
+      g.translate(0, S.ground); g.scale(1, -0.26); g.translate(0, -S.ground); g.globalCompositeOperation = "lighter"; g.globalAlpha = 0.34;
+      g.drawImage(acc, 0, 0); g.restore();
+      g.globalAlpha = 1; g.globalCompositeOperation = "source-over";
+      var wf = g.createLinearGradient(0, S.ground, 0, H); wf.addColorStop(0, "rgba(2,3,9,0)"); wf.addColorStop(1, "rgba(2,3,9,0.85)");
+      g.fillStyle = wf; g.fillRect(0, S.ground, W, H - S.ground);
+      if (sky > 0.01) {                                                // the skyline catches the light of each burst
+        g.globalCompositeOperation = "lighter";
+        var hz = g.createLinearGradient(0, S.ground - H * 0.2, 0, S.ground);
+        hz.addColorStop(0, "rgba(0,0,0,0)"); hz.addColorStop(1, rgba(cols[0], sky * 0.6));
+        g.fillStyle = hz; g.fillRect(0, S.ground - H * 0.2, W, H * 0.2);
+        g.globalCompositeOperation = "source-over";
+      }
+      r.bloom(acc, 0.85 + 0.5 * lv, 0.022, 2);
+    }
+  });
+
+  /* ---------- Synthwave \u2014 an 80s neon sunset: the striped sun pulses with the voice, the mountains ARE its spectrum,
+     and the perspective grid rushes toward you faster as someone speaks; each syllable sends a bright wave down the grid. ---------- */
+  register({
+    id: "synthwave", name: "Synthwave", layout: "top", text: "default",
+    blurb: "An 80s neon sunset \u2014 the striped sun pulses with the voice, the mountains are its spectrum, and the grid rushes at you.",
+    init: function (r) {
+      var S = r.S, W = r.w, H = r.h, u = r.u, R = rng(88), i;
+      S.hz = H * 0.6; S.scroll = 0; S.mix = 0; S.gold = 0; S.waves = []; S.P = 72;
+      S.front = new Float32Array(S.P); S.back = new Float32Array(S.P);
+      S.base = new Float32Array(S.P);
+      for (i = 0; i < S.P; i++) { var xn = i / (S.P - 1); S.base[i] = 0.25 + 0.5 * noise1(xn * 7 + 3) + 0.25 * noise1(xn * 19 + 1); }
+      var bg = mkCanvas(W, H), g = bg.getContext("2d"), sky = g.createLinearGradient(0, 0, 0, S.hz);
+      sky.addColorStop(0, "#060217"); sky.addColorStop(0.5, "#1a0736"); sky.addColorStop(0.82, "#46104e"); sky.addColorStop(1, "#8c1f5c");
+      g.fillStyle = sky; g.fillRect(0, 0, W, S.hz);
+      for (i = 0; i < 190; i++) { var b = 0.2 + R() * R() * 0.8, s = (0.5 + R() * 1.1) * u; g.fillStyle = "rgba(255,230,255," + b.toFixed(3) + ")"; g.fillRect(R() * W, Math.pow(R(), 1.6) * S.hz * 0.7, s, s); }
+      var fl = g.createLinearGradient(0, S.hz, 0, H); fl.addColorStop(0, "#1a0530"); fl.addColorStop(1, "#050109");
+      g.fillStyle = fl; g.fillRect(0, S.hz, W, H - S.hz);
+      S.bg = bg;
+    },
+    draw: function (r, f) {
+      var S = r.S, W = r.w, H = r.h, u = r.u, t = f.t, dt = f.dt, st = f.state, lv = f.level, i, k;
+      var talk = st === "listening" || st === "responding", proc = st === "processing", hz = S.hz;
+      S.mix = follow(S.mix, st === "responding" ? 1 : st === "listening" ? 0 : S.mix, 0.08, 0.08, dt);
+      S.gold = follow(S.gold, proc ? 1 : 0, 0.08, 0.05, dt);
+      var neon = mixc(mixc([60, 235, 255], [255, 60, 200], S.mix), [255, 190, 60], S.gold);
+      var neon2 = mixc(mixc([255, 60, 200], [80, 220, 255], S.mix), [255, 120, 60], S.gold);
+      S.scroll += dt * (0.9 + 3.6 * lv + (proc ? 1.2 : 0));
+      if (f.onset && talk && S.waves.length < 6) S.waves.push({ z: 14, a: 0.5 + 0.5 * f.voice });
+      // mountains: the spectrum mirrored from the middle, low notes nearest the sun
+      for (i = 0; i < S.P; i++) {
+        var xn = i / (S.P - 1), d = Math.abs(xn - 0.5) * 2, bi = d * 26, b0 = bi | 0, bv = f.bands[b0] + (f.bands[Math.min(31, b0 + 1)] - f.bands[b0]) * (bi - b0);
+        var gapC = smoothstep(0.1, 0.34, d), tgt = (S.base[i] * 0.35 + (talk ? bv * (0.6 + 0.8 * lv) : proc ? 0.25 + 0.2 * Math.sin(t * 3 + d * 9) : 0.08)) * gapC;
+        S.front[i] = follow(S.front[i], tgt, 0.45, 0.12, dt);
+        S.back[i] = follow(S.back[i], S.base[i] * 0.55 * gapC + tgt * 0.35, 0.05, 0.03, dt);
+      }
+      var sc = r.scene(), g = sc.getContext("2d");
+      g.globalCompositeOperation = "source-over"; g.globalAlpha = 1; g.drawImage(S.bg, 0, 0);
+      // the sun: gradient disc with widening cut stripes, pulsing with the low bands
+      var bass = (f.bands[1] + f.bands[3] + f.bands[5]) / 3, Rs = H * (0.155 + 0.012 * f.slow + (talk ? 0.012 * lv : 0)), cx = W / 2, cy = hz - H * 0.075;
+      var ssz = Math.ceil(H * 0.37 + 6), sun = r.buf("swsun", ssz, ssz), q = sun.getContext("2d"), o = ssz / 2;   // fixed size: no realloc as it pulses
+      q.globalCompositeOperation = "source-over"; q.clearRect(0, 0, sun.width, sun.height);
+      var sg = q.createLinearGradient(0, o - Rs, 0, o + Rs);
+      sg.addColorStop(0, "#fff27a"); sg.addColorStop(0.45, "#ffb03a"); sg.addColorStop(0.75, "#ff4f7a"); sg.addColorStop(1, "#d61e8f");
+      q.fillStyle = sg; q.beginPath(); q.arc(o, o, Rs, 0, TAU); q.fill();
+      q.globalCompositeOperation = "destination-out";
+      for (k = 0; k < 7; k++) {
+        var sy = o + Rs * (0.02 + k * 0.155), th = Rs * (0.018 + 0.028 * k / 6) * (0.8 + 1.4 * (talk ? bass : 0.15) + (proc ? 0.3 * (0.5 + 0.5 * Math.sin(t * 5 - k)) : 0));
+        q.fillRect(0, sy, sun.width, th);
+      }
+      q.globalCompositeOperation = "source-over";
+      g.save(); g.beginPath(); g.rect(0, 0, W, hz); g.clip();
+      g.globalCompositeOperation = "lighter";
+      var glow = g.createRadialGradient(cx, cy, Rs * 0.6, cx, cy, Rs * 2.4);
+      glow.addColorStop(0, "rgba(255,90,160," + (0.22 + 0.25 * lv).toFixed(3) + ")"); glow.addColorStop(1, "rgba(255,90,160,0)");
+      g.fillStyle = glow; g.fillRect(cx - Rs * 2.4, cy - Rs * 2.4, Rs * 4.8, Rs * 4.8);
+      g.globalCompositeOperation = "source-over";
+      g.drawImage(sun, cx - o, cy - o);
+      g.restore();
+      // mountains (back ridge, then the live front ridge)
+      function ridge(arr, hmax, fill, edge, lw) {
+        g.beginPath(); g.moveTo(0, hz);
+        for (var j = 0; j < S.P; j++) g.lineTo(j / (S.P - 1) * W, hz - arr[j] * hmax);
+        g.lineTo(W, hz); g.closePath(); g.fillStyle = fill; g.fill();
+        g.beginPath(); for (j = 0; j < S.P; j++) { var px = j / (S.P - 1) * W, py = hz - arr[j] * hmax; if (j) g.lineTo(px, py); else g.moveTo(px, py); }
+        g.lineWidth = lw; g.strokeStyle = edge; g.stroke();
+      }
+      ridge(S.back, H * 0.2, "#12042a", rgba(neon2, 0.55), 1.2 * u);
+      var mf = g.createLinearGradient(0, hz - H * 0.18, 0, hz); mf.addColorStop(0, "#1d0636"); mf.addColorStop(1, "#0b0218");
+      ridge(S.front, H * 0.16, mf, rgba(neon, 0.95), 1.8 * u);
+      // the horizon line
+      g.globalCompositeOperation = "lighter";
+      g.fillStyle = rgba(mixc(neon, [255, 255, 255], 0.4), 0.9); g.fillRect(0, hz - 0.8 * u, W, 1.6 * u);
+      // the perspective grid
+      var camH = H - hz, spacing = 1, zmax = 16, offset = S.scroll % spacing;
+      g.lineWidth = 1.4 * u; g.strokeStyle = rgba(neon, 0.8);
+      g.beginPath();
+      for (var z = spacing - offset; z < zmax; z += spacing) {
+        var zz = Math.max(0.05, z * 0.55), y = hz + camH * (1 / zz) * 0.55;
+        if (y > H + 2 || y < hz) continue;
+        g.moveTo(0, y); g.lineTo(W, y);
+      }
+      var nV = 26;
+      for (k = -nV; k <= nV; k++) { var xb = cx + k * (W * 0.16); g.moveTo(cx + (xb - cx) * 0.02, hz); g.lineTo(cx + (xb - cx) * 2.2, H * 1.35); }
+      g.stroke();
+      // syllable waves rolling toward you
+      for (i = S.waves.length - 1; i >= 0; i--) {
+        var wv = S.waves[i]; wv.z -= dt * (5 + 6 * lv);
+        if (wv.z < 0.9) { S.waves.splice(i, 1); continue; }
+        var wy = hz + camH * (1 / Math.max(0.05, wv.z * 0.55)) * 0.55, wa = wv.a * Math.min(1, (14 - wv.z) / 3);
+        var wg = g.createLinearGradient(0, wy - 10 * u, 0, wy + 10 * u);
+        wg.addColorStop(0, rgba(neon2, 0)); wg.addColorStop(0.5, rgba(mixc(neon2, [255, 255, 255], 0.35), wa)); wg.addColorStop(1, rgba(neon2, 0));
+        g.fillStyle = wg; g.fillRect(0, wy - 10 * u, W, 20 * u);
+      }
+      // fade the far grid into the haze
+      g.globalCompositeOperation = "source-over";
+      var haze = g.createLinearGradient(0, hz, 0, hz + (H - hz) * 0.35);
+      haze.addColorStop(0, "rgba(26,5,48,0.9)"); haze.addColorStop(1, "rgba(26,5,48,0)");
+      g.fillStyle = haze; g.fillRect(0, hz + 0.8 * u, W, (H - hz) * 0.35);
+      r.present(sc, 0.55 + 0.45 * lv, 0.018, 2);
+    }
+  });
+
   /* ---------------- demo conversation (gallery + previews): real Luna speech data on a loop ---------------- */
   function simTexture(t) {
     var v = 0.30 + 0.38 * Math.abs(Math.sin(t * 3.3)) + 0.26 * Math.abs(Math.sin(t * 7.9 + 1.7)) * (0.5 + 0.5 * Math.sin(t * 1.3));
@@ -1284,7 +1692,7 @@ var VV_DEMO = {"user": {"frames": 136, "dur": 2.705, "b64": "AzkLICYAKzQ5LhYyMil
   }
   var DEMO_TEXT = {
     user: "Hey Luna, can you show me something beautiful?",
-    reply: "Of course. Here's a little light show: eleven different looks, all dancing to my voice. Pick your favourite, and I'll wear it every time we talk."
+    reply: "Of course. Here's a little light show: fifteen different looks, all dancing to my voice. Pick your favourite, and I'll wear it every time we talk."
   };
   var demoClips = null;
   function getDemoClips() { if (!demoClips) demoClips = { user: unpackClip(VV_DEMO.user), luna: unpackClip(VV_DEMO.luna) }; return demoClips; }

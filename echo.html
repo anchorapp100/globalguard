@@ -92,6 +92,8 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
 :root[data-theme="dark"] .btnlink{color:#1a0b14}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btnlink{color:#1a0b14}}
 .btnlink:hover{filter:brightness(1.08)}
+.herocta{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem 1rem;margin-top:1.5rem}
+.herocta span{font-family:"IBM Plex Mono",monospace;font-size:.75rem;color:var(--muted)}
 
 /* pipeline schematic (committed-dark stage) */
 .pipe{scrollbar-color:#2e3a47 #070a11;background:#070a11;border:1px solid #1b2431;border-radius:16px;padding:.6rem;box-shadow:0 30px 60px -30px rgba(0,0,0,.6)}
@@ -174,6 +176,10 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
           <span class="chip">Gemini 3.6 Flash</span>
           <span class="chip">Piper · en_GB</span>
           <span class="chip">15 live visuals</span>
+        </div>
+        <div class="herocta">
+          <a class="btnlink" href="echo-prompt.html">Get the visuals prompt →</a>
+          <span>Rebuild all fifteen with another AI</span>
         </div>
       </div>
       <div>

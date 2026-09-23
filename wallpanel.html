@@ -403,7 +403,7 @@
 </section>
 
 <!-- 06 LESSONS -->
-<section style="background:var(--surface-2)">
+<section id="field-notes" style="background:var(--surface-2)">
   <div class="wrap reveal">
     <div class="sec-head col"><span class="eyebrow">08 · Field notes</span><h2>Things that cost an hour each</h2><p class="lede">The dashboard went from "a three out of ten" to this in one day of iteration against tablet screenshots. Most of the time went on these.</p></div>
     <div class="logs">
@@ -413,6 +413,7 @@
       <div class="log"><h3><span class="no">04</span>The header came back</h3><dl class="grid"><dt>Symptom</dt><dd>HA's own tab strip reappeared above the pill bar after a rebuild.</dd><dt>Cause</dt><dd>The kiosk setting was on each view but no longer at the dashboard root.</dd><dt>Fix</dt><dd class="fix">Both.</dd></dl></div>
       <div class="log"><h3><span class="no">05</span>The tablet went "offline" while showing the dashboard</h3><dl class="grid"><dt>Symptom</dt><dd>Every tablet sensor unavailable, yet the panel was plainly live.</dd><dt>Cause</dt><dd>DHCP had quietly moved the tablet to a new address; the integration was still pointed at the old one.</dd><dt>Fix</dt><dd class="fix">Repointed, and a reservation so it can't wander again.</dd></dl></div>
       <div class="log"><h3><span class="no">06</span>Six copies of the tab bar</h3><dl class="grid"><dt>Symptom</dt><dd>HA's dashboard loader doesn't reliably honour YAML anchors, so the pill bar had to be pasted into every view.</dd><dt>Fix</dt><dd class="fix">A tiny build step: write it once, stamp it into each view with the right pill lit.</dd></dl></div>
+      <div class="log"><h3><span class="no">07</span>"Session expired" on the web-app tabs</h3><dl class="grid"><dt>Symptom</dt><dd>The Scenes tab kept saying "Session expired — reload the panel", even though the panel itself was signed in. A reload helped for half an hour.</dd><dt>Cause</dt><dd>Scenes, Media, Traccar and Energy are small web-apps in an iframe, and each borrowed the access token the panel had saved. Home&nbsp;Assistant renews that token only when the page needs it, so on an always-on kiosk it sat expired for hours. Scenes gave up; Media, Traccar and Energy quietly stopped updating, and Energy fell back to its sample figures.</dd><dt>Fix</dt><dd class="fix">The tabs now make their calls through the panel's own live connection to Home&nbsp;Assistant, which stays signed in for days. The saved token is only a fallback, renewed at most once per load, so a failure can't count towards Home&nbsp;Assistant's automatic IP ban.</dd></dl></div>
     </div>
   </div>
 </section>

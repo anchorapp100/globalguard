@@ -69,7 +69,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
 .callout.warn b.h{color:var(--alert)}
 .callout code,.card code,.lede code,p code,li code{font-family:"IBM Plex Mono",monospace;font-size:.86em;background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:.05em .38em;color:var(--ink)}
 .step .body{min-width:0}
-.step .body p+p,.step .body figure+p{margin-top:.9rem}
+.step .body p+p,.step .body figure+p,.step .body pre+p{margin-top:.9rem}
 .steps.wide .step{grid-template-columns:7.6rem 1fr}
 @media(max-width:640px){.steps.wide .step{grid-template-columns:1fr;gap:.35rem}}
 #pickStage,#pickDesc{max-width:58rem;margin-inline:auto}
@@ -152,7 +152,20 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
 .scores figcaption{margin-top:1rem;text-align:left;color:var(--muted);font-size:.86rem;font-family:"Hanken Grotesk",sans-serif;letter-spacing:0}
 @media(max-width:560px){.sc-row,.sc-axis{grid-template-columns:5.2rem 1fr 4.9rem;gap:.5rem}}
 .ears-side{display:flex;flex-direction:column;gap:1.1rem}
-.ears-side .callout{margin-top:0}
+@media(min-width:901px){.ears-side{position:sticky;top:5rem}}
+.ears-notes{margin-top:2rem}
+.ears-notes .callout{margin-top:0}
+.deep{margin-top:2.6rem}
+.deep>h3{font-size:1.3rem;font-weight:800;margin-bottom:.4rem}
+.deep-lede{color:var(--muted);max-width:46rem;margin-bottom:1.1rem}
+.chain{list-style:none;margin:0 0 1.2rem;padding:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:.7rem;counter-reset:ch}
+.chain li{counter-increment:ch;position:relative;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:.8rem .85rem;display:flex;flex-direction:column;gap:.3rem;min-width:0}
+.chain li::before{content:counter(ch,decimal-leading-zero);font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.1em;color:var(--accent)}
+.chain b{font-size:.95rem;line-height:1.25;color:var(--ink)}
+.chain span{font-size:.84rem;line-height:1.4;color:var(--muted)}
+@media(min-width:981px){.chain li:not(:last-child)::after{content:"→";position:absolute;right:-.68rem;top:50%;transform:translateY(-50%);font-family:"IBM Plex Mono",monospace;font-size:1.05rem;font-weight:600;line-height:1;color:var(--accent)}}
+@media(max-width:980px){.chain{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:560px){.chain{grid-template-columns:1fr}}
 .cmd.wrap{white-space:pre-wrap;overflow-wrap:anywhere}
 </style>
 </head>
@@ -225,7 +238,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
     <div class="stats">
       <div class="stat"><span class="big num-strong">50</span><span class="lab">Amazon services stopped</span></div>
       <div class="stat"><span class="big num-strong">&lt;1&nbsp;s</span><span class="lab">speech-to-text on the GPU</span></div>
-      <div class="stat"><span class="big num-strong">2</span><span class="lab">wake words · one per person</span></div>
+      <div class="stat"><span class="big num-strong">2</span><span class="lab">wake words · hey luna, okay nabu</span></div>
       <div class="stat"><span class="big num-strong">15</span><span class="lab">live visuals on the panel</span></div>
     </div>
   </div>
@@ -426,7 +439,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
         <text class="pp-t pp-tag" x="630" y="334">TEXT → SPEECH · THE PI</text>
         <text class="pp-t pp-title" x="630" y="358">Piper · en_GB "alba"</text>
         <text class="pp-t" x="630" y="380">Luna's voice</text>
-        <text class="pp-t" x="630" y="400">streamed to the Dot</text>
+        <text class="pp-t" x="630" y="400">sent to the Dot</text>
 
         <rect class="pp-node" x="300" y="328" width="210" height="96" rx="14"/>
         <text class="pp-t pp-tag" x="318" y="354">DISPLAY · KIOSK LAPTOP</text>
@@ -444,12 +457,14 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
     </figure>
 
     <div class="steps wide" style="margin-top:2rem">
-      <div class="step"><span class="idx">1 · wake</span><div class="body"><h3>The wake word is heard on the Dot itself</h3><p>EchoLocal runs microWakeWord models on the Dot. Two custom models — <b>"okay computer"</b> and <b>"hey luna"</b> — were pushed to it over ADB, and its two assistant slots map one wake word per person. Until one fires, no audio leaves the device; after it fires, audio streams to Home&nbsp;Assistant over the ESPHome API.</p></div></div>
+      <div class="step"><span class="idx">1 · wake</span><div class="body"><h3>The wake word is heard on the Dot itself</h3><p>EchoLocal runs microWakeWord models on the Dot, one in each of its two assistant slots: a community-trained <b>"hey luna"</b>, pushed to it over ADB, and <b>"okay nabu"</b>, Home&nbsp;Assistant's own wake word, which came with EchoLocal. Until one fires, no audio leaves the device; after it fires, audio streams to Home&nbsp;Assistant over the ESPHome API. Why these two, and not the original "okay computer", is in <a href="#better-ears" style="color:var(--accent)">Better ears</a>.</p></div></div>
       <div class="step"><span class="idx">2 · transcribe</span><div class="body"><h3>Whisper large-v3 on the RTX&nbsp;5070</h3><p>Speech-to-text moved off the Pi's CPU — where even the small models were slow and error-prone — onto the GPU server that already runs the Frigate cameras. <code>faster-whisper</code> with the large-v3 model runs in its own Docker container behind the Wyoming protocol: transcriptions back in under a second, and the 12&nbsp;GB card is still half free with the camera detector running alongside. The Pi's small model stays configured as a fallback. One Windows-server snag: Docker Desktop's credential store refuses image pulls over SSH, so the image is pulled once at the console and everything else is driven remotely.</p></div></div>
       <div class="step"><span class="idx">3 · understand</span><div class="body"><h3>The house answers first; Gemini only when it can't</h3><p>Home&nbsp;Assistant's own intent engine gets the first go — "turn off the landing light" is matched and done locally in a fraction of a second. Anything else goes to <b>scene_ai</b>, a custom conversation agent, which hands the request to a small service on the Pi that asks <b>Gemini&nbsp;3.6&nbsp;Flash</b> with Google Search grounding. It can build scenes and automations (every entity it names is checked against the real device list before anything runs), answer questions about the house from a live state snapshot, look things up on the web in two to three seconds, and answer "near me" questions from the location of whoever is asking. Anything that touches the alarm needs a spoken <b>"confirm"</b>.</p></div></div>
-      <div class="step"><span class="idx">4 · speak</span><div class="body"><h3>Piper gives Luna her voice</h3><p>Piper's British <code>en_GB alba</code> voice runs on the Pi and streams the reply to the Dot's speaker. Voice and text arrive together because the Dot is set to <b>streaming</b> delivery rather than waiting for the whole clip.</p></div></div>
-      <div class="step"><span class="idx">two people</span><div class="body"><h3>A wake word per person, not voice biometrics</h3><p>"Okay computer" is Kev; "hey luna" is Mom. Each routes to its own pipeline with its own copy of the agent — the same brain and voice, but "near me" follows the right phone. No speaker recognition, no training: the wake word <i>is</i> the identity.</p></div></div>
+      <div class="step"><span class="idx">4 · speak</span><div class="body"><h3>Piper gives Luna her voice</h3><p>Piper's British <code>en_GB alba</code> voice runs on the Pi, and the Dot fetches the reply as one clip once Piper has finished it. That wait is why the words reach the wall panel a beat before Luna speaks. Streamed delivery would start her sooner; our first attempt at switching it on didn't take (field note&nbsp;03).</p></div></div>
+      <div class="step"><span class="idx">two people</span><div class="body"><h3>A wake word per person, not voice biometrics</h3><p>Each wake word can route to its own pipeline with its own copy of the agent — the same brain and voice, but "near me" follows the right phone. No speaker recognition, no training: the wake word <i>is</i> the identity. The Dot sits in Kev's room, so both of its words go to his pipeline; Mom's is built and waiting for the Dot planned for her room.</p></div></div>
     </div>
+
+    <div class="callout"><b class="h">What leaves the house</b>Device commands never do: the intent engine on the Pi handles them. A question that goes to Gemini takes context with it so the answer can be about this house: a snapshot of up to 220 device states, who's home, the alarm, the weather and the asking phone's location (town, postcode and coordinates), with Google Search attached to every call. It goes over the paid API, which Google doesn't use to improve its products; requests are still kept for a limited time for abuse checks, and for 30 days when search is used, and the privacy switches in the Gemini app don't cover the API. Next on the list: send each question only the context it needs, with the location cut down to a town.</div>
 
     <div class="card" style="margin-top:2rem">
       <h3 style="font-size:1.1rem;margin-bottom:1rem">Where the time goes</h3>
@@ -473,7 +488,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
       <div class="tblwrap"><table class="tbl">
         <thead><tr><th>Model</th><th>Job</th><th>Runs on</th><th>Details</th></tr></thead>
         <tbody>
-          <tr><td><b>microWakeWord</b> — "okay computer", "hey luna"</td><td>Wake word, one per person</td><td>The Echo Dot</td><td>Tiny on-device models run by EchoLocal. Thresholds tuned from the Dot's own logs (0.45 and 0.5). Nothing leaves the Dot until one fires.</td></tr>
+          <tr><td><b>microWakeWord</b> — "hey luna", "okay nabu"</td><td>Wake word</td><td>The Echo Dot</td><td>Tiny on-device models run by EchoLocal. Cutoffs set from the Dot's own logs: 0.40 for "hey luna" and 0.80 for the much stronger "okay nabu". Nothing leaves the Dot until one fires.</td></tr>
           <tr><td><b>Whisper large-v3</b> via faster-whisper</td><td>Speech → text</td><td>RTX&nbsp;5070 server, Docker</td><td><code>linuxserver/faster-whisper:gpu</code>, English, beam size&nbsp;1, served to Home&nbsp;Assistant over the Wyoming protocol. Under a second per request. It shares the 12&nbsp;GB card with the camera detector — about 5.8&nbsp;GB in use with both loaded.</td></tr>
           <tr><td><b>Whisper tiny</b> (int8) via faster-whisper</td><td>Fallback speech → text</td><td>Raspberry&nbsp;Pi&nbsp;4 CPU</td><td>Still configured, for when the server is off. The Pi started on the base model, then tiny for speed, before the move to the GPU.</td></tr>
           <tr><td><b>Home&nbsp;Assistant intents</b></td><td>Device commands</td><td>The Pi</td><td>Sentence matching rather than a neural model: "turn off the landing light" is matched and done in a fraction of a second and never leaves the house.</td></tr>
@@ -502,16 +517,16 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
         <dt>Fix</dt><dd class="fix">The panel now listens for "alexa" — which nobody says any more — so the Dot always answers and the panel is display-only. The Dot's threshold came down to match the scores in its logs.</dd></dl></div>
       <div class="log"><h3><span class="no">03</span>The voice lagged the text</h3><dl class="grid">
         <dt>Symptom</dt><dd>The transcript landed seconds before Luna spoke.</dd>
-        <dt>Cause</dt><dd>The Dot's delivery mode was <code>whole</code>: wait for the entire reply clip, then play it.</dd>
-        <dt>Fix</dt><dd class="fix">Delivery set to <code>streaming</code> in the Dot's config. What's left is Piper finishing on the Pi (above) — the next target.</dd></dl></div>
+        <dt>Cause</dt><dd>The Dot's delivery mode is <code>whole</code>: wait for Piper to finish the entire reply, then play it. We set it to <code>streaming</code> in the Dot's config, but EchoLocal only knows <code>whole</code> and <code>stream</code>, so it quietly kept waiting for the whole clip, and Home&nbsp;Assistant showed the setting as "unknown". We only found out later, reading EchoLocal's source.</dd>
+        <dt>Fix</dt><dd class="fix">Not yet. <code>stream</code> is the right value, but EchoLocal warns that a streamed reply can gap if audio arrives late, so it needs a live test first. Moving Piper onto the GPU (above) is the bigger win.</dd></dl></div>
       <div class="log"><h3><span class="no">04</span>It only heard you up close</h3><dl class="grid">
         <dt>Symptom</dt><dd>Perfect when leaning over it; nothing from across the room.</dd>
         <dt>Cause</dt><dd>The microphone mixing was set to <code>center</code> — one microphone out of seven — at 20&nbsp;dB of gain, with wake thresholds tuned for close range. The logs showed "hey luna" scoring 0.95 up close but under 0.6 at distance.</dd>
-        <dt>Fix</dt><dd class="fix"><code>beamformer</code> mixing (the whole array, steered, with noise rejection — Alexa's own far-field mode), gain up to 28&nbsp;dB, and thresholds lowered to 0.5 and 0.45. "Hey luna" now works from across the room; "okay computer" is limited by its model, not the tuning, so a better model is on the list. <a href="#better-ears" style="color:var(--accent)">How we got there, step by step ↓</a></dd></dl></div>
+        <dt>Fix</dt><dd class="fix"><code>beamformer</code> mixing (Amazon's own far-field filters, aimed at the loudest direction), gain up to 28&nbsp;dB, the "hey luna" cutoff lowered to 0.40, and "okay computer" replaced by the far stronger "okay nabu". "Hey luna" now works from across the room most of the time, and "okay nabu" woke it on all three of its first tries. <a href="#better-ears" style="color:var(--accent)">How we got there, step by step ↓</a></dd></dl></div>
       <div class="log"><h3><span class="no">05</span>"Session expired" on the panel</h3><dl class="grid">
         <dt>Symptom</dt><dd>Every day or two the wall panel dropped its login.</dd>
         <dt>Cause</dt><dd>An ordinary token lapse on a kiosk that nobody ever signs back into.</dd>
-        <dt>Fix</dt><dd class="fix">Trusted-network sign-in for the home network, passed through the local HTTPS proxy so Home&nbsp;Assistant sees the panel's real address. The panel keeps its secure page (the microphone needs one) and never asks for a password.</dd></dl></div>
+        <dt>Fix</dt><dd class="fix">Trusted-network sign-in for the home network, passed through the local HTTPS proxy so Home&nbsp;Assistant sees the panel's real address. The panel keeps its secure page (the microphone needs one) and never asks for a password. A later "Session expired" on the Scenes tab had a different cause, the tab's own copy of the token: <a href="wallpanel.html#field-notes" style="color:var(--accent)">wall panel, field note&nbsp;07</a>.</dd></dl></div>
       <div class="log"><h3><span class="no">06</span>The Pi that stopped breathing</h3><dl class="grid">
         <dt>Symptom</dt><dd>Mid-investigation, Home&nbsp;Assistant and SSH both went unresponsive while the Pi still answered pings.</dd>
         <dt>Cause</dt><dd>A regular-expression search over a 700&nbsp;KB single-line minified JavaScript file, run on the Pi itself, pegged the CPU and starved everything else.</dd>
@@ -523,7 +538,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
 <!-- 05 BETTER EARS -->
 <section id="better-ears">
   <div class="wrap reveal">
-    <div class="sec-head col"><span class="eyebrow">05 · Better ears</span><h2>From leaning over it to across the room</h2><p class="lede">At first Luna only heard you from arm's length. Three settings on the Dot fixed that: which microphones it listens with, how much it amplifies them, and how sure it has to be before it wakes. Each change was checked against the Dot's own logs rather than guessed. If your Echo, or any voice satellite, only hears you up close, work through them in this order.</p></div>
+    <div class="sec-head col"><span class="eyebrow">05 · Better ears</span><h2>From leaning over it to across the room</h2><p class="lede">At first Luna only heard you from arm's length. Three settings on the Dot got her hearing across the room: which microphones it listens with, how much it amplifies them, and how sure it has to be before it wakes. A fourth change, a better-trained wake word, made it dependable. Each change was checked against the Dot's own logs rather than guessed. If your Echo, or any voice satellite, only hears you up close, work through them in this order.</p></div>
     <div class="twocol">
       <div class="steps wide">
         <div class="step"><span class="idx">Look first</span><div class="body"><h3>Read the settings and the wake scores</h3>
@@ -532,23 +547,33 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
 <pre class="cmd wrap"><span class="p">&gt;</span> adb shell "logcat -d | grep echolocal | grep -i wake"
 <span class="o">wake detected slot=2 id=hey_luna peak=0.988 crossing=0.870 cutoff=0.85</span></pre>
           <p>Reading the logs and the file needs adb: over USB, or over Wi-Fi once EchoLocal's remote-adb switch is on.</p></div></div>
-        <div class="step"><span class="idx">Change 1</span><div class="body"><h3>Listen with the whole array</h3>
-          <p><code>Center mic</code> means one microphone out of the Dot's seven. We switched mixing to <code>Beamformer</code>, which combines the whole ring, steers towards the voice and turns down sound from other directions: the same far-field trick a stock Alexa relies on. Home&nbsp;Assistant offers <i>Center mic</i>, <i>Delay and sum</i> (a simpler way of combining them) and <i>Beamformer</i>.</p></div></div>
+        <div class="step"><span class="idx">Change 1</span><div class="body"><h3>Listen with more than one microphone</h3>
+          <p><code>Center mic</code> means one microphone out of the Dot's seven. We switched mixing to <code>Beamformer</code>, which runs Amazon's own far-field filters, the same ones a stock Alexa relies on: eight listening directions built from four of the seven microphones, aimed at whichever direction is loudest. Home&nbsp;Assistant offers <i>Center mic</i>, <i>Delay and sum</i> (EchoLocal's own mix, which uses all seven microphones in six directions) and <i>Beamformer</i>.</p>
+          <p>Played back on recordings of Kev's voice, the two aimed mixes came out close: delay and sum slightly ahead up close, the beamformer holding on to more of the far attempts. So the beamformer stayed.</p></div></div>
         <div class="step"><span class="idx">Change 2</span><div class="body"><h3>A little more gain, in steps</h3>
-          <p>20&nbsp;dB went to 24, then 28, with a test from across the room after each. More gain lifts a quiet, distant voice, but it lifts the room's hiss and the TV too, so we stopped at 28; the control goes to 59. Levelling and echo cancellation stayed on, and the separate noise-reduction switch stayed off.</p></div></div>
+          <p>20&nbsp;dB went to 24, then 28, with a test from across the room after each. More gain lifts a quiet, distant voice, but it lifts the room's hiss and the TV too, so we stopped at 28; the control goes to 59. Levelling and echo cancellation stayed on, and the separate noise-reduction switch stayed off.</p>
+          <p>Past that point, don't expect more volume to rescue a distant voice. The wake-word model scores how far your voice stands above the room, so a boost that lifts the noise with it changes almost nothing: on the bench, a synthesised "hey luna" about 24&nbsp;dB above the room's noise woke the Dot and one about 18&nbsp;dB above didn't, at every level of amplification we tried. What helps is whatever raises your voice over the room: aiming the microphones, turning the TV down, facing the Dot.</p></div></div>
         <div class="step"><span class="idx">Change 3</span><div class="body"><h3>Set the cutoff from the far-away scores</h3>
-          <p>With the whole array listening, "hey luna" still scored 0.99 up close but only 0.59 and 0.62 from further back, against a cutoff of 0.85: the Dot was hearing the phrase and throwing it away. At a cutoff of 0.55 every attempt woke it, but the two furthest only just (they crossed at 0.553 and 0.554), so it went down to 0.50 for some margin. "Okay computer" sits at 0.45.</p>
+          <p>With the beamformer listening, "hey luna" still scored 0.99 up close but only 0.59 and 0.62 from further back, against a cutoff of 0.85: the Dot was hearing the phrase and throwing it away. At a cutoff of 0.55 every attempt woke it, but the two furthest only just (they crossed at 0.553 and 0.554), so it went down to 0.50 for some margin, and later to 0.40.</p>
+          <p>That last step was for misses nobody could see. The Dot only logs a near miss once the score reaches 0.50, so with the cutoff at 0.50 a failed attempt left no trace at all. At 0.40 a quieter attempt still wakes it, and ordinary speech is nowhere near: on the bench, "what time is it" scored 0.06 on the same model.</p>
           <p>Two traps. Despite the name <i>wake word sensitivity</i>, a lower number is more sensitive, because it is the score the phrase has to beat. And Home&nbsp;Assistant's slider stops at 0.50, so anything lower has to go in <code>state.json</code>.</p></div></div>
+        <div class="step"><span class="idx">Change 4</span><div class="body"><h3>Choose a well-trained wake word</h3>
+          <p>Every wake word is its own small model, and some are trained far better than others. "Okay computer" barely registered from a distance however it was tuned, and it twice woke on Luna's own reply ("7:46&nbsp;PM"). Each time it cut her off and left the Dot listening for fifteen seconds, deaf to a real "hey luna". It was switched off.</p>
+          <p>In its place went <b>"okay nabu"</b>, Home&nbsp;Assistant's own wake word, trained by the author of microWakeWord and already on the Dot. In Kev's first test it woke three times out of three, including from across the room, scoring 0.88 to 0.995 against a cutoff of 0.80. It's now the one to use from a distance; "hey luna" stays in the first slot.</p>
+          <p>Keep the word you use in slot&nbsp;1. In EchoLocal 0.0.7, if slot&nbsp;1 is empty, a word in slot&nbsp;2 is heard but the turn fails with a red ring: the Dot looks it up in the wrong place.</p></div></div>
         <div class="step"><span class="idx">Every time</span><div class="body"><h3>Make it stick, then prove it</h3>
           <p>echod reads <code>state.json</code> only when it starts, so every edit was followed by a reboot and two checks: the new value is still in the file (echod quietly resets an invalid one, such as a misspelt mixing mode, to <code>center</code>), and the uptime is a few seconds, proving the Dot really restarted. Then test again from the far spot and read the scores.</p>
-<pre class="cmd wrap"><span class="o">"microphone": { "gain": 28, "mixing": "beamformer",
-                "leveling": true, "cancel": true, "denoise": false },
+<pre class="cmd wrap"><span class="o">"microphone": {
+  "gain": 28, "mixing": "beamformer",
+  "leveling": true, "cancel": true,
+  "denoise": false },
 "wake": { "words": [
-  { "id": "okay_computer", "threshold": 0.45 },
-  { "id": "hey_luna",      "threshold": 0.5 } ] }</span>
+  { "id": "hey_luna",  "threshold": 0.4 },
+  { "id": "okay_nabu", "threshold": 0.8 } ] }</span>
 <span class="p">&gt;</span> adb reboot
 <span class="p">&gt;</span> adb shell cat /proc/uptime
-<span class="o">18.00 46.08</span></pre></div></div>
+<span class="o">18.00 46.08</span></pre>
+          <p>Then prove it in the room, not only on a recording. We built a bench on the PC that replays raw recordings from all seven microphones through the Dot's own mixes and wake-word models. On it, a better-trained community "hey luna" woke on 11 of Kev's 11 recorded attempts, against 4 for the one on the Dot. Live, it wouldn't wake from across the room and once woke by itself, so the old model went back. Nothing changes on the Dot on the bench's word alone.</p></div></div>
       </div>
       <div class="ears-side">
         <figure class="card scores">
@@ -561,7 +586,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
             <div class="sc-axis" aria-hidden="true"><span></span><span><span>0</span><span>0.5</span><span>1.0</span></span><span></span></div>
           </div>
           <div class="sc-group">
-            <h4>28&nbsp;dB, cutoff 0.55 (now 0.50)</h4>
+            <h4>28&nbsp;dB, cutoff 0.55 (now 0.40)</h4>
             <div class="sc-row"><span>up close</span><span class="sc-track" aria-hidden="true"><i style="width:94%"></i><b style="left:55%"></b></span><span class="sc-val">0.94 woke</span></div>
             <div class="sc-row"><span>further</span><span class="sc-track" aria-hidden="true"><i style="width:80%"></i><b style="left:55%"></b></span><span class="sc-val">0.80 woke</span></div>
             <div class="sc-row"><span>further</span><span class="sc-track" aria-hidden="true"><i style="width:77%"></i><b style="left:55%"></b></span><span class="sc-val">0.77 woke</span></div>
@@ -569,10 +594,38 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
             <div class="sc-row"><span>far edge</span><span class="sc-track" aria-hidden="true"><i style="width:62%"></i><b style="left:55%"></b></span><span class="sc-val">0.62 woke</span></div>
             <div class="sc-axis" aria-hidden="true"><span></span><span><span>0</span><span>0.5</span><span>1.0</span></span><span></span></div>
           </div>
-          <figcaption>Real "hey luna" attempts from the Dot's logs, up close to the far side of the bedroom. Each bar is the wake-word model's peak score; the dashed line is the cutoff it had to beat.</figcaption>
+          <div class="sc-group">
+            <h4>"Okay nabu", 28&nbsp;dB, cutoff 0.80</h4>
+            <div class="sc-row"><span>try 1</span><span class="sc-track" aria-hidden="true"><i style="width:99%"></i><b style="left:80%"></b></span><span class="sc-val">0.99 woke</span></div>
+            <div class="sc-row"><span>try 2</span><span class="sc-track" aria-hidden="true"><i style="width:99.5%"></i><b style="left:80%"></b></span><span class="sc-val">0.995 woke</span></div>
+            <div class="sc-row"><span>try 3</span><span class="sc-track" aria-hidden="true"><i style="width:88%"></i><b style="left:80%"></b></span><span class="sc-val">0.88 woke</span></div>
+            <div class="sc-axis" aria-hidden="true"><span></span><span><span>0</span><span>0.5</span><span>1.0</span></span><span></span></div>
+          </div>
+          <figcaption>Real attempts from the Dot's logs: "hey luna" from up close to the far side of the bedroom, then Kev's first three "okay nabu". Each bar is the wake-word model's peak score; the dashed line is the cutoff it had to beat.</figcaption>
         </figure>
-        <div class="callout"><b class="h">What tuning can't fix</b>"Okay computer" barely registered at a distance, even with the whole array: its wake-word model is simply weaker than the one for "hey luna". No cutoff rescues a score that isn't there, so the real fix is a better model from EchoLocal's wake-word library, which is on the list. And every step down in cutoff invites more false wake-ups from the TV; 0.50 is where this room settled.</div>
-        <div class="callout"><b class="h">Two things that look like range problems</b>If another device listens for the same wake word, it can answer first and make your satellite look deaf: the wall panel kept winning "okay computer" until it was given a word nobody says (field note 02). And once awake, the hearing is Whisper's job: the large model on the RTX&nbsp;5070 copes with a distant, echoey voice far better than the small one a Pi can run.</div>
+      </div>
+    </div>
+
+    <div class="grid-2 ears-notes">
+        <div class="callout"><b class="h">What tuning can't fix</b>No cutoff rescues a score that isn't there, and every step down invites more false wake-ups from the TV. If a word still misses after the first three changes, try a better-trained one before tuning any further. Here that was "okay nabu", which scored 0.88 or more on every try, where "okay computer" had barely registered from a distance.</div>
+        <div class="callout"><b class="h">Three things that look like range problems</b>If another device listens for the same wake word, it can answer first and make your satellite look deaf: the wall panel kept winning "okay computer" until it was given a word nobody says (field note 02). A wake word that fires on the assistant's own voice does the same: every false wake cuts the reply off and leaves the Dot listening for fifteen seconds, deaf to the real thing. And once awake, the hearing is Whisper's job: the large model on the RTX&nbsp;5070 copes with a distant, echoey voice far better than the small one a Pi can run.</div>
+    </div>
+
+    <div class="deep">
+      <h3>Inside the Dot's ears</h3>
+      <p class="deep-lede">Kev still had to raise his voice now and then, so we went through EchoLocal's source (it's open, and written in Go) and built a test bench on the PC that runs the Dot's own processing on raw recordings. Every sound takes this path:</p>
+      <ol class="chain">
+        <li><b>Microphones</b><span>A 36&nbsp;mm ring of six plus one in the centre, 16&nbsp;kHz</span></li>
+        <li><b>Mix</b><span>Centre mic, delay and sum, or Amazon's beamformer, aimed at the loudest direction</span></li>
+        <li><b>Echo cancelling</b><span>Only while the Dot is playing: the centre mic stands in for the mix</span></li>
+        <li><b>Noise reduction</b><span>Optional, and off here</span></li>
+        <li><b>Levelling</b><span>Aims for −23&nbsp;dBFS, adding up to 27&nbsp;dB</span></li>
+        <li><b>Wake word, then Whisper</b><span>Both hear exactly this audio</span></li>
+      </ol>
+      <div class="grid-3">
+        <div class="card feat"><h3>Levelling was innocent</h3><p>It sits low after every reply, which made it the first suspect, and for an evening an automation reset it after each one. On the bench it made no difference: the model scores your voice against the room, and levelling lifts both. The automation is gone.</p></div>
+        <div class="card feat"><h3>The weak spot is talking over her</h3><p>While Luna speaks or music plays, wake detection hears only the echo-cancelled centre microphone. Interrupting her means being heard by one microphone out of seven.</p></div>
+        <div class="card feat"><h3>What firmware could add</h3><p>Score the wake word in every direction at once instead of only the loudest, cancel the echo on more than one microphone, log every attempt's score, and train a "hey luna" on Kev's own voice. None of it is started: the bench has to agree with the room first.</p></div>
       </div>
     </div>
   </div>
@@ -704,14 +757,14 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
 <!-- 07 NEXT -->
 <section>
   <div class="wrap reveal">
-    <div class="sec-head col"><span class="eyebrow">07 · What's next</span><h2>One Dot works. Now a house full of them.</h2><p class="lede">The hard parts — the unlock, the local stack, per-person wake words, the fixes above — are solved, so every extra second-hand Dot drops into a working system in about twenty minutes.</p></div>
+    <div class="sec-head col"><span class="eyebrow">07 · What's next</span><h2>One Dot works. Now a house full of them.</h2><p class="lede">The hard parts — the unlock, the local stack, per-person pipelines, far-field hearing, the fixes above — are solved, so every extra second-hand Dot drops into a working system in about twenty minutes.</p></div>
     <div class="grid-2">
       <div class="card feat"><h3>A Dot in every room</h3><p>Kitchen, living room, Mom's room, the landing and the hall. Each one gets a Home&nbsp;Assistant area, so "turn the lights on" means <i>this</i> room — and with a wake word per person, every command carries who and where. Six speakers also means announcements, intercom and alarm audio everywhere.</p></div>
       <div class="card feat"><h3>Knowing where people are, indoors</h3><p>Every Dot is also a Bluetooth proxy that advertises its own beacon. Enough of them make BLE trilateration possible (Bermuda and the BLE Positioning System) — and the <a href="roomscribe.html" style="color:var(--accent)">Roomscribe</a> 3D scan gives each Dot's true position, so the Dots can calibrate against each other. Realistically room-level, not centimetres.</p></div>
-      <div class="card feat"><h3>Faster replies</h3><p>Piper onto the RTX&nbsp;5070 to take the synthesis wait out of long answers, and a stronger "okay computer" model for across-the-room wake-ups.</p></div>
-      <div class="card feat"><h3>Mom's voice on the Echo</h3><p>On the panel, "hey luna" already routes to Mom's own pipeline. On the Dot, both wake words currently share Kev's — wiring the second slot through is a small job on the list.</p></div>
+      <div class="card feat"><h3>Faster, more private replies</h3><p>Piper onto the RTX&nbsp;5070 to take the synthesis wait out of long answers, and streamed replies on the Dot once a live test shows they don't gap. And Gemini gets only the context each question needs, with the location cut to a town.</p></div>
+      <div class="card feat"><h3>Better ears, in firmware</h3><p>The settings are done; the rest needs code. EchoLocal is open source, so the plan is to listen in every direction at once, cancel the echo on more than one microphone and train a "hey luna" on Kev's own voice, each change proven in the room before it stays.</p></div>
     </div>
-    <p style="color:var(--muted);font-size:.9rem;margin-top:1.6rem">Credits: the amonet exploit and TWRP port by k4y0z and r0rt1z2 (XDA unlock thread); EchoLocal by ygelfand; EchoMuse by wilbowes; the Voice Satellite card for the original Lens Flares look; Home&nbsp;Assistant's Assist, Wyoming, faster-whisper, Piper and microWakeWord projects.</p>
+    <p style="color:var(--muted);font-size:.9rem;margin-top:1.6rem">Credits: the amonet exploit and TWRP port by k4y0z and r0rt1z2 (XDA unlock thread); EchoLocal by ygelfand; EchoMuse by wilbowes; the "hey luna" wake-word model by Tater Totterson and "okay nabu" by Kevin Ahrendt; the Voice Satellite card for the original Lens Flares look; Home&nbsp;Assistant's Assist, Wyoming, faster-whisper, Piper and microWakeWord projects.</p>
   </div>
 </section>
 

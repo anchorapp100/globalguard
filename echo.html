@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Echo Voice — DECS Home Systems</title>
+<meta name="description" content="A 2016 Amazon Echo Dot rooted, freed from Amazon and turned into a local Home Assistant voice satellite: on-device wake words, Whisper on an RTX 5070, Gemini for answers, Piper for Luna's voice, and eleven live visuals on the wall panel.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+/* ---------- Echo Voice page: local additions ---------- */
+:root{--rose:#A8327A;--rose-soft:#F6E2EE;--cyan:#0B7F9A;--cyan-soft:#DDF1F6}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--rose:#F28ACB;--rose-soft:#2A1022;--cyan:#5CD6F2;--cyan-soft:#0B2530}}
+:root[data-theme="dark"]{--rose:#F28ACB;--rose-soft:#2A1022;--cyan:#5CD6F2;--cyan-soft:#0B2530}
+body.p-echo{--accent:var(--rose);--accent-soft:var(--rose-soft)}
+
+/* live voice-visual stage (a committed-dark screen) */
+.vstage{position:relative;aspect-ratio:16/10;border-radius:16px;overflow:hidden;background:#000;border:1px solid #1b2431;
+  box-shadow:0 30px 60px -30px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.04);container-type:size}
+.vstage .vv-stage{position:absolute;inset:0}
+.vstage .vv-stage.vv-stage{font-family:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif}
+.vstage .vv-stage.vv-stage .vv-content{gap:1.4cqh}
+.vstage .vv-stage.vv-stage .vv-status{font-size:clamp(7px,1.5cqw,12px)}
+.vstage .vv-stage.vv-stage .vv-user{font-size:clamp(9px,2.3cqw,19px)}
+.vstage .vv-stage.vv-stage .vv-assistant{font-size:clamp(10px,2.75cqw,23px);max-height:34cqh}
+.vstage .vv-stage.vv-stage.vv-t-terminal .vv-content{font-family:"IBM Plex Mono",ui-monospace,monospace}
+.vstage .vv-stage.vv-stage.vv-t-terminal .vv-assistant{font-size:clamp(9px,2.2cqw,19px)}
+.vstage .vv-stage.vv-stage.vv-t-terminal .vv-user{font-size:clamp(8px,1.9cqw,16px)}
+.vbadge{position:absolute;top:.7rem;left:.7rem;z-index:3;font-family:"IBM Plex Mono",monospace;font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;
+  padding:.36rem .66rem;border-radius:999px;background:rgba(7,10,17,.72);border:1px solid #223041;color:#b6c1cc;display:flex;gap:.5rem;align-items:center;pointer-events:none}
+.vbadge i{width:.5rem;height:.5rem;border-radius:50%;background:#F28ACB;box-shadow:0 0 8px #F28ACB}
+.vplay{position:absolute;inset:0;z-index:4;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.35);border:0;cursor:pointer;color:#fff;
+  font-family:"IBM Plex Mono",monospace;font-size:.8rem;letter-spacing:.12em;text-transform:uppercase}
+.vstage.paused .vplay{display:flex}
+.vlegend{display:flex;gap:1.1rem;flex-wrap:wrap;margin-top:.9rem;font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.05em;color:var(--muted)}
+.vlegend span{display:inline-flex;align-items:center;gap:.45rem}
+.vlegend i{width:.55rem;height:.55rem;border-radius:50%}
+.pills{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:1.1rem}
+.pill{font-family:"IBM Plex Mono",monospace;font-size:.72rem;border-radius:999px;padding:.45rem .85rem;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--muted);transition:border-color .15s,background .15s,color .15s}
+.pill:hover{border-color:var(--line-strong);color:var(--ink)}
+.pill[aria-pressed="true"]{color:var(--accent);border-color:var(--accent);background:var(--accent-soft);font-weight:600}
+.vdesc{margin-top:1rem;color:var(--muted);font-size:.98rem;min-height:3.3em;max-width:44rem}
+.vdesc b{color:var(--ink)}
+
+/* commands, screenshots, tables, callouts */
+.cmd{margin:.9rem 0 0;background:#0c1116;color:#d7e1ea;border:1px solid #1c2530;border-radius:12px;padding:.95rem 1.1rem;overflow-x:auto;
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.8rem;line-height:1.65;white-space:pre}
+.cmd .o{color:#7f8d9a}
+.cmd .p{color:#F7BE57}
+.shot{margin:1rem 0 0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#0c0c0c}
+.shot img{display:block;width:100%;height:auto}
+.shot figcaption{margin:0;padding:.7rem 1rem;background:var(--surface);border-top:1px solid var(--line);text-align:left;font-family:"Hanken Grotesk",sans-serif;font-size:.86rem;letter-spacing:0}
+.shot figcaption b{color:var(--ink)}
+.tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
+.tbl th{font-family:"IBM Plex Mono",monospace;font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);text-align:left;padding:.8rem 1rem;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.tbl td{padding:.72rem 1rem;border-top:1px solid var(--line);vertical-align:top;color:var(--muted)}
+.tbl tr:first-child td{border-top:0}
+.tbl.listen td:first-child{white-space:nowrap}
+.tbl td:first-child{color:var(--ink)}
+.tbl code{font-family:"IBM Plex Mono",monospace;font-size:.82em;background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:.05em .38em;color:var(--ink);white-space:nowrap}
+.ring{display:inline-block;width:.8rem;height:.8rem;border-radius:50%;margin-right:.5rem;vertical-align:-.08rem;border:1px solid rgba(0,0,0,.15)}
+.ring.rainbow{background:conic-gradient(#ff3b30,#ffcc00,#34c759,#0a84ff,#af52de,#ff3b30)}
+.callout{margin-top:1.2rem;border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:10px;padding:.95rem 1.1rem;font-size:.95rem;color:var(--muted)}
+.callout b.h{display:block;font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:.3rem}
+.callout.warn{border-left-color:var(--alert);background:var(--alert-soft)}
+.callout.warn b.h{color:var(--alert)}
+.callout code,.card code,.lede code,p code,li code{font-family:"IBM Plex Mono",monospace;font-size:.86em;background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:.05em .38em;color:var(--ink)}
+.step .body{min-width:0}
+.step .body p+p,.step .body figure+p{margin-top:.9rem}
+.steps.wide .step{grid-template-columns:7.6rem 1fr}
+@media(max-width:640px){.steps.wide .step{grid-template-columns:1fr;gap:.35rem}}
+#pickStage,#pickDesc{max-width:58rem;margin-inline:auto}
+#pickDesc{text-align:center}
+.step .sub{font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin:-.1rem 0 .5rem}
+.tiers{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:.8rem;align-items:stretch}
+.tiers .arrow{display:flex;align-items:center;color:var(--accent);font-family:"IBM Plex Mono",monospace}
+@media(max-width:860px){.tiers{grid-template-columns:1fr}.tiers .arrow{justify-content:center;transform:rotate(90deg)}}
+.tiers .card h3{font-size:1.02rem;margin-bottom:.35rem}
+.tiers .card .who{font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:.4rem}
+.tiers .card p{color:var(--muted);font-size:.93rem}
+.twocol{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(1.4rem,3vw,2.4rem);align-items:start}
+.twocol>*{min-width:0}
+@media(max-width:900px){.twocol{grid-template-columns:1fr}}
+.dlcard{display:flex;gap:1.1rem;align-items:center;flex-wrap:wrap}
+.dlcard .t{flex:1;min-width:15rem}
+.dlcard .t h3{font-size:1.05rem}
+.dlcard .t p{color:var(--muted);font-size:.93rem;margin-top:.25rem}
+.btnlink{font-family:"IBM Plex Mono",monospace;font-size:.78rem;text-decoration:none;border-radius:999px;padding:.62rem 1.05rem;border:1px solid var(--accent);background:var(--accent);color:#fff;font-weight:600;white-space:nowrap}
+:root[data-theme="dark"] .btnlink{color:#1a0b14}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btnlink{color:#1a0b14}}
+.btnlink:hover{filter:brightness(1.08)}
+
+/* pipeline schematic (committed-dark stage) */
+.pipe{scrollbar-color:#2e3a47 #070a11;background:#070a11;border:1px solid #1b2431;border-radius:16px;padding:.6rem;box-shadow:0 30px 60px -30px rgba(0,0,0,.6)}
+.pipe svg{display:block;width:100%;min-width:760px;height:auto}
+.pp-node{fill:#0e151f;stroke:#26333f;stroke-width:1.4}
+.pp-node.hi{stroke:#F28ACB}
+.pp-t{font-family:"IBM Plex Mono",ui-monospace,monospace;fill:#9aa7b3;font-size:12.5px}
+.pp-title{fill:#e7edf3;font-weight:600;font-size:15px}
+.pp-tag{font-size:10.5px;letter-spacing:.14em;fill:#7c8a97}
+.pp-wire{fill:none;stroke:#243040;stroke-width:3;stroke-linecap:round;opacity:.45}
+.pp-flow{fill:none;stroke-width:3.2;stroke-linecap:round;stroke-dasharray:2 11;animation:ppmove 1s linear infinite}
+.pp-lab{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11.5px;fill:#c3ccd5}
+.pp-num{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;font-weight:700;fill:#070a11}
+@keyframes ppmove{to{stroke-dashoffset:-13}}
+@media (prefers-reduced-motion:reduce){.pp-flow{animation:none}}
+
+/* where the time goes */
+.tl{display:flex;flex-direction:column;gap:1.3rem}
+.tl .row h3{font-size:.98rem;margin-bottom:.55rem;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.tl .row h3 span{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--faint);font-weight:500;letter-spacing:.04em}
+.tl .bar{display:flex;height:2.3rem;border-radius:9px;overflow:hidden;border:1px solid var(--line)}
+.tl .seg{display:flex;align-items:center;justify-content:center;font-family:"IBM Plex Mono",monospace;font-size:.68rem;color:#fff;white-space:nowrap;overflow:hidden;min-width:0;padding:0 .3rem}
+.tl .keys{display:flex;flex-wrap:wrap;gap:.35rem 1.1rem;margin-top:.55rem;font-family:"IBM Plex Mono",monospace;font-size:.7rem;color:var(--muted)}
+.tl .keys i{display:inline-block;width:.6rem;height:.6rem;border-radius:3px;margin-right:.35rem;vertical-align:-.05rem}
+.s-you{background:#0B8FAE}.s-stt{background:#0E7C86}.s-llm{background:#A85708}.s-int{background:#1B7F49}.s-tts{background:#6D40C4}.s-luna{background:#A8327A}
+
+/* visual chips */
+.vgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:.9rem}
+@media(max-width:900px){.vgrid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.vgrid{grid-template-columns:1fr}}
+.vcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:1rem 1.1rem;text-align:left;cursor:pointer;font:inherit;color:inherit;transition:border-color .15s,transform .15s}
+.vcard:hover{border-color:var(--accent);transform:translateY(-2px)}
+.vcard[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.vcard h3{font-size:1rem;display:flex;align-items:center;gap:.55rem}
+.vcard h3 .sw{display:inline-flex;gap:3px}
+.vcard h3 .sw i{width:.62rem;height:.62rem;border-radius:50%;display:inline-block}
+.vcard h3 .sw i.rb{background:conic-gradient(#3fd0f0,#b96eff,#F28ACB,#F7BE57,#46ff9b,#3fd0f0);width:.9rem;height:.9rem}
+.vcard p{color:var(--muted);font-size:.9rem;margin-top:.3rem;line-height:1.55}
+.sheet{margin-top:1.4rem;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#0e1621}
+.sheet img{display:block;width:100%;height:auto}
+</style>
+</head>
+<body class="p-echo">
+
+<header class="nav"><div class="wrap">
+  <a class="brand" href="index.html"><span class="dot"></span> DECS&nbsp;Home&nbsp;Systems</a>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="globalguard.html">GlobalGuard</a>
+    <a href="homeassistant.html">Home&nbsp;Assistant</a>
+    <a href="wallpanel.html">Wall&nbsp;panel</a>
+    <a href="echo.html" class="active">Echo&nbsp;Voice</a>
+    <a href="cameras.html">Cameras</a>
+    <a href="presence.html">Presence</a>
+    <a href="roomscribe.html">Roomscribe</a>
+    <a href="traccar.html">Traccar</a>
+    <a href="finance.html">Finance</a>
+    <a href="fan.html">Fan</a>
+    <a href="rada.html">Rada&nbsp;shower</a>
+    <a href="theme.html">HA&nbsp;Theme</a>
+    <a href="technical.html">Technical</a>
+    <a href="roadmap.html">Roadmap</a>
+    <a href="claude.html">Claude&nbsp;Code</a>
+    <button class="themebtn" id="tt" aria-label="Toggle colour theme"><span id="ttic">◐</span> theme</button>
+  </nav>
+</div></header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">Local voice · a 2016 Echo Dot, set free</span>
+        <h1 class="title">Alexa out.<br><em>Luna</em> in.</h1>
+        <p class="lede">We rooted a second-generation Echo Dot, replaced Alexa with an open-source daemon and made it a Home&nbsp;Assistant voice satellite. The wake word runs on the Dot, the RTX&nbsp;5070 in the cupboard does the listening, Gemini answers what the house can't, and a British voice called Luna replies — while the wall panel lights up in time with both voices.</p>
+        <div class="meta-row">
+          <span class="chip">Echo Dot 2nd gen</span>
+          <span class="chip">EchoLocal · ESPHome</span>
+          <span class="chip">Whisper on an RTX 5070</span>
+          <span class="chip">Gemini 3.6 Flash</span>
+          <span class="chip">Piper · en_GB</span>
+          <span class="chip">11 live visuals</span>
+        </div>
+      </div>
+      <div>
+        <div class="vstage" id="heroStage" role="img" aria-label="Live demo of the wall-panel voice visual, cycling through the eleven styles while a recorded conversation with Luna plays">
+          <span class="vbadge"><i></i><span id="heroName">Live</span></span>
+          <button class="vplay" type="button" data-play>▶ Play the demo</button>
+        </div>
+        <div class="vlegend" aria-hidden="true">
+          <span><i style="background:#3fd0f0"></i>you, listening</span>
+          <span><i style="background:#F7BE57"></i>thinking</span>
+          <span><i style="background:#F28ACB"></i>Luna replying</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- STATS -->
+<section style="padding-block:clamp(2.2rem,5vw,3.2rem)">
+  <div class="wrap reveal">
+    <div class="stats">
+      <div class="stat"><span class="big num-strong">50</span><span class="lab">Amazon services stopped</span></div>
+      <div class="stat"><span class="big num-strong">&lt;1&nbsp;s</span><span class="lab">speech-to-text on the GPU</span></div>
+      <div class="stat"><span class="big num-strong">2</span><span class="lab">wake words · one per person</span></div>
+      <div class="stat"><span class="big num-strong">11</span><span class="lab">live visuals on the panel</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 01 THE BRIEF -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">01 · The brief</span><h2>A voice assistant that lives at home</h2><p class="lede">Alexa-quality voice control with no Amazon and no Google in the loop for everyday commands — but free to reach the internet when you actually ask it to look something up. Home&nbsp;Assistant already runs the house on a Raspberry&nbsp;Pi, so the assistant had to plug into that, not replace it.</p></div>
+    <div class="grid-2">
+      <div class="card feat"><h3>Why an Echo Dot, not the Nest Hub</h3><p>The Nest Hub was the first candidate and the worst: Google patched its bootloader exploit in 2021, and its chip is far too small to run speech or language models anyway. The 2016 <b>Echo Dot 2nd generation</b> (model RS03QR, codename "biscuit") was the opposite story — a well-documented bootloader exploit, and two open-source projects, <b>EchoLocal</b> and <b>EchoMuse</b>, that replace Alexa outright. Seven microphones, a speaker and an LED ring for a few pounds second-hand.</p></div>
+      <div class="card feat"><h3>Two shiny things we said no to</h3><p><b>Google's Home MCP</b> — a cloud service that lets an AI agent drive Google Home devices, which is the opposite direction to what we want. <b>TypeSafe's Jev</b> — a closed, US-hosted decision model that can't produce speech or run locally. Neither moved the design; both are noted in the build log for completeness.</p></div>
+    </div>
+    <div style="margin-top:2.2rem">
+      <p class="lede" style="margin-bottom:1.1rem;max-width:44rem">Three tiers. The Dot is deliberately dumb: it listens for its wake word, streams audio and speaks the reply. Everything clever lives on machines with fans.</p>
+      <div class="tiers">
+        <div class="card"><div class="who">Satellite</div><h3>The Echo Dot</h3><p>Runs EchoLocal. Wake-word detection on the device itself (microWakeWord), then streams to Home&nbsp;Assistant over the ESPHome native API. Also a media player, a Bluetooth proxy, a light sensor and an LED ring.</p></div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="card"><div class="who">Hub</div><h3>Home Assistant · the Pi</h3><p>Runs the Assist pipeline. Its own intent engine handles device commands locally in a fraction of a second; Piper speaks the replies. Anything it can't match goes to the brain.</p></div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="card"><div class="who">Brains</div><h3>GPU server + Gemini</h3><p>Whisper large-v3 transcribes on the RTX&nbsp;5070 that already runs the cameras. Open questions, scenes and automations go to Gemini&nbsp;3.6&nbsp;Flash with Google Search.</p></div>
+      </div>
+      <div class="callout"><b class="h">Where the plan changed</b>The build log sketched a local LLM box — Ollama running a Qwen3 model on a mini PC. In practice we split the brain: device commands never leave the house, speech moved to a GPU we already owned, and only genuine questions go out to Gemini — about two seconds for a web answer, where the first attempt took twenty and often timed out.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 02 FREEING THE DOT -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">02 · Freeing the Dot</span><h2>One evening, one Windows laptop, eight steps</h2><p class="lede">The Dot runs Fire&nbsp;OS on a MediaTek MT8163. The <b style="color:var(--ink)">amonet</b> exploit breaks its bootloader, TWRP recovery flashes a known firmware into both system slots, <b style="color:var(--ink)">boot-root</b> roots it and switches off Amazon's updates, and <b style="color:var(--ink)">EchoLocal</b> swaps Alexa for its own daemon. Real terminal output from this build is below — serial numbers, folder paths and network details blurred.</p><p style="color:var(--muted);font-size:.98rem;max-width:44rem">The unlock itself was worked through with a separate Claude chat that knew the Dot but not this house — the build log and its screenshots come from that session. Everything from step&nbsp;8 on — the network, Home&nbsp;Assistant and the voice stack — was built with Claude&nbsp;Code.</p></div>
+
+    <div class="twocol">
+      <div>
+        <h3 style="font-size:1.15rem;margin-bottom:.8rem">The kit</h3>
+        <ul style="margin:0;padding-left:1.1rem;color:var(--muted);display:flex;flex-direction:column;gap:.4rem">
+          <li>An <b style="color:var(--ink)">Echo Dot 2nd generation</b> — check the base label says <code>RS03QR</code>. Nothing here applies to any other model.</li>
+          <li>A Windows PC. The current unlock has a Windows path, so no Linux is needed unless the Dot can't reach fastboot.</li>
+          <li>A micro-USB <b style="color:var(--ink)">data</b> cable (charge-only cables won't work) and the Dot's own power supply — USB from the PC alone won't boot it reliably.</li>
+          <li>The Kindle Fire USB driver, installed <i>before</i> the Dot is plugged in.</li>
+        </ul>
+      </div>
+      <div>
+        <h3 style="font-size:1.15rem;margin-bottom:.8rem">The files</h3>
+        <p style="color:var(--muted);font-size:.95rem">Everything goes in one folder, with the amonet zip extracted inside it — every command below runs from there, because that is where <code>adb.exe</code> lives.</p>
+        <div class="callout" style="margin-top:1rem"><b class="h">Check the firmware before you flash it</b>A truncated download flashed to both slots is the one mistake TWRP can't save you from. The hash printed must match exactly.
+<pre class="cmd">certutil -hashfile update-kindle-biscuit_puffin-NS65741_user_8142_0013222530692.bin MD5
+<span class="o">ead2ea9a9ca2fa1c708381a07c605356</span></pre></div>
+      </div>
+    </div>
+    <div class="tblwrap" style="margin-top:1.4rem"><table class="tbl">
+          <thead><tr><th>File</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><code>amonet-biscuit-v2.0.0.zip</code></td><td>The exploit, TWRP, scripts and <code>adb.exe</code> — from the XDA unlock thread. Use v2.0.0, not v1.1.0.</td></tr>
+            <tr><td><code>boot-root.zip</code></td><td>Same thread. Roots both slots and turns ADB on.</td></tr>
+            <tr><td>Fire&nbsp;OS 6574.1 (<code>…13222530692.bin</code>)</td><td>Amazon's own image, 106&nbsp;MB, linked from FTVDB.</td></tr>
+            <tr><td><code>echolocal_windows_x86_64.exe</code></td><td>EchoLocal release 0.0.7 — the release asset, not the green "Code" zip.</td></tr>
+          </tbody>
+        </table></div>
+
+    <h3 style="font-size:1.15rem;margin:2.2rem 0 .8rem">Reading the LED ring — the Dot's only screen</h3>
+    <div class="tblwrap"><table class="tbl">
+      <thead><tr><th>Ring</th><th>Meaning</th><th>When you see it</th></tr></thead>
+      <tbody>
+        <tr><td><span class="ring" style="background:linear-gradient(90deg,#1f6fff,#1fd6ff)"></span>Blue &amp; cyan, spinning</td><td>Normal boot</td><td>Every power-on — or the button press was missed.</td></tr>
+        <tr><td><span class="ring" style="background:#1f6fff"></span>Solid blue, stays on</td><td>Button held, stock fastboot not offered</td><td>Retry the timing, update the firmware once, or fall back to the test-point method.</td></tr>
+        <tr><td><span class="ring" style="background:#ff8a1f"></span>Orange</td><td>Amazon setup mode, no Wi-Fi</td><td>After the Fire&nbsp;OS flash, before EchoLocal. Ignore it.</td></tr>
+        <tr><td><span class="ring" style="background:#22c55e"></span>Solid green</td><td>Stock fastboot</td><td>The target of step&nbsp;1. Also flashes green when a TWRP install succeeds.</td></tr>
+        <tr><td><span class="ring" style="background:#f4f6f8"></span>Solid white</td><td>TWRP recovery</td><td>After fastbrick, and whenever you run <code>adb reboot recovery</code>.</td></tr>
+        <tr><td><span class="ring rainbow"></span>Spinning rainbow</td><td>Hacked fastboot</td><td>Only after the exploit is installed.</td></tr>
+        <tr><td><span class="ring" style="background:#ef4444"></span>Red, a few seconds</td><td>A TWRP install failed</td><td>Stop and read the terminal.</td></tr>
+      </tbody>
+    </table></div>
+    <div class="callout warn"><b class="h">Two ways to brick it permanently</b>Interrupting <code>fastbrick.bat</code> after its ten-second grace period, and flashing anything that touches the preloader, LK or TrustZone partitions. Neither happens if you follow the steps: only ever flash stock firmware through TWRP, which protects those partitions.</div>
+
+    <div class="steps" style="margin-top:2rem">
+      <div class="step"><span class="idx">01</span><div class="body">
+        <h3>Get the Dot into fastboot</h3><div class="sub">Target: a solid green ring</div>
+        <p>Deregister the Dot in the Alexa app first. Then hold the <b>action</b> button (the dot, not the microphone-mute button), plug the power in while holding, and keep holding for a good ten seconds. When the ring goes solid green, let go and connect the USB cable. Spinning blue means the press was missed — hold earlier and longer.</p>
+      </div></div>
+      <div class="step"><span class="idx">02</span><div class="body">
+        <h3>Break the bootloader with fastbrick</h3><div class="sub">About a minute, case closed</div>
+        <p>Double-click <code>fastbrick.bat</code>. It detects the Dot and prints the bootloader build — <code>63cb91b-20221007_072309</code> is the one the exploit targets. Type <code>YES</code>; after a ten-second grace period, don't touch the Dot, the cable or the laptop. The ring fills like a progress bar, goes green, and the Dot reboots into TWRP with a solid white ring.</p>
+        <figure class="shot"><img src="images/echo-fastbrick.png" width="919" height="462" alt="Command prompt running amonet fastbrick: detected BISCUIT Echo Dot 2nd Generation 2016, LK build 63cb91b-20221007_072309, payload fastbrick-20221007.img, waiting for YES" loading="lazy"><figcaption><b>What success looks like.</b> The script found the Dot, matched the LK build and chose its payload — it's waiting for YES.</figcaption></figure>
+      </div></div>
+      <div class="step"><span class="idx">03</span><div class="body">
+        <h3>Flash Fire&nbsp;OS&nbsp;6 to slot B</h3><div class="sub">The Dot has two system slots; we fill both</div>
+        <p>With the white ring showing, confirm ADB sees the Dot in recovery, wipe, push the firmware and install it. TWRP always writes to the <i>inactive</i> slot.</p>
+<pre class="cmd"><span class="p">&gt;</span> adb devices
+<span class="o">List of devices attached
+&lt;serial&gt;        recovery</span>
+<span class="p">&gt;</span> adb shell twrp wipe cache
+<span class="p">&gt;</span> adb shell twrp wipe data
+<span class="p">&gt;</span> adb push update-kindle-biscuit_puffin-NS65741_user_8142_0013222530692.bin /sdcard/update.zip
+<span class="p">&gt;</span> adb shell twrp install /sdcard/update.zip</pre>
+        <figure class="shot"><img src="images/echo-twrp-slot-b.png" width="987" height="206" alt="TWRP install output: Flashing A/B zip to inactive slot: B, done processing script file" loading="lazy"><figcaption><b>First install.</b> Note "Flashing A/B zip to inactive slot: B".</figcaption></figure>
+      </div></div>
+      <div class="step"><span class="idx">04</span><div class="body">
+        <h3>Switch slots and flash slot A</h3><div class="sub">So the Dot boots whichever slot it picks</div>
+        <p>The install doesn't move the active slot, so do it by hand, reboot into recovery and install the same file again. The XDA guide uses one long <code>bcbtool</code> line with a shell <code>case</code> statement — fine on Linux, fragile quoting in Windows <code>cmd</code>. Two plain commands do the same job.</p>
+<pre class="cmd"><span class="p">&gt;</span> adb shell bcbtool get_active
+<span class="o">a</span>
+<span class="p">&gt;</span> adb shell bcbtool set_active b
+<span class="p">&gt;</span> adb reboot recovery
+<span class="p">&gt;</span> adb shell twrp install /sdcard/update.zip</pre>
+        <figure class="shot"><img src="images/echo-twrp-slot-a.png" width="981" height="172" alt="Second TWRP install output: Flashing A/B zip to inactive slot: A" loading="lazy"><figcaption><b>Second install.</b> This time it says slot A — if it said B again, the slot switch didn't take.</figcaption></figure>
+      </div></div>
+      <div class="step"><span class="idx">05</span><div class="body">
+        <h3>Root it with boot-root</h3><div class="sub">Both slots in one go</div>
+        <p>For each slot it patches the boot command line, disables dm-verity, makes <code>adbd</code> run as root, relaxes SELinux — and, importantly, neuters OTA updates so Amazon can never push firmware back onto it.</p>
+<pre class="cmd"><span class="p">&gt;</span> adb push boot-root.zip /sdcard/
+<span class="p">&gt;</span> adb shell twrp install /sdcard/boot-root.zip</pre>
+        <figure class="shot"><img src="images/echo-boot-root.png" width="1023" height="495" alt="boot-root output patching boot cmdline, dm-verity, system, properties, fos flags, adbd, selinux policy, fstab and neutering OTA updates for slot a and slot b" loading="lazy"><figcaption><b>boot-root at work</b> — every patch applied twice, once per slot.</figcaption></figure>
+      </div></div>
+      <div class="step"><span class="idx">06</span><div class="body">
+        <h3>Boot and prove root</h3><div class="sub">The first boot of Fire&nbsp;OS&nbsp;6 takes a couple of minutes</div>
+        <p><code>adb reboot</code>. Blue and cyan spin for a while, then it settles on orange because there's no Wi-Fi — ignore it; it never gets set up with Amazon. Our first <code>su -c id</code> failed with "su: not found": boot-root doesn't install an <code>su</code> binary, it makes the ADB shell itself root.</p>
+        <figure class="shot"><img src="images/echo-root-proof.png" width="1106" height="116" alt="adb shell id returns uid=0(root) gid=0(root) with an su SELinux context" loading="lazy"><figcaption><b>Proof.</b> <code>uid=0(root)</code> with an <code>su</code> SELinux context — unlocked and rooted.</figcaption></figure>
+      </div></div>
+      <div class="step"><span class="idx">07</span><div class="body">
+        <h3>Install EchoLocal — this is the step that removes Alexa</h3><div class="sub">Two mistakes we made, so you don't have to</div>
+        <p>We first downloaded <code>echolocal-main.zip</code> from GitHub's green Code button — that's the source code, not the program; the program is a release asset. Then we typed the device name without quotes, so <code>cmd</code> split it into two arguments.</p>
+<pre class="cmd"><span class="p">&gt;</span> .\echolocal_windows_x86_64.exe install --name "kevs bedroom"</pre>
+        <figure class="shot"><img src="images/echo-echolocal-confirm.png" width="1112" height="253" alt="EchoLocal warns it will overwrite the boot partition boot_a and asks to type yes to continue; the device serial is blurred" loading="lazy"><figcaption><b>The right tool, the right Dot.</b> It sees root, targets <code>boot_a</code> and warns that going back means flashing a stock boot image by hand.</figcaption></figure>
+        <p>It asks for the Wi-Fi name and password, flashes its own boot image, stops every Amazon service, opens the API port and reboots the Dot to prove its daemon starts on its own.</p>
+        <figure class="shot"><img src="images/echo-echolocal-install.png" width="1091" height="947" alt="EchoLocal install log: device verified, root confirmed, 50 Amazon rc entries changed and 33 stopped, echod installed, API port tcp/6053 opened, connected to Wi-Fi, rebooted, echod started on its own; serial, Wi-Fi name and address blurred" loading="lazy"><figcaption><b>The finished install.</b> Fifty Amazon services changed, <code>echod</code> installed, API on <code>tcp/6053</code>, rebooted, and <code>echod</code> came back on its own. The ESPHome encryption key printed at the bottom is cropped out.</figcaption></figure>
+        <div class="callout"><b class="h">At this point the Dot is done</b>It boots straight into EchoLocal, survives power cycles and never contacts Amazon again. Everything after this is Home&nbsp;Assistant configuration.</div>
+      </div></div>
+      <div class="step"><span class="idx">08</span><div class="body">
+        <h3>Add it to Home&nbsp;Assistant</h3><div class="sub">Discovered as an ESPHome device</div>
+        <p>Home&nbsp;Assistant talks to the Dot on port 6053, so the two must be able to see each other. The Dot had joined the mesh Wi-Fi, which runs as a second router with its own network behind NAT. Not knowing the house, the unlock chat's build log suggested switching the mesh to bridge mode — but no mesh switching was ever needed: the Pi running Home&nbsp;Assistant is <b>dual-homed</b>, wired to the main router and also joined to the mesh, so it reached the Dot directly. (Bridge mode is still the general fix if your Home&nbsp;Assistant can't see the Dot on another subnet.)</p>
+        <p>Then <i>Settings → Devices &amp; services</i>: "kevs bedroom" appears as a discovered ESPHome device. Paste the encryption key, pick an Assist pipeline and a wake word on the device page, say it — and the ring lights up.</p>
+      </div></div>
+    </div>
+
+    <div class="grid-3" style="margin-top:2rem">
+      <div class="card"><h3 style="font-size:1rem;margin-bottom:.4rem">Buttons after the exploit</h3><p style="color:var(--muted);font-size:.92rem">Hold while connecting power: <b style="color:var(--ink)">Volume&nbsp;Up</b> → TWRP (white). <b style="color:var(--ink)">Volume&nbsp;Down</b> or <b style="color:var(--ink)">Action</b> → hacked fastboot (rainbow). <b style="color:var(--ink)">Mute</b> with USB → preloader USB download, for emergency unbricking only.</p></div>
+      <div class="card"><h3 style="font-size:1rem;margin-bottom:.4rem">If it won't boot</h3><p style="color:var(--muted);font-size:.92rem">Don't keep power-cycling it — the preloader counts failed boots per slot and gives up when both run out. Go to TWRP with Volume&nbsp;Up and reinstall Fire&nbsp;OS to the inactive slot, or rerun the EchoLocal install. Ten seconds, versus an opened case.</p></div>
+      <div class="card"><h3 style="font-size:1rem;margin-bottom:.4rem">Going back to Alexa</h3><p style="color:var(--muted);font-size:.92rem">Possible, but not a button press: boot TWRP, install the Fire&nbsp;OS zip to both slots again without boot-root, and it boots stock Fire&nbsp;OS&nbsp;6 with the exploit still underneath.</p></div>
+    </div>
+
+    <div class="card dlcard" style="margin-top:1.4rem">
+      <div class="t"><h3>The full build log (PDF, 11 pages)</h3><p>The unlock session's own write-up: every step with the terminal output, the LED table, recovery and sources. Serial numbers, folder paths, network addresses and the Wi-Fi name are redacted, and a closing page of publication notes corrects the network advice for this house.</p></div>
+      <a class="btnlink" href="docs/Freeing-the-Echo-Dot.pdf" download>Download the PDF ↓</a>
+    </div>
+  </div>
+</section>
+
+<!-- 03 THE VOICE STACK -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">03 · The voice stack</span><h2>One turn, from wake word to Luna's reply</h2><p class="lede">Nothing leaves the Dot until it hears its wake word. After that the audio travels to Home&nbsp;Assistant, over to the GPU server for transcription, through the house's own intent engine — and out to Gemini only if the house can't answer.</p></div>
+    <figure class="figwrap pipe">
+      <svg viewBox="0 0 1000 450" role="img" aria-labelledby="pipeT pipeD">
+        <title id="pipeT">The Echo Voice pipeline</title>
+        <desc id="pipeD">The Echo Dot detects the wake word and streams audio to Home Assistant on the Pi. Home Assistant sends the audio to Whisper large-v3 on the RTX 5070 server, gets text back, tries its own intent engine, and otherwise asks Gemini 3.6 Flash through the scene_ai agent. Piper on the Pi turns the answer into speech, which the Dot plays. The wall panel reads the conversation state and the reply audio to draw its visual.</desc>
+        <!-- wires -->
+        <path class="pp-wire" d="M222 205 H300"/><path class="pp-wire" d="M300 250 H222"/>
+        <path class="pp-wire" d="M510 190 C560 190 560 88 612 88"/>
+        <path class="pp-wire" d="M510 222 H612"/>
+        <path class="pp-wire" d="M510 254 C560 254 560 360 612 360"/>
+        <path class="pp-wire" d="M405 282 V328"/>
+        <!-- flows -->
+        <path class="pp-flow" stroke="#3fd0f0" d="M222 205 H300"/>
+        <path class="pp-flow" stroke="#3fd0f0" d="M510 190 C560 190 560 88 612 88"/>
+        <path class="pp-flow" stroke="#F7BE57" d="M510 222 H612"/>
+        <path class="pp-flow" stroke="#B79BF0" d="M612 360 C560 360 560 254 510 254"/>
+        <path class="pp-flow" stroke="#F28ACB" d="M300 250 H222"/>
+        <path class="pp-flow" stroke="#F28ACB" style="animation-duration:1.8s" d="M405 282 V328"/>
+        <!-- nodes -->
+        <rect class="pp-node" x="28" y="160" width="194" height="126" rx="14"/>
+        <text class="pp-t pp-tag" x="46" y="186">SATELLITE</text>
+        <text class="pp-t pp-title" x="46" y="210">Echo Dot · 2016</text>
+        <text class="pp-t" x="46" y="234">wake word on-device</text>
+        <text class="pp-t" x="46" y="254">7 mics · beamformer</text>
+        <text class="pp-t" x="46" y="274">speaker · LED ring</text>
+
+        <rect class="pp-node hi" x="300" y="160" width="210" height="122" rx="14"/>
+        <text class="pp-t pp-tag" x="318" y="186">HUB · RASPBERRY PI</text>
+        <text class="pp-t pp-title" x="318" y="210">Home Assistant</text>
+        <text class="pp-t" x="318" y="234">Assist pipeline</text>
+        <text class="pp-t" x="318" y="254">intent engine (local)</text>
+        <text class="pp-t" x="318" y="274">scene_ai agent</text>
+
+        <rect class="pp-node" x="612" y="36" width="250" height="104" rx="14"/>
+        <text class="pp-t pp-tag" x="630" y="62">SPEECH → TEXT · GPU SERVER</text>
+        <text class="pp-t pp-title" x="630" y="86">Whisper large-v3</text>
+        <text class="pp-t" x="630" y="108">RTX 5070 · Docker · Wyoming</text>
+        <text class="pp-t" x="630" y="128">sub-second · 12 GB card</text>
+
+        <rect class="pp-node" x="612" y="172" width="250" height="104" rx="14"/>
+        <text class="pp-t pp-tag" x="630" y="198">ANSWERS &amp; ACTIONS</text>
+        <text class="pp-t pp-title" x="630" y="222">Gemini 3.6 Flash</text>
+        <text class="pp-t" x="630" y="244">+ Google Search grounding</text>
+        <text class="pp-t" x="630" y="264">Q&amp;A · scenes · automations</text>
+
+        <rect class="pp-node" x="612" y="308" width="250" height="104" rx="14"/>
+        <text class="pp-t pp-tag" x="630" y="334">TEXT → SPEECH · THE PI</text>
+        <text class="pp-t pp-title" x="630" y="358">Piper · en_GB "alba"</text>
+        <text class="pp-t" x="630" y="380">Luna's voice</text>
+        <text class="pp-t" x="630" y="400">streamed to the Dot</text>
+
+        <rect class="pp-node" x="300" y="328" width="210" height="96" rx="14"/>
+        <text class="pp-t pp-tag" x="318" y="354">DISPLAY · KIOSK LAPTOP</text>
+        <text class="pp-t pp-title" x="318" y="378">Wall panel</text>
+        <text class="pp-t" x="318" y="400">full-screen visual</text>
+        <text class="pp-t" x="318" y="418">+ live transcript</text>
+        <!-- numbered labels -->
+        <g><circle cx="261" cy="186" r="9" fill="#3fd0f0"/><text class="pp-num" x="261" y="190" text-anchor="middle">1</text><text class="pp-lab" x="232" y="170">wake + audio</text></g>
+        <g><circle cx="561" cy="130" r="9" fill="#3fd0f0"/><text class="pp-num" x="561" y="134" text-anchor="middle">2</text><text class="pp-lab" x="486" y="112">speech → text</text></g>
+        <g><circle cx="561" cy="222" r="9" fill="#F7BE57"/><text class="pp-num" x="561" y="226" text-anchor="middle">3</text><text class="pp-lab" x="522" y="206">understand</text></g>
+        <g><circle cx="561" cy="315" r="9" fill="#B79BF0"/><text class="pp-num" x="561" y="319" text-anchor="middle">4</text><text class="pp-lab" x="486" y="342">text → speech</text></g>
+        <g><circle cx="261" cy="250" r="9" fill="#F28ACB"/><text class="pp-num" x="261" y="254" text-anchor="middle">5</text><text class="pp-lab" x="236" y="302">Luna speaks</text></g>
+        <g><circle cx="405" cy="305" r="9" fill="#F28ACB"/><text class="pp-num" x="405" y="309" text-anchor="middle">6</text></g>
+      </svg>
+    </figure>
+
+    <div class="steps wide" style="margin-top:2rem">
+      <div class="step"><span class="idx">1 · wake</span><div class="body"><h3>The wake word is heard on the Dot itself</h3><p>EchoLocal runs microWakeWord models on the Dot. Two custom models — <b>"okay computer"</b> and <b>"hey luna"</b> — were pushed to it over ADB, and its two assistant slots map one wake word per person. Until one fires, no audio leaves the device; after it fires, audio streams to Home&nbsp;Assistant over the ESPHome API.</p></div></div>
+      <div class="step"><span class="idx">2 · transcribe</span><div class="body"><h3>Whisper large-v3 on the RTX&nbsp;5070</h3><p>Speech-to-text moved off the Pi's CPU — where even the small models were slow and error-prone — onto the GPU server that already runs the Frigate cameras. <code>faster-whisper</code> with the large-v3 model runs in its own Docker container behind the Wyoming protocol: transcriptions back in under a second, and the 12&nbsp;GB card is still half free with the camera detector running alongside. The Pi's small model stays configured as a fallback. One Windows-server snag: Docker Desktop's credential store refuses image pulls over SSH, so the image is pulled once at the console and everything else is driven remotely.</p></div></div>
+      <div class="step"><span class="idx">3 · understand</span><div class="body"><h3>The house answers first; Gemini only when it can't</h3><p>Home&nbsp;Assistant's own intent engine gets the first go — "turn off the landing light" is matched and done locally in a fraction of a second. Anything else goes to <b>scene_ai</b>, a custom conversation agent, which hands the request to a small service on the Pi that asks <b>Gemini&nbsp;3.6&nbsp;Flash</b> with Google Search grounding. It can build scenes and automations (every entity it names is checked against the real device list before anything runs), answer questions about the house from a live state snapshot, look things up on the web in two to three seconds, and answer "near me" questions from the location of whoever is asking. Anything that touches the alarm needs a spoken <b>"confirm"</b>.</p></div></div>
+      <div class="step"><span class="idx">4 · speak</span><div class="body"><h3>Piper gives Luna her voice</h3><p>Piper's British <code>en_GB alba</code> voice runs on the Pi and streams the reply to the Dot's speaker. Voice and text arrive together because the Dot is set to <b>streaming</b> delivery rather than waiting for the whole clip.</p></div></div>
+      <div class="step"><span class="idx">two people</span><div class="body"><h3>A wake word per person, not voice biometrics</h3><p>"Okay computer" is Kev; "hey luna" is Mom. Each routes to its own pipeline with its own copy of the agent — the same brain and voice, but "near me" follows the right phone. No speaker recognition, no training: the wake word <i>is</i> the identity.</p></div></div>
+    </div>
+
+    <div class="card" style="margin-top:2rem">
+      <h3 style="font-size:1.1rem;margin-bottom:1rem">Where the time goes</h3>
+      <div class="tl">
+        <div class="row"><h3>A question with a three-second answer <span>≈ 8.8 s wake to last word</span></h3>
+          <div class="bar" role="img" aria-label="You speak 2 seconds, Whisper half a second, Gemini 2 seconds, Piper 1.3 seconds, Luna speaks 3 seconds">
+            <div class="seg s-you" style="flex:2">you · 2.0 s</div><div class="seg s-stt" style="flex:.5">0.5</div><div class="seg s-llm" style="flex:2">Gemini · 2.0 s</div><div class="seg s-tts" style="flex:1.3">Piper 1.3</div><div class="seg s-luna" style="flex:3">Luna speaks · 3.0 s</div>
+          </div></div>
+        <div class="row"><h3>A device command — "turn off the landing light" <span>≈ 3.8 s</span></h3>
+          <div class="bar" role="img" aria-label="You speak 1.6 seconds, Whisper 0.4 seconds, intent engine 0.2 seconds, Piper 0.6 seconds, Luna speaks 1 second">
+            <div class="seg s-you" style="flex:1.6">you · 1.6 s</div><div class="seg s-stt" style="flex:.4"></div><div class="seg s-int" style="flex:.2"></div><div class="seg s-tts" style="flex:.6"></div><div class="seg s-luna" style="flex:1">Luna 1.0</div>
+          </div></div>
+        <div class="keys"><span><i class="s-you"></i>you speaking</span><span><i class="s-stt"></i>Whisper · GPU</span><span><i class="s-int"></i>intent engine · local</span><span><i class="s-llm"></i>Gemini + search</span><span><i class="s-tts"></i>Piper · Pi</span><span><i class="s-luna"></i>Luna speaking</span></div>
+      </div>
+      <p style="color:var(--muted);font-size:.9rem;margin-top:1.1rem">Approximate, measured on this system. The Dot starts speaking about 0.26&nbsp;s after Piper finishes, and Piper on the Pi needs about 0.35&nbsp;s per second of speech — so long answers are where the lag builds up. Moving Piper onto the GPU is next.</p>
+    </div>
+
+    <div style="margin-top:2.4rem">
+      <h3 style="font-size:1.3rem;font-weight:800;margin-bottom:.4rem">The models, and where they run</h3>
+      <p style="color:var(--muted);max-width:46rem;margin-bottom:1.1rem">Four places, each doing what it's good at: tiny wake-word models on the devices, the heavy listening on the RTX&nbsp;5070, fast sentence-matching and Luna's voice on the Pi, and the open questions in the cloud.</p>
+      <div class="tblwrap"><table class="tbl">
+        <thead><tr><th>Model</th><th>Job</th><th>Runs on</th><th>Details</th></tr></thead>
+        <tbody>
+          <tr><td><b>microWakeWord</b> — "okay computer", "hey luna"</td><td>Wake word, one per person</td><td>The Echo Dot</td><td>Tiny on-device models run by EchoLocal. Thresholds tuned from the Dot's own logs (0.45 and 0.5). Nothing leaves the Dot until one fires.</td></tr>
+          <tr><td><b>Whisper large-v3</b> via faster-whisper</td><td>Speech → text</td><td>RTX&nbsp;5070 server, Docker</td><td><code>linuxserver/faster-whisper:gpu</code>, English, beam size&nbsp;1, served to Home&nbsp;Assistant over the Wyoming protocol. Under a second per request. It shares the 12&nbsp;GB card with the camera detector — about 5.8&nbsp;GB in use with both loaded.</td></tr>
+          <tr><td><b>Whisper tiny</b> (int8) via faster-whisper</td><td>Fallback speech → text</td><td>Raspberry&nbsp;Pi&nbsp;4 CPU</td><td>Still configured, for when the server is off. The Pi started on the base model, then tiny for speed, before the move to the GPU.</td></tr>
+          <tr><td><b>Home&nbsp;Assistant intents</b></td><td>Device commands</td><td>The Pi</td><td>Sentence matching rather than a neural model: "turn off the landing light" is matched and done in a fraction of a second and never leaves the house.</td></tr>
+          <tr><td><b>Gemini 3.6 Flash</b></td><td>Questions, scenes, automations</td><td>Google, in the cloud</td><td>Temperature 0.2, no thinking budget, Google Search grounding; about two seconds an answer. Paid tier, so prompts aren't used for training. It replaced Claude Opus&nbsp;5, whose 10–30 seconds a turn was too slow for a voice assistant.</td></tr>
+          <tr><td><b>Piper</b> — <code>en_GB alba</code> (medium)</td><td>Text → speech: Luna's voice</td><td>The Pi's CPU</td><td>Served over Wyoming. About 0.35&nbsp;s of synthesis per second of speech, which is why it's the next thing to move onto the 5070.</td></tr>
+          <tr><td><b>microWakeWord</b> — "alexa"</td><td>Keeping the panel out of the way</td><td>Wall-panel laptop, in the browser</td><td>The panel's own satellite listens for a word nobody says any more, so the Dot always answers and the panel stays a display.</td></tr>
+        </tbody>
+      </table></div>
+      <p style="color:var(--muted);font-size:.9rem;margin-top:.9rem">The same RTX&nbsp;5070 also runs Frigate's object detection for the <a href="cameras.html" style="color:var(--accent)">doorbell cameras</a>. Next in line for it: Piper, to take the synthesis wait out of long answers, and possibly a local language model as an offline fallback for Gemini.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 04 FIELD NOTES -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">04 · Making it a proper Alexa</span><h2>Six things that cost an hour each</h2><p class="lede">The Dot worked on day one — close up, some of the time. Getting it to hear across a bedroom and answer every time took these.</p></div>
+    <div class="logs">
+      <div class="log"><h3><span class="no">01</span>It heard, it thought, it said nothing</h3><dl class="grid">
+        <dt>Symptom</dt><dd>The ring lit, the transcript appeared, Gemini answered — and the Dot stayed silent.</dd>
+        <dt>Cause</dt><dd>Home&nbsp;Assistant hands every device a URL for the reply audio, built from its <code>internal_url</code>. That pointed at the wall panel's LAN-only HTTPS name, which the Dot's network can't resolve — so playback failed without an error.</dd>
+        <dt>Fix</dt><dd class="fix">Point <code>internal_url</code> at the Pi's plain LAN address. The panel keeps its secure name; the Dot gets an address it can reach.</dd></dl></div>
+      <div class="log"><h3><span class="no">02</span>Two assistants, one wake word</h3><dl class="grid">
+        <dt>Symptom</dt><dd>"Okay computer" woke the wall panel instead of the Dot, or neither — "another device answered first".</dd>
+        <dt>Cause</dt><dd>The panel laptop runs its own browser satellite listening for the same word, and won the arbitration. The Dot's own detections were near misses, peaking just under its threshold.</dd>
+        <dt>Fix</dt><dd class="fix">The panel now listens for "alexa" — which nobody says any more — so the Dot always answers and the panel is display-only. The Dot's threshold came down to match the scores in its logs.</dd></dl></div>
+      <div class="log"><h3><span class="no">03</span>The voice lagged the text</h3><dl class="grid">
+        <dt>Symptom</dt><dd>The transcript landed seconds before Luna spoke.</dd>
+        <dt>Cause</dt><dd>The Dot's delivery mode was <code>whole</code>: wait for the entire reply clip, then play it.</dd>
+        <dt>Fix</dt><dd class="fix">Delivery set to <code>streaming</code> in the Dot's config. What's left is Piper finishing on the Pi (above) — the next target.</dd></dl></div>
+      <div class="log"><h3><span class="no">04</span>It only heard you up close</h3><dl class="grid">
+        <dt>Symptom</dt><dd>Perfect when leaning over it; nothing from across the room.</dd>
+        <dt>Cause</dt><dd>The microphone mixing was set to <code>center</code> — one microphone out of seven — at 20&nbsp;dB of gain, with wake thresholds tuned for close range. The logs showed "hey luna" scoring 0.95 up close but under 0.6 at distance.</dd>
+        <dt>Fix</dt><dd class="fix"><code>beamformer</code> mixing (the whole array, steered, with noise rejection — Alexa's own far-field mode), gain up to 28&nbsp;dB, and thresholds lowered to 0.5 and 0.45. "Hey luna" now works from across the room; "okay computer" is limited by its model, not the tuning, so a better model is on the list.</dd></dl></div>
+      <div class="log"><h3><span class="no">05</span>"Session expired" on the panel</h3><dl class="grid">
+        <dt>Symptom</dt><dd>Every day or two the wall panel dropped its login.</dd>
+        <dt>Cause</dt><dd>An ordinary token lapse on a kiosk that nobody ever signs back into.</dd>
+        <dt>Fix</dt><dd class="fix">Trusted-network sign-in for the home network, passed through the local HTTPS proxy so Home&nbsp;Assistant sees the panel's real address. The panel keeps its secure page (the microphone needs one) and never asks for a password.</dd></dl></div>
+      <div class="log"><h3><span class="no">06</span>The Pi that stopped breathing</h3><dl class="grid">
+        <dt>Symptom</dt><dd>Mid-investigation, Home&nbsp;Assistant and SSH both went unresponsive while the Pi still answered pings.</dd>
+        <dt>Cause</dt><dd>A regular-expression search over a 700&nbsp;KB single-line minified JavaScript file, run on the Pi itself, pegged the CPU and starved everything else.</dd>
+        <dt>Fix</dt><dd class="fix">A power cycle (the alarm bridge is independent, so security held) and a rule: copy big files off the Pi and analyse them locally.</dd></dl></div>
+    </div>
+  </div>
+</section>
+
+<!-- 05 THE PANEL SEES THE VOICE -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">05 · The panel sees the voice</span><h2>A screen for a speaker that has none</h2><p class="lede">When the Dot starts a conversation, the wall panel — a laptop in kiosk mode — fades to a full-screen visual with the transcript, and fades back five seconds after Luna finishes. It follows the Dot's state live: listening, thinking, replying.</p></div>
+    <div class="steps wide">
+      <div class="step"><span class="idx">first</span><div class="body"><h3>A faithful port of Lens Flares</h3><p>The look Kev wanted was the "Lens Flares" skin from the Voice Satellite card. The card can't show an ESPHome satellite's transcript, so its algorithm was lifted out of the card's JavaScript and rebuilt as a standalone canvas overlay: anamorphic blue and rose streaks, bokeh dots, and a three-pass blur for the bloom.</p></div></div>
+      <div class="step"><span class="idx">your voice</span><div class="body"><h3>Reactive to you, through the panel's microphone</h3><p>Browsers only allow the microphone on a secure page, so the panel loads Home&nbsp;Assistant through a LAN-only HTTPS name: local DNS points it at the Pi, and Caddy serves it with a real Let's&nbsp;Encrypt certificate issued over a DNS challenge — nothing exposed to the internet. A Chromium "treat as secure" flag was tried first and simply didn't work in kiosk mode.</p></div></div>
+      <div class="step"><span class="idx">her voice</span><div class="body"><h3>Luna's own audio, in sync with the Dot</h3><p>The panel's mic barely hears the Dot's small speaker across the room. But Home&nbsp;Assistant records every assist run, including the URL of the exact reply audio. The moment the Dot starts replying, the panel fetches that same audio, analyses it — a 20&nbsp;ms loudness envelope, a 32-band spectrum and the waveform — and plays the analysis back in time with the Dot, starting 0.3&nbsp;s after the audio is ready (measured against the Dot's own logs). Every syllable she speaks lands on screen.</p></div></div>
+      <div class="step"><span class="idx">then</span><div class="body"><h3>Eleven visuals and a way to choose</h3><p>Lens Flares became one skin of a small engine: shared audio analysis (512-point FFT, 32 bands from 80&nbsp;Hz to 7&nbsp;kHz, syllable-onset detection), a renderer with bloom, and eleven skins that each draw a frame in a few milliseconds. The choice is a Home&nbsp;Assistant helper, set from the Scenes tab or a gallery page with live previews and a full-screen demo — or <b>Surprise me</b>, a different one every conversation. A small loader checks for new versions and hot-swaps them between conversations, dodging Home&nbsp;Assistant's month-long cache on local files. If a skin ever errors, the panel falls back to Lens Flares.</p></div></div>
+    </div>
+
+
+    <div class="twocol" style="margin-top:2.6rem">
+      <div>
+        <h3 style="font-size:1.3rem;font-weight:800;margin-bottom:.6rem">How the words get on screen</h3>
+        <p style="color:var(--muted)">EchoLocal publishes the Dot to Home&nbsp;Assistant with three things the panel needs: the satellite's <b style="color:var(--ink)">state</b> (idle, listening, thinking, replying), a <b style="color:var(--ink)">last heard</b> sensor holding Whisper's transcript of what you said, and a <b style="color:var(--ink)">last reply</b> sensor holding Luna's answer. The overlay is a small script loaded into the wall-panel dashboard, so it reads those straight from the page's own live Home&nbsp;Assistant connection, several times a second — no token, no extra server.</p>
+        <p style="color:var(--muted);margin-top:.8rem">The visual is a canvas filling the screen; the words are a separate HTML layer on top of it. When a conversation starts it remembers the previous turn's text so nothing stale flashes up, then shows "Listening" or "Thinking", your words when Whisper's transcript lands, and Luna's the moment the reply exists. Each visual places the text where its art isn't — beside Lens Flares and Galaxy, above the meters and the aurora, over the ribbons — in white with a soft shadow, warm amber on the VU panel, or green terminal type on the oscilloscope. Long answers step down a size, and everything fades five seconds after the Dot goes quiet.</p>
+        <p style="color:var(--muted);margin-top:.8rem">The words always arrive a beat before Luna speaks: Home&nbsp;Assistant has the reply text as soon as Gemini answers, while the Dot waits for Piper to finish the audio.</p>
+      </div>
+      <div>
+        <h3 style="font-size:1.3rem;font-weight:800;margin-bottom:.6rem">How the visuals follow each voice</h3>
+        <p style="color:var(--muted)"><b style="color:var(--ink)">Your voice</b> comes from the panel's own microphone. The browser's Web Audio analyser gives a 1024-point FFT of every frame, which becomes a loudness level, 32 bands from 80&nbsp;Hz to 7&nbsp;kHz (with automatic gain, so near and far speech both fill the range) and a 20&nbsp;ms slice of the waveform.</p>
+        <p style="color:var(--muted);margin-top:.8rem"><b style="color:var(--ink)">Luna's voice</b> is too quiet for that microphone across the room, so the panel uses her actual reply instead. Home&nbsp;Assistant keeps a record of every assist run, including a link to the reply audio; the moment the Dot starts replying, the panel fetches that same file, decodes it and analyses it into 20&nbsp;ms frames of loudness, spectrum and waveform. Those frames are then played back against the clock, starting 0.3&nbsp;s after the audio is ready — the delay measured between Home&nbsp;Assistant and the Dot's own logs — so each syllable lands as she says it.</p>
+        <p style="color:var(--muted);margin-top:.8rem">Both feed the same frame builder, 30 times a second: a fast level (crisper for Luna, whose audio is known in advance), a slow level for drifting and bloom, the smoothed bands and waveform, and a syllable detector that fires on sudden rises. If neither source is available, the Echo's room-level sensor and then a gentle organic motion keep it alive.</p>
+      </div>
+    </div>
+
+    <figure class="figwrap pipe" style="margin-top:1.8rem">
+      <svg viewBox="0 0 1000 350" role="img" aria-labelledby="ovT ovD">
+        <title id="ovT">How the overlay is fed</title>
+        <desc id="ovD">Home Assistant state and transcript sensors feed the text layer and the state machine. The panel microphone and Luna's analysed reply audio feed the frame builder, which drives the eleven canvas skins.</desc>
+        <path class="pp-wire" d="M304 46 H700"/><path class="pp-flow" stroke="#F7BE57" style="animation-duration:1.6s" d="M304 46 H700"/>
+        <path class="pp-wire" d="M304 92 C340 92 346 118 380 118"/><path class="pp-flow" stroke="#F7BE57" style="animation-duration:1.6s" d="M304 92 C340 92 346 118 380 118"/>
+        <path class="pp-wire" d="M304 170 H380"/><path class="pp-flow" stroke="#3fd0f0" d="M304 170 H380"/>
+        <path class="pp-wire" d="M304 282 C342 282 344 262 380 262"/><path class="pp-flow" stroke="#F28ACB" d="M304 282 C342 282 344 262 380 262"/>
+        <path class="pp-wire" d="M630 262 H700"/><path class="pp-flow" stroke="#B79BF0" d="M630 262 H700"/>
+
+        <rect class="pp-node" x="24" y="14" width="280" height="90" rx="14"/>
+        <text class="pp-t pp-tag" x="42" y="38">HOME ASSISTANT · FROM THE DOT</text>
+        <text class="pp-t pp-title" x="42" y="62">State + transcript</text>
+        <text class="pp-t" x="42" y="84">state · heard · reply</text>
+
+        <rect class="pp-node" x="24" y="126" width="280" height="88" rx="14"/>
+        <text class="pp-t pp-tag" x="42" y="150">YOUR VOICE</text>
+        <text class="pp-t pp-title" x="42" y="174">Panel microphone</text>
+        <text class="pp-t" x="42" y="196">Web Audio · 1024-point FFT</text>
+
+        <rect class="pp-node" x="24" y="236" width="280" height="100" rx="14"/>
+        <text class="pp-t pp-tag" x="42" y="260">LUNA'S VOICE</text>
+        <text class="pp-t pp-title" x="42" y="284">Her actual reply audio</text>
+        <text class="pp-t" x="42" y="306">same file the Dot plays</text>
+        <text class="pp-t" x="42" y="326">analysed · replayed +0.3 s</text>
+
+        <rect class="pp-node hi" x="380" y="96" width="250" height="236" rx="14"/>
+        <text class="pp-t pp-tag" x="398" y="122">FRAME BUILDER · 30 FPS</text>
+        <text class="pp-t pp-title" x="398" y="146">Every frame</text>
+        <text class="pp-t" x="398" y="172">fast + slow level</text>
+        <text class="pp-t" x="398" y="194">32 bands · 80 Hz–7 kHz</text>
+        <text class="pp-t" x="398" y="216">20 ms waveform</text>
+        <text class="pp-t" x="398" y="238">syllable onsets</text>
+        <text class="pp-t" x="398" y="260">listening · thinking</text>
+        <text class="pp-t" x="398" y="282">· replying</text>
+        <text class="pp-t" x="398" y="310">falls back to room level</text>
+
+        <rect class="pp-node" x="700" y="14" width="276" height="100" rx="14"/>
+        <text class="pp-t pp-tag" x="718" y="38">TEXT LAYER · HTML</text>
+        <text class="pp-t pp-title" x="718" y="62">The words</text>
+        <text class="pp-t" x="718" y="84">status · yours · Luna's</text>
+        <text class="pp-t" x="718" y="104">placed per skin</text>
+
+        <rect class="pp-node" x="700" y="206" width="276" height="112" rx="14"/>
+        <text class="pp-t pp-tag" x="718" y="230">CANVAS · 11 SKINS</text>
+        <text class="pp-t pp-title" x="718" y="254">The visual</text>
+        <text class="pp-t" x="718" y="276">chosen in Home Assistant</text>
+        <text class="pp-t" x="718" y="296">or "Surprise me"</text>
+      </svg>
+    </figure>
+
+    <h3 style="font-size:1.15rem;margin:2rem 0 .8rem">What each visual listens to</h3>
+    <div class="tblwrap"><table class="tbl listen">
+      <thead><tr><th>Visual</th><th>Driven by</th></tr></thead>
+      <tbody>
+        <tr><td>Lens Flares</td><td>The fast level lifts the streaks' height and brightness; the slow level sets the drift and the bloom.</td></tr>
+        <tr><td>Classic VU</td><td>Raw loudness through real VU ballistics — the MIC needle for you, LUNA for her — with a peak lamp above +0&nbsp;VU and an amber lamp while she thinks.</td></tr>
+        <tr><td>Aurora</td><td>Each voice brightens its own curtains, green for you and violet for Luna; every syllable sends a ripple along them.</td></tr>
+        <tr><td>Mercury</td><td>Loudness swells the core and pushes the droplets out; the bands size them; syllables fling new drops that flow back; thinking pulls everything into one gold drop.</td></tr>
+        <tr><td>Ribbons</td><td>Five band groups set five ribbons' amplitude; syllables shed sparks.</td></tr>
+        <tr><td>Galaxy</td><td>Loudness spins it up and brightens the arms; syllables send shockwaves through them.</td></tr>
+        <tr><td>Halo</td><td>The 32 bands, mirrored, become 72 bars; syllables flash the ring; thinking starts a spinner.</td></tr>
+        <tr><td>Pulsar</td><td>Every 55&nbsp;ms the current spectrum becomes a new ridge, so the plot scrolls through the last three seconds of voice.</td></tr>
+        <tr><td>Phosphor</td><td>The waveform itself: a triggered trace for your voice, an X-Y figure for Luna's, a 3:2 Lissajous while she thinks.</td></tr>
+        <tr><td>Tesla</td><td>Loudness sets how many filaments burn and how thick; syllables crackle off side branches.</td></tr>
+        <tr><td>Luna Orb</td><td>The bands shape the sphere by latitude; syllables ripple across its surface; loudness lights the lines between its points.</td></tr>
+      </tbody>
+    </table></div>
+
+    <div style="margin-top:2.4rem">
+      <div class="vstage" id="pickStage" role="img" aria-label="Live demo of the selected voice visual with a recorded conversation">
+        <span class="vbadge"><i></i><span id="pickName">Classic VU</span></span>
+        <button class="vplay" type="button" data-play>▶ Play the demo</button>
+      </div>
+      <p class="vdesc" id="pickDesc"></p>
+      <div class="vgrid" id="pickGrid" style="margin-top:1rem"></div>
+      <p style="color:var(--faint);font-size:.85rem;margin-top:1rem;font-family:'IBM Plex Mono',monospace">This page runs the same engine as the panel, fed by a real recording of Luna's voice analysed into 20&nbsp;ms frames.</p>
+    </div>
+
+    <div class="grid-2" style="margin-top:2rem">
+      <div class="card feat"><h3>Why Mercury nearly didn't make it</h3><p>Metaballs built from the usual <code>r²/d²</code> fields go flat wherever drops merge, so the chrome reflections broke into hard bands. A bounded kernel — <code>(1 − d²/R²)³</code> with R = 2.2&nbsp;r — gives a surface within a few percent of a true sphere for a lone drop, and bulges smoothly where drops join. Then the studio "environment" it reflects had to be made smooth, with a horizon that curves like a real camera's.</p></div>
+      <div class="card feat"><h3>Bloom that doesn't wash out</h3><p>Additive light saturates fast: the first Halo turned into a solid white disc and Ribbons blew out to white in the middle. Every skin was tuned frame by frame against its three states — listening, thinking, replying — with cyan for you, gold for thinking and rose for Luna running through all eleven.</p></div>
+    </div>
+    <figure class="sheet"><img src="images/echo-visuals-sheet.jpg" width="1976" height="1694" alt="Contact sheet of the eleven voice visuals mid-conversation: Lens Flares, Classic VU, Aurora, Mercury, Ribbons, Galaxy, Halo, Pulsar, Phosphor, Tesla and Luna Orb" loading="lazy"></figure>
+    <p style="text-align:center;color:var(--muted);font-size:.85rem;margin-top:.8rem;font-family:'IBM Plex Mono',monospace">All eleven, each caught mid-conversation — the sheet that went to Kev's phone while he was at work.</p>
+  </div>
+</section>
+
+<!-- 06 NEXT -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">06 · What's next</span><h2>One Dot works. Now a house full of them.</h2><p class="lede">The hard parts — the unlock, the local stack, per-person wake words, the fixes above — are solved, so every extra second-hand Dot drops into a working system in about twenty minutes.</p></div>
+    <div class="grid-2">
+      <div class="card feat"><h3>A Dot in every room</h3><p>Kitchen, living room, Mom's room, the landing and the hall. Each one gets a Home&nbsp;Assistant area, so "turn the lights on" means <i>this</i> room — and with a wake word per person, every command carries who and where. Six speakers also means announcements, intercom and alarm audio everywhere.</p></div>
+      <div class="card feat"><h3>Knowing where people are, indoors</h3><p>Every Dot is also a Bluetooth proxy that advertises its own beacon. Enough of them make BLE trilateration possible (Bermuda and the BLE Positioning System) — and the <a href="roomscribe.html" style="color:var(--accent)">Roomscribe</a> 3D scan gives each Dot's true position, so the Dots can calibrate against each other. Realistically room-level, not centimetres.</p></div>
+      <div class="card feat"><h3>Faster replies</h3><p>Piper onto the RTX&nbsp;5070 to take the synthesis wait out of long answers, and a stronger "okay computer" model for across-the-room wake-ups.</p></div>
+      <div class="card feat"><h3>Mom's voice on the Echo</h3><p>On the panel, "hey luna" already routes to Mom's own pipeline. On the Dot, both wake words currently share Kev's — wiring the second slot through is a small job on the list.</p></div>
+    </div>
+    <p style="color:var(--muted);font-size:.9rem;margin-top:1.6rem">Credits: the amonet exploit and TWRP port by k4y0z and r0rt1z2 (XDA unlock thread); EchoLocal by ygelfand; EchoMuse by wilbowes; the Voice Satellite card for the original Lens Flares look; Home&nbsp;Assistant's Assist, Wyoming, faster-whisper, Piper and microWakeWord projects.</p>
+  </div>
+</section>
+
+<!-- CLOSE -->
+<section>
+  <div class="wrap reveal">
+    <div class="close">
+      <span class="eyebrow" style="color:#F28ACB">Echo Voice</span>
+      <h2 style="margin-top:1rem;line-height:1.12">A second-hand Echo Dot is now the best microphone in the house — and it no longer works for Amazon.</h2>
+      <p>Seven microphones, a speaker and an LED ring, answering to two wake words, thinking with a GPU and a search engine, and showing every syllable on the wall.</p>
+      <div class="sig"><span class="dot"></span> Kevin orchestrates · Claude&nbsp;Code drives · built at home</div>
+    </div>
+  </div>
+</section>
+
+<footer>DECS Home Systems · built &amp; documented locally on one Pi · <a href="globalguard.html">GlobalGuard</a> · <a href="homeassistant.html">Home Assistant</a> · <a href="wallpanel.html">Wall panel</a> · <a href="echo.html">Echo Voice</a> · <a href="cameras.html">Cameras</a> · <a href="presence.html">Presence</a> · <a href="roomscribe.html">Roomscribe</a> · <a href="traccar.html">Traccar</a> · <a href="finance.html">Finance</a> · <a href="fan.html">Fan</a> · <a href="rada.html">Rada&nbsp;shower</a> · <a href="roadmap.html">Roadmap</a></footer>
+
+<script src="app.js"></script>
+<script>window.__VV_NO_OVERLAY = true; window.__VV_NO_FONT = true;</script>
+<script src="voice-visuals.js"></script>
+<script>
+(function () {
+  "use strict";
+  var VV = window.VoiceVisuals;
+  if (!VV) return;
+  var SW = {
+    "lens-flares": ["#2a82ff", "#7ac8ff", "#ff3c78"], "classic-vu": ["#f7e4b3", "#c8102e", "#15130f"], "aurora": ["#46ff9b", "#28dca5", "#be4bff"],
+    "mercury": ["#c9d2de", "#3cc8ff", "#ff46c8"], "ribbons": ["#28d2ff", "#b96eff", "#ff3caa"], "galaxy": ["#a0c4ff", "#ff78c8", "#fff0d2"],
+    "halo": ["#3ce1ff", "#5082ff", "#ff50be"], "pulsar": ["#ececec", "#8cdcff", "#ff96c8"], "phosphor": ["#5aff96", "#beffd7", "#0a1a10"],
+    "tesla": ["#5a96ff", "#b464ff", "#ff46c8"], "luna-orb": ["#46c8ff", "#ff50be", "#ffb450"]
+  };
+  var rm = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function Live(host, skin, opts) {
+    this.host = host; this.stage = new VV.Stage(host, { skin: skin, quality: 1 });
+    host.insertBefore(this.stage.el, host.firstChild);
+    this.demo = new VV.Demo(0); this.t0 = null; this.visible = false; this.paused = rm; this.last = 0; this.prev = "idle"; this.opts = opts || {};
+    host.classList.toggle("paused", this.paused);
+    var self = this, btn = host.querySelector("[data-play]");
+    if (btn) btn.addEventListener("click", function () { self.paused = false; host.classList.remove("paused"); });
+    if (this.paused) { this.frameAt(7.6); }
+  }
+  Live.prototype.restart = function () { this.t0 = null; this.demo = new VV.Demo(0); };
+  Live.prototype.frameAt = function (t) {
+    var s, d = new VV.Demo(0);
+    for (var x = Math.max(0, t - 3); x < t; x += 1 / 30) s = d.sample(x), this.stage.draw(s.f);
+    s = d.sample(t); this.stage.draw(s.f); this.stage.text(s.status, s.user, s.reply);
+  };
+  Live.prototype.tick = function (ms) {
+    if (this.paused || !this.visible) { this.t0 = null; return; }
+    if (ms - this.last < 1000 / 30 - 2) return; this.last = ms;
+    if (this.t0 == null) { this.t0 = ms / 1000; this.demo = new VV.Demo(-this.t0); }
+    var s = this.demo.sample(ms / 1000);
+    if (this.opts.cycle && s.state === "listening" && this.prev !== "listening") this.opts.cycle(this);
+    this.prev = s.state;
+    this.stage.draw(s.f); this.stage.text(s.status, s.user, s.reply);
+  };
+  var hero = new Live(document.getElementById("heroStage"), "lens-flares", { cycle: function (L) {
+    L.turns = (L.turns || 0) + 1; if (L.turns === 1) return;          // first conversation plays on Lens Flares
+    var i = VV.skins.indexOf(L.stage.skin); var next = VV.skins[(i + 1) % VV.skins.length];
+    L.stage.setSkin(next.id); document.getElementById("heroName").textContent = next.name;
+  } });
+  document.getElementById("heroName").textContent = hero.stage.skin.name;
+  var pick = new Live(document.getElementById("pickStage"), "classic-vu");
+  var grid = document.getElementById("pickGrid"), desc = document.getElementById("pickDesc");
+  function choose(id) {
+    var sk = pick.stage.setSkin(id);
+    document.getElementById("pickName").textContent = sk.name;
+    desc.innerHTML = "<b>" + sk.name + ".</b> " + sk.blurb.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+    [].forEach.call(grid.children, function (b) { b.setAttribute("aria-pressed", b.getAttribute("data-id") === sk.id ? "true" : "false"); });
+    pick.restart(); if (pick.paused) pick.frameAt(7.6);
+  }
+  VV.skins.forEach(function (sk) {
+    var b = document.createElement("button"); b.type = "button"; b.className = "vcard"; b.setAttribute("data-id", sk.id); b.setAttribute("aria-pressed", "false");
+    var sw = (SW[sk.id] || []).map(function (c) { return "<i style='background:" + c + "'></i>"; }).join("");
+    b.innerHTML = "<h3><span class='sw'>" + sw + "</span></h3><p></p>";
+    b.querySelector("h3").appendChild(document.createTextNode(sk.name));
+    b.querySelector("p").textContent = sk.blurb;
+    b.addEventListener("click", function () { choose(sk.id); });
+    grid.appendChild(b);
+  });
+  var sb = document.createElement("button"); sb.type = "button"; sb.className = "vcard"; sb.setAttribute("data-id", "surprise"); sb.setAttribute("aria-pressed", "false");
+  sb.innerHTML = "<h3><span class='sw'><i class='rb'></i></span>Surprise me</h3><p>A different visual every time you talk to Luna. Tap to roll one.</p>";
+  sb.addEventListener("click", function () {
+    var pool = VV.skins.filter(function (k) { return k !== pick.stage.skin; });
+    choose(pool[Math.floor(Math.random() * pool.length)].id);
+  });
+  grid.appendChild(sb);
+  choose("classic-vu");
+  var lives = [hero, pick];
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (es) { es.forEach(function (e) { lives.forEach(function (L) { if (L.host === e.target) L.visible = e.isIntersecting; }); }); }, { threshold: 0.05 });
+    lives.forEach(function (L) { io.observe(L.host); });
+  } else lives.forEach(function (L) { L.visible = true; });
+  (function loop(ms) { requestAnimationFrame(loop); lives.forEach(function (L) { L.tick(ms); }); })(performance.now());
+})();
+</script>
+</body>
+</html>

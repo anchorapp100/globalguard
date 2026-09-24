@@ -1,13 +1,13 @@
 /* =====================================================================
  * Voice Visuals \u2014 audio-reactive voice overlay for the Davis wall panel.
- *   A skin engine: shared audio analysis + renderer + bloom, fifteen skins,
+ *   A skin engine: shared audio analysis + renderer + bloom, nineteen skins,
  *   a demo driver (real Luna speech data) and the Home Assistant overlay.
  *   Source: C:\envy\voice-visuals\src\*.js  \u00b7  built by build.py
  * ===================================================================== */
 (function () {
   "use strict";
   if (window.VoiceVisuals) return;
-  var VERSION = "20260923174301";
+  var VERSION = "20260924171558";
 
   var CFG = {
     stateEnt:  "assist_satellite.kevs_bedroom_assist_satellite",
@@ -18,6 +18,7 @@
     selectEnt: "input_select.voice_visual",
     panelPath: "/home-panel",     // the overlay only takes over the wall-panel dashboard
     idleFadeMs: 5000,
+    navFadeMs: 900,               // after a voice page switch, fade out sooner to reveal the new page
     pollMs: 150,
     micGain: 13, micGate: 0.006,
     ttsLeadMs: 300                // Echo speaks ~0.26s after the reply audio is ready (measured)
@@ -1685,6 +1686,505 @@ var VV_DEMO = {"user": {"frames": 136, "dur": 2.705, "b64": "AzkLICYAKzQ5LhYyMil
     }
   });
 
+  /* ---------- HAL 9000 \u2014 the red eye from 2001: A Space Odyssey, set in its brushed-aluminium panel ----------
+     The lens is the only thing that moves: it glows hotter and its core swells with Luna's voice, stays watchful with a
+     cool rim light while you talk, and breathes slowly while she thinks. Syllables flicker the core. The room, the panel,
+     the nameplate, the chrome ring and the glass reflections are drawn once. */
+  register({
+    id: "hal-9000", name: "HAL 9000", layout: "left", text: "default", hiDpi: true,
+    blurb: "The calm red eye from 2001: A Space Odyssey. It glows and flickers as Luna speaks, and watches while you talk.",
+    init: function (r) {
+      var S = r.S, W = r.w, H = r.h, u = r.u, R = rng(2001), i;
+      var pw = Math.min(W * 0.34, H * 0.52), pcx = W * 0.775, px = pcx - pw / 2;
+      var Rc = pw * 0.41, Rb = Rc * 0.87, Rg = Rc * 0.75, ecy = H * 0.53;
+      S.pcx = pcx; S.ecy = ecy; S.Rc = Rc; S.Rg = Rg; S.I = 0.5; S.flick = 0; S.cool = 0; S.gold = 0;
+      var bg = mkCanvas(W, H), g = bg.getContext("2d");
+      // the room: near-black, faintly lit behind the panel
+      g.fillStyle = "#030304"; g.fillRect(0, 0, W, H);
+      var room = g.createRadialGradient(pcx, ecy, 0, pcx, ecy, H * 1.1);
+      room.addColorStop(0, "rgba(46,46,52,0.5)"); room.addColorStop(1, "rgba(0,0,0,0)");
+      g.fillStyle = room; g.fillRect(0, 0, W, H);
+      // the panel: brushed aluminium, running off the top and bottom of the screen
+      g.save(); g.shadowColor = "rgba(0,0,0,0.9)"; g.shadowBlur = 34 * u; g.fillStyle = "#6c7075"; g.fillRect(px, -30, pw, H + 60); g.restore();
+      var al = g.createLinearGradient(px, 0, px + pw, 0);
+      al.addColorStop(0, "#63686d"); al.addColorStop(0.16, "#a2a7ab"); al.addColorStop(0.5, "#c6c9cc"); al.addColorStop(0.84, "#9ea3a7"); al.addColorStop(1, "#5d6267");
+      g.fillStyle = al; g.fillRect(px, -30, pw, H + 60);
+      for (i = 0; i < 1100; i++) {                                 // vertical brush strokes
+        var a = R() * 0.07;
+        g.fillStyle = (R() < 0.5 ? "rgba(255,255,255," : "rgba(0,0,0,") + a.toFixed(3) + ")";
+        g.fillRect(px + R() * pw, -30 + R() * H * 0.4, Math.max(0.6, 0.6 * u), H * (0.3 + R() * 0.9));
+      }
+      var vf = g.createLinearGradient(0, 0, 0, H);
+      vf.addColorStop(0, "rgba(255,255,255,0.1)"); vf.addColorStop(0.5, "rgba(0,0,0,0)"); vf.addColorStop(1, "rgba(0,0,0,0.4)");
+      g.fillStyle = vf; g.fillRect(px, -30, pw, H + 60);
+      g.fillStyle = "rgba(255,255,255,0.32)"; g.fillRect(px, -30, Math.max(1, u), H + 60);
+      g.fillStyle = "rgba(0,0,0,0.5)"; g.fillRect(px + pw - Math.max(1, 1.5 * u), -30, Math.max(1, 1.5 * u), H + 60);
+      // the nameplate
+      var nw = pw * 0.66, nh = pw * 0.15, nx = pcx - nw / 2, ny = H * 0.1;
+      g.save(); g.shadowColor = "rgba(0,0,0,0.65)"; g.shadowBlur = 7 * u; g.shadowOffsetY = 2 * u;
+      roundRect(g, nx, ny, nw, nh, 3 * u); g.fillStyle = "#0a0b0c"; g.fill(); g.restore();
+      roundRect(g, nx + 2 * u, ny + 2 * u, nw - 4 * u, nh - 4 * u, 2 * u); g.strokeStyle = "rgba(255,255,255,0.07)"; g.lineWidth = Math.max(1, u); g.stroke();
+      var fs = nh * 0.5, fam = "px 'Helvetica Neue',Helvetica,Arial,sans-serif";
+      g.textBaseline = "middle"; g.textAlign = "left"; g.fillStyle = "#f1f1f1";
+      g.font = "700 " + fs.toFixed(1) + fam; var w1 = g.measureText("HAL").width;
+      g.font = "300 " + fs.toFixed(1) + fam; var w2 = g.measureText(" 9000").width, tx = pcx - (w1 + w2) / 2;
+      g.font = "700 " + fs.toFixed(1) + fam; g.fillText("HAL", tx, ny + nh * 0.53);
+      g.font = "300 " + fs.toFixed(1) + fam; g.fillText(" 9000", tx + w1, ny + nh * 0.53);
+      // the chrome ring: machined, so it bands as it turns (conic where the browser has it)
+      var ring;
+      if (g.createConicGradient) {
+        ring = g.createConicGradient(-0.7, pcx, ecy);
+        [[0, "#eceef0"], [0.12, "#8a8e93"], [0.26, "#f6f7f8"], [0.4, "#6a6e73"], [0.55, "#dadcdf"], [0.7, "#777b80"], [0.86, "#eff0f2"], [1, "#eceef0"]]
+          .forEach(function (s) { ring.addColorStop(s[0], s[1]); });
+      } else {
+        ring = g.createLinearGradient(pcx - Rc, ecy - Rc, pcx + Rc, ecy + Rc);
+        ring.addColorStop(0, "#eef0f2"); ring.addColorStop(0.5, "#80858a"); ring.addColorStop(1, "#d7dadd");
+      }
+      g.save(); g.shadowColor = "rgba(0,0,0,0.65)"; g.shadowBlur = 14 * u; g.shadowOffsetY = 4 * u;
+      g.beginPath(); g.arc(pcx, ecy, Rc, 0, TAU); g.fillStyle = ring; g.fill(); g.restore();
+      g.beginPath(); g.arc(pcx, ecy, Rc * 0.955, 0, TAU); g.strokeStyle = "rgba(0,0,0,0.35)"; g.lineWidth = Math.max(1, 1.3 * u); g.stroke();
+      g.beginPath(); g.arc(pcx, ecy, Rc - 0.8 * u, 0, TAU); g.strokeStyle = "rgba(255,255,255,0.35)"; g.lineWidth = Math.max(1, 0.8 * u); g.stroke();
+      // the black bezel and the glass well
+      var bz = g.createRadialGradient(pcx, ecy - Rb * 0.35, Rb * 0.15, pcx, ecy, Rb);
+      bz.addColorStop(0, "#202023"); bz.addColorStop(1, "#040404");
+      g.beginPath(); g.arc(pcx, ecy, Rb, 0, TAU); g.fillStyle = bz; g.fill();
+      g.beginPath(); g.arc(pcx, ecy, Rg + 1.5 * u, 0, TAU); g.fillStyle = "#000"; g.fill();
+      S.bg = bg;
+      // the glass: lens elements, the fisheye reflections of the room, and the dark edge
+      var gs = Math.ceil(Rg * 2 + 4), gl = mkCanvas(gs, gs), q = gl.getContext("2d"), o = gs / 2;
+      q.save(); q.beginPath(); q.arc(o, o, Rg, 0, TAU); q.clip();
+      [0.2, 0.33, 0.47, 0.6, 0.74, 0.88].forEach(function (k, j) {
+        q.beginPath(); q.arc(o, o, Rg * k, 0, TAU); q.strokeStyle = "rgba(255,255,255," + (0.028 + 0.014 * (j % 2)).toFixed(3) + ")";
+        q.lineWidth = Math.max(1, u); q.stroke();
+      });
+      function arcR(rad, a0, a1, w, al) { q.beginPath(); q.arc(o, o, rad, a0, a1); q.strokeStyle = "rgba(255,255,255," + al + ")"; q.lineWidth = w; q.lineCap = "round"; q.stroke(); }
+      arcR(Rg * 0.8, Math.PI * 1.07, Math.PI * 1.38, 4 * u, 0.12);
+      arcR(Rg * 0.69, Math.PI * 1.11, Math.PI * 1.31, 2.4 * u, 0.08);
+      arcR(Rg * 0.87, Math.PI * 1.56, Math.PI * 1.72, 2 * u, 0.05);
+      arcR(Rg * 0.55, Math.PI * 0.2, Math.PI * 0.32, 1.6 * u, 0.04);
+      for (i = 0; i < 6; i++) {                                    // a row of ceiling lights, bent by the lens
+        var aa = Math.PI * (1.15 + i * 0.034), rr = Rg * 0.6;
+        q.beginPath(); q.arc(o + Math.cos(aa) * rr, o + Math.sin(aa) * rr, (1.1 + 0.7 * (i % 2)) * u, 0, TAU);
+        q.fillStyle = "rgba(255,255,255,0.26)"; q.fill();
+      }
+      var sp = q.createRadialGradient(o - Rg * 0.38, o - Rg * 0.43, 0, o - Rg * 0.38, o - Rg * 0.43, Rg * 0.17);
+      sp.addColorStop(0, "rgba(255,255,255,0.55)"); sp.addColorStop(0.35, "rgba(255,255,255,0.12)"); sp.addColorStop(1, "rgba(255,255,255,0)");
+      q.fillStyle = sp; q.fillRect(0, 0, gs, gs);
+      var sheen = q.createLinearGradient(0, o - Rg, 0, o + Rg * 0.15);
+      sheen.addColorStop(0, "rgba(255,255,255,0.07)"); sheen.addColorStop(1, "rgba(255,255,255,0)");
+      q.fillStyle = sheen; q.fillRect(0, 0, gs, gs);
+      var ed = q.createRadialGradient(o, o, Rg * 0.6, o, o, Rg);
+      ed.addColorStop(0, "rgba(0,0,0,0)"); ed.addColorStop(1, "rgba(0,0,0,0.7)");
+      q.fillStyle = ed; q.fillRect(0, 0, gs, gs);
+      q.restore();
+      S.glass = gl; S.gs = gs;
+    },
+    draw: function (r, f) {
+      var S = r.S, W = r.w, H = r.h, u = r.u, t = f.t, dt = f.dt, st = f.state, lv = f.level;
+      var talk = st === "listening" || st === "responding", proc = st === "processing";
+      if (f.onset && talk) S.flick = 1;
+      S.flick = Math.max(0, S.flick - dt * 5);
+      var target = st === "responding" ? 0.5 + 0.8 * lv : st === "listening" ? 0.48 + 0.3 * lv
+                 : proc ? 0.55 + 0.22 * Math.sin(t * 2.4) : 0.46 + 0.04 * Math.sin(t * 0.9);
+      S.I = follow(S.I, target, 0.35, 0.12, dt);
+      S.cool = follow(S.cool, st === "listening" ? 1 : 0, 0.1, 0.06, dt);
+      S.gold = follow(S.gold, proc ? 1 : 0, 0.08, 0.05, dt);
+      var I = S.I + (st === "responding" ? 0.22 : 0.1) * S.flick, g = r.ctx, cx = S.pcx, cy = S.ecy, Rg = S.Rg;
+      g.drawImage(S.bg, 0, 0);
+      // the eye, drawn into its own full-frame buffer so only the eye blooms
+      var eb = r.buf("haleye", W, H), e = eb.getContext("2d");
+      e.clearRect(cx - Rg - 2, cy - Rg - 2, Rg * 2 + 4, Rg * 2 + 4);
+      var k = clamp(0.72 + 0.5 * I, 0.5, 1.4);
+      var core = mixc([255, 250, 214], [255, 222, 140], S.gold), mid = mixc([255, 196, 72], [255, 176, 44], S.gold);
+      var eg = e.createRadialGradient(cx, cy, 0, cx, cy, Rg);
+      eg.addColorStop(0, rgba(core, 1));
+      eg.addColorStop(0.045 * k, rgba(mid, 1));
+      eg.addColorStop(0.12 * k, rgba([255, 72, 18], 1));
+      eg.addColorStop(0.28 * k, rgba([206, 8, 0], clamp(0.72 + 0.28 * I, 0, 1)));
+      eg.addColorStop(0.58, rgba([96, 0, 0], clamp(0.5 + 0.4 * I, 0, 1)));
+      eg.addColorStop(0.86, "rgba(28,0,0,0.92)");
+      eg.addColorStop(1, "rgba(5,0,0,1)");
+      e.save(); e.beginPath(); e.arc(cx, cy, Rg, 0, TAU); e.globalAlpha = clamp(0.5 + 0.55 * I, 0, 1); e.fillStyle = eg; e.fill(); e.restore();
+      g.drawImage(eb, 0, 0);
+      g.save(); g.globalCompositeOperation = "lighter";
+      var spill = g.createRadialGradient(cx, cy, Rg * 0.95, cx, cy, S.Rc * 1.2);    // the red light catching the chrome
+      spill.addColorStop(0, rgba([255, 36, 10], 0.14 * I)); spill.addColorStop(1, "rgba(255,36,10,0)");
+      g.fillStyle = spill; g.beginPath(); g.arc(cx, cy, S.Rc * 1.2, 0, TAU); g.fill();
+      g.restore();
+      g.drawImage(S.glass, cx - S.gs / 2, cy - S.gs / 2);
+      if (S.cool > 0.02) {                                        // a cool rim light while you speak
+        g.save(); g.globalCompositeOperation = "lighter"; g.lineCap = "round";
+        g.beginPath(); g.arc(cx, cy, Rg * 0.93, Math.PI * 0.18, Math.PI * 0.82);
+        g.strokeStyle = rgba([120, 215, 255], (0.08 + 0.3 * lv) * S.cool); g.lineWidth = 3 * u; g.stroke();
+        g.restore();
+      }
+      r.bloom(eb, 0.65 + 0.7 * I, 0.03, 2);
+    }
+  });
+
+  /* ---------- Mother \u2014 MU/TH/UR 6000 from Alien: a phosphor terminal ready for inquiry, beside a wall of lamps ----------
+     The terminal types its ready line at the start of every conversation and traces the voice along its foot; the lamp wall
+     chatters faster the louder someone speaks (each column follows its own slice of the spectrum), sweeps in a diagonal
+     wave while she thinks, and throws a cluster of lamps on every syllable. The transcript is the HTML layer ("mother"
+     text theme), sitting inside the screen. */
+  register({
+    id: "mother", name: "Mother", layout: "left", text: "mother", hiDpi: true,
+    blurb: "MU/TH/UR 6000 from Alien. A green terminal, ready for your question, beside a wall of lamps that chatters as you talk.",
+    init: function (r) {
+      var S = r.S, W = r.w, H = r.h, u = r.u, R = rng(2037), i, j, a, b;
+      S.C = [140, 255, 214]; S.R = rng(6000);
+      // the terminal
+      var cx0 = W * 0.03, cy0 = H * 0.05, cw = W * 0.555, ch = H * 0.9, pad = Math.min(cw, ch) * 0.045;
+      S.sx = cx0 + pad; S.sy = cy0 + pad; S.sw = cw - 2 * pad; S.sh = ch - 2 * pad; S.cr = 16 * u;
+      var bg = mkCanvas(W, H), g = bg.getContext("2d");
+      g.fillStyle = "#050607"; g.fillRect(0, 0, W, H);
+      var amb = g.createRadialGradient(W * 0.3, H * 0.5, 0, W * 0.3, H * 0.5, W * 0.7);
+      amb.addColorStop(0, "rgba(30,60,52,0.35)"); amb.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = amb; g.fillRect(0, 0, W, H);
+      g.save(); g.shadowColor = "rgba(0,0,0,0.9)"; g.shadowBlur = 22 * u;
+      roundRect(g, cx0, cy0, cw, ch, 24 * u);
+      var bz = g.createLinearGradient(0, cy0, 0, cy0 + ch); bz.addColorStop(0, "#2a2c2b"); bz.addColorStop(1, "#121313");
+      g.fillStyle = bz; g.fill(); g.restore();
+      roundRect(g, S.sx - 5 * u, S.sy - 5 * u, S.sw + 10 * u, S.sh + 10 * u, S.cr + 5 * u); g.fillStyle = "#020303"; g.fill();
+      var scr = g.createRadialGradient(S.sx + S.sw / 2, S.sy + S.sh / 2, 0, S.sx + S.sw / 2, S.sy + S.sh / 2, S.sw * 0.65);
+      scr.addColorStop(0, "#04120e"); scr.addColorStop(0.75, "#020a08"); scr.addColorStop(1, "#010403");
+      roundRect(g, S.sx, S.sy, S.sw, S.sh, S.cr); g.fillStyle = scr; g.fill();
+      g.fillStyle = "rgba(170,185,178,0.5)"; g.font = "700 " + (10 * u).toFixed(1) + "px 'Courier New',monospace";
+      g.textBaseline = "middle"; g.textAlign = "left"; g.fillText("MU/TH/UR 6000", cx0 + 24 * u, cy0 + ch - pad * 0.45);
+      g.textAlign = "right"; g.fillText("INTERFACE 2037", cx0 + cw - 24 * u, cy0 + ch - pad * 0.45);
+      // the lamp wall: 3 x 5 panels of 5 x 4 lamps, dark sockets drawn once
+      var lx0 = W * 0.615, ly0 = H * 0.05, lw = W * 0.355, lh = H * 0.9, PC = 3, PR = 5, LC = 5, LR = 4;
+      var gap = Math.min(lw, lh) * 0.03, pw = (lw - gap * (PC - 1)) / PC, ph = (lh - gap * (PR - 1)) / PR;
+      var lr = Math.min(pw / LC, ph / LR) * 0.2;
+      S.lr = lr; S.lamps = []; S.wall = [lx0, ly0, lw, lh];
+      for (a = 0; a < PC; a++) for (b = 0; b < PR; b++) {
+        var px = lx0 + a * (pw + gap), py = ly0 + b * (ph + gap);
+        g.save(); g.shadowColor = "rgba(0,0,0,0.8)"; g.shadowBlur = 8 * u;
+        roundRect(g, px, py, pw, ph, 5 * u);
+        var pg = g.createLinearGradient(px, py, px, py + ph); pg.addColorStop(0, "#1d1f20"); pg.addColorStop(1, "#111213");
+        g.fillStyle = pg; g.fill(); g.restore();
+        roundRect(g, px + 1.5 * u, py + 1.5 * u, pw - 3 * u, ph - 3 * u, 4 * u); g.strokeStyle = "rgba(255,255,255,0.05)"; g.lineWidth = Math.max(1, u); g.stroke();
+        g.fillStyle = "rgba(150,160,155,0.35)"; g.font = "600 " + (7.5 * u).toFixed(1) + "px 'Courier New',monospace"; g.textAlign = "left";
+        g.fillText(String.fromCharCode(65 + b) + "-" + (a * PR + b + 11), px + 5 * u, py + ph - 6 * u);
+        for (i = 0; i < LC; i++) for (j = 0; j < LR; j++) {
+          var x = px + pw * (0.14 + 0.72 * i / (LC - 1)), y = py + ph * (0.16 + 0.58 * j / (LR - 1)), p = R();
+          var type = p < 0.66 ? 0 : p < 0.9 ? 1 : 2;
+          g.beginPath(); g.arc(x, y, lr * 1.35, 0, TAU); g.fillStyle = "#070808"; g.fill();
+          g.beginPath(); g.arc(x, y, lr, 0, TAU); g.fillStyle = ["#2c2a26", "#2e2518", "#2e1a17"][type]; g.fill();
+          S.lamps.push({ x: x, y: y, type: type, on: R() < 0.3, rate: 0.35 + R() * 1.5, band: Math.min(31, ((a * LC + i) / (PC * LC - 1) * 30) | 0),
+                         diag: a * LC + i + (b * LR + j) * 0.7, flash: 0 });
+        }
+      }
+      S.bg = bg;
+      S.spr = [[255, 246, 226], [255, 178, 72], [255, 74, 44]].map(function (c) { return dotSprite(Math.ceil(lr * 7), c, [255, 255, 250]); });
+      // the glass: scanlines, a curvature vignette and a faint reflection
+      var gl = mkCanvas(S.sw, S.sh), q = gl.getContext("2d");
+      q.fillStyle = "rgba(0,0,0,0.22)"; for (var yy = 0; yy < S.sh; yy += 3) q.fillRect(0, yy, S.sw, 1);
+      var vg = q.createRadialGradient(S.sw / 2, S.sh / 2, S.sh * 0.3, S.sw / 2, S.sh / 2, S.sw * 0.72);
+      vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,0.6)"); q.fillStyle = vg; q.fillRect(0, 0, S.sw, S.sh);
+      var rf = q.createLinearGradient(0, 0, S.sw * 0.7, S.sh); rf.addColorStop(0, "rgba(255,255,255,0.05)"); rf.addColorStop(0.35, "rgba(255,255,255,0.012)"); rf.addColorStop(0.36, "rgba(255,255,255,0)");
+      q.fillStyle = rf; q.fillRect(0, 0, S.sw, S.sh);
+      S.glass = gl;
+      S.typeT = null; S.lastSt = null; S.cool = 0; S.warm = 0; S.gold = 0;
+      S.READY = "INTERFACE 2037 READY FOR INQUIRY";
+    },
+    draw: function (r, f) {
+      var S = r.S, W = r.w, H = r.h, u = r.u, t = f.t, dt = f.dt, st = f.state, lv = f.level, R = S.R, i, L;
+      var talk = st === "listening" || st === "responding", proc = st === "processing";
+      if (S.typeT === null) S.typeT = t - 99;                     // first frame: the ready line is already typed
+      if (st !== S.lastSt) { if (st === "listening" && S.lastSt !== null) S.typeT = t; S.lastSt = st; }
+      S.cool = follow(S.cool, st === "listening" ? 1 : 0, 0.1, 0.06, dt);
+      S.warm = follow(S.warm, st === "responding" ? 1 : 0, 0.1, 0.06, dt);
+      S.gold = follow(S.gold, proc ? 1 : 0, 0.1, 0.05, dt);
+      // the lamps
+      var act = talk ? 0.7 + 5.5 * lv : 0.45, n = S.lamps.length;
+      if (f.onset && talk) for (i = 0; i < 7; i++) { L = S.lamps[(R() * n) | 0]; L.on = true; L.flash = 1; }
+      for (i = 0; i < n; i++) {
+        L = S.lamps[i];
+        if (proc) L.on = Math.sin(t * 6.5 - L.diag * 0.5) > 0.5 || (L.on && R() < 0.3);
+        else if (R() < clamp(dt * L.rate * act * (talk ? 0.45 + 1.3 * f.bands[L.band] : 1), 0, 0.9)) L.on = !L.on;
+        L.flash = Math.max(0, L.flash - dt * 3);
+      }
+      var g = r.ctx; g.drawImage(S.bg, 0, 0);
+      var lb = r.buf("mulamps", W, H), c = lb.getContext("2d"), wl = S.wall, half = S.spr[0].width / 2;
+      c.globalCompositeOperation = "source-over"; c.clearRect(wl[0] - half, wl[1] - half, wl[2] + 2 * half, wl[3] + 2 * half);
+      for (i = 0; i < n; i++) {
+        L = S.lamps[i]; if (!L.on && L.flash < 0.05) continue;
+        c.globalAlpha = clamp((L.on ? 0.8 : 0) + 0.45 * L.flash, 0, 1); c.drawImage(S.spr[L.type], L.x - half, L.y - half);
+      }
+      c.globalAlpha = 1;
+      var tint = S.cool > 0.02 ? [[150, 215, 255], 0.45 * S.cool] : S.warm > 0.02 ? [[255, 150, 205], 0.35 * S.warm] : [[255, 196, 90], 0.4 * S.gold];
+      if (tint[1] > 0.02) {
+        c.globalCompositeOperation = "source-atop"; c.fillStyle = rgba(tint[0], tint[1]);
+        c.fillRect(wl[0] - half, wl[1] - half, wl[2] + 2 * half, wl[3] + 2 * half); c.globalCompositeOperation = "source-over";
+      }
+      g.save(); g.globalCompositeOperation = "lighter"; g.drawImage(lb, 0, 0); g.restore();
+      // the terminal's phosphor, with a little persistence
+      var sw = S.sw, sh = S.sh, P = r.buf("muphos", sw, sh), p = P.getContext("2d"), C = S.C;
+      p.globalCompositeOperation = "destination-out"; p.fillStyle = "rgba(0,0,0," + (1 - Math.pow(0.55, dt * 30)).toFixed(3) + ")"; p.fillRect(0, 0, sw, sh);
+      p.globalCompositeOperation = "lighter";
+      var fs = Math.max(10, sh * 0.042), x0 = sw * 0.07, y0 = sh * 0.1, mono = "'Cascadia Mono','Consolas','Lucida Console','Courier New',monospace";
+      p.textBaseline = "middle"; p.textAlign = "left"; p.fillStyle = rgba(C, 0.95);
+      p.font = "700 " + fs.toFixed(1) + "px " + mono; p.fillText("MU/TH/UR 6000", x0, y0);
+      p.font = "400 " + fs.toFixed(1) + "px " + mono;
+      var typed = clamp(Math.floor((t - S.typeT) * 34), 0, S.READY.length), line = S.READY.slice(0, typed);
+      p.fillStyle = rgba(C, 0.85); p.fillText(line, x0, y0 + fs * 1.6);
+      if (typed < S.READY.length || (t * 1.6) % 1 < 0.55) {
+        var cwid = p.measureText("M").width; p.fillStyle = rgba(C, 0.9);
+        p.fillRect(x0 + p.measureText(line).width + cwid * 0.2, y0 + fs * 1.6 - fs * 0.5, cwid * 0.9, fs * 1.0);
+      }
+      p.fillStyle = rgba(C, 0.35); p.fillRect(x0, y0 + fs * 2.7, sw * 0.86, Math.max(1, u));
+      // the foot: a live trace of the voice, or a progress row while she thinks
+      var fy = sh * 0.9, fx0 = x0, fx1 = sw * 0.93, amp = sh * 0.05;
+      p.fillStyle = rgba(C, 0.45); p.font = "600 " + (fs * 0.62).toFixed(1) + "px " + mono; p.fillText(proc ? "COMPUTING" : "AUDIO I/O", fx0, fy - amp * 1.9);
+      if (proc) {
+        var nb = 24, bw = (fx1 - fx0) / nb, lit = Math.floor((t * 12) % (nb + 6));
+        for (i = 0; i < nb; i++) { p.fillStyle = rgba(C, i <= lit ? 0.85 : 0.14); p.fillRect(fx0 + i * bw + bw * 0.15, fy - amp * 0.35, bw * 0.7, amp * 0.7); }
+      } else {
+        var wv = f.wave, gn = talk ? 2.4 : 0.5;
+        p.beginPath();
+        for (i = 0; i < 200; i++) { var xx = fx0 + (fx1 - fx0) * i / 199, yv = fy - Math.tanh(wv[(i * 1.28) | 0] * gn) * amp; if (i) p.lineTo(xx, yv); else p.moveTo(xx, yv); }
+        p.strokeStyle = rgba(C, 0.85); p.lineWidth = 1.6 * u; p.stroke();
+      }
+      var flick = 0.93 + 0.07 * noise1(t * 23);
+      g.save(); roundRect(g, S.sx, S.sy, sw, sh, S.cr); g.clip();
+      g.globalCompositeOperation = "lighter"; g.globalAlpha = flick; g.drawImage(P, S.sx, S.sy);
+      g.globalCompositeOperation = "source-over"; g.globalAlpha = 1; g.drawImage(S.glass, S.sx, S.sy);
+      g.restore();
+      var bl = r.buf("mubloom", W, H), bc = bl.getContext("2d");
+      bc.globalCompositeOperation = "source-over"; bc.clearRect(0, 0, W, H); bc.drawImage(P, S.sx, S.sy);
+      bc.globalCompositeOperation = "lighter"; bc.globalAlpha = 0.7; bc.drawImage(lb, 0, 0); bc.globalAlpha = 1;
+      r.bloom(bl, 0.75 + 0.5 * lv, 0.02, 2);
+    }
+  });
+
+  /* ---------- Light Cycles \u2014 the Grid from Tron: two cycles race an arena and write your voices as walls of light ----------
+     Cyan is you, orange is Luna. Whoever is speaking rides fast and turns 90 degrees on their syllables, and the wall behind
+     each cycle is as tall as that voice was loud, so the trails are the conversation's waveform in 3-D. Walls fade after six
+     seconds. While she thinks, both slow down and gold rings pulse out across the floor. The grid itself is static, so it
+     is drawn once; only the walls, the cycles and their glow are drawn per frame. */
+  register({
+    id: "light-cycles", name: "Light Cycles", layout: "top", text: "tron", hiDpi: true,
+    blurb: "Tron's Grid. Two light cycles, cyan for you and orange for Luna, turn on every syllable and leave walls shaped like your voices.",
+    init: function (r) {
+      var S = r.S, W = r.w, H = r.h, u = r.u, i, k;
+      S.hy = H * 0.38; S.hc = 14; S.cx = W / 2; S.fp = (H - S.hy) * 10 / S.hc;     // the floor at z = 10 meets the bottom edge
+      S.A = 19; S.z0 = 10.6; S.z1 = 46; S.LIFE = 6; S.R = rng(1982); S.rings = 0;   // the arena fills the floor in front of you
+      var D = [[0, 1], [1, 0], [0, -1], [-1, 0]];
+      S.D = D;
+      function cyc(x, z, dir, col) { return { x: x, z: z, dir: dir, col: col, trail: [], lastTurn: -9, next: 0, sampled: -9, flash: 0 }; }
+      S.cyc = [cyc(-7, 15, 0, [90, 225, 255]), cyc(7, 34, 2, [255, 150, 40])];
+      var bg = mkCanvas(W, H), g = bg.getContext("2d"), hy = S.hy;
+      g.fillStyle = "#000"; g.fillRect(0, 0, W, H);
+      var sky = g.createLinearGradient(0, hy - H * 0.25, 0, hy);
+      sky.addColorStop(0, "rgba(0,40,70,0)"); sky.addColorStop(1, "rgba(0,70,110,0.35)");
+      g.fillStyle = sky; g.fillRect(0, hy - H * 0.25, W, H * 0.25);
+      var fl = g.createLinearGradient(0, hy, 0, H); fl.addColorStop(0, "#001426"); fl.addColorStop(0.3, "#000a14"); fl.addColorStop(1, "#000308");
+      g.fillStyle = fl; g.fillRect(0, hy, W, H - hy);
+      function P(x, z) { return [S.cx + S.fp * x / z, hy + S.fp * S.hc / z]; }
+      // grid: lines across (constant z) fade with distance; lines along (constant x) fade toward the horizon
+      var step = 2;
+      for (k = 10; k < 170; k += step) {
+        var y = P(0, k)[1], a = clamp(0.5 * Math.pow(10 / k, 0.9), 0.03, 0.5);
+        g.fillStyle = "rgba(40,150,255," + a.toFixed(3) + ")"; g.fillRect(0, y - 0.6 * u, W, Math.max(1, 1.2 * u));
+      }
+      var along = g.createLinearGradient(0, hy, 0, H); along.addColorStop(0, "rgba(40,150,255,0)"); along.addColorStop(0.2, "rgba(40,150,255,0.14)"); along.addColorStop(1, "rgba(40,150,255,0.5)");
+      g.strokeStyle = along; g.lineWidth = Math.max(1, 1.2 * u); g.beginPath();
+      for (i = -40; i <= 40; i++) { var x = i * step, n = P(x, 10), fz = P(x, 170); g.moveTo(n[0], n[1]); g.lineTo(fz[0], fz[1]); }
+      g.stroke();
+      // the arena's edge
+      var c = [P(-S.A, S.z0), P(S.A, S.z0), P(S.A, S.z1), P(-S.A, S.z1)];
+      g.save(); g.shadowColor = "rgba(80,200,255,0.9)"; g.shadowBlur = 10 * u;
+      g.beginPath(); g.moveTo(c[0][0], c[0][1]); for (i = 1; i < 4; i++) g.lineTo(c[i][0], c[i][1]); g.closePath();
+      g.strokeStyle = "rgba(120,220,255,0.85)"; g.lineWidth = 2 * u; g.stroke(); g.restore();
+      g.fillStyle = "rgba(160,235,255,0.9)"; g.fillRect(0, hy - 0.7 * u, W, Math.max(1, 1.4 * u));
+      S.bg = bg;
+      S.spr = S.cyc.map(function (cy) { return dotSprite(Math.ceil(130 * u), cy.col, [255, 255, 255]); });
+    },
+    draw: function (r, f) {
+      var S = r.S, W = r.w, H = r.h, u = r.u, t = f.t, dt = f.dt, st = f.state, lv = f.level, R = S.R, D = S.D, i, j;
+      var proc = st === "processing", hy = S.hy, cx = S.cx, fp = S.fp, hc = S.hc;
+      function PX(x, z) { return cx + fp * x / z; }
+      function PY(y, z) { return hy + fp * (hc - y) / z; }
+      function free(cy, dir, ahead) {
+        var nx = cy.x + D[dir][0] * ahead, nz = cy.z + D[dir][1] * ahead;
+        return nx > -S.A + 0.5 && nx < S.A - 0.5 && nz > S.z0 + 0.5 && nz < S.z1 - 0.5;
+      }
+      function turn(cy) {
+        var l = (cy.dir + 3) % 4, rt = (cy.dir + 1) % 4, fl = free(cy, l, 2.5), fr = free(cy, rt, 2.5);
+        cy.dir = fl && fr ? (R() < 0.5 ? l : rt) : fl ? l : fr ? rt : (cy.dir + 2) % 4;
+        cy.lastTurn = t; cy.trail.push({ x: cy.x, z: cy.z, h: cy.trail.length ? cy.trail[cy.trail.length - 1].h : 0.4, t: t });
+      }
+      for (i = 0; i < 2; i++) {
+        var cy = S.cyc[i], active = (st === "listening" && i === 0) || (st === "responding" && i === 1);
+        var spd = active ? 6 + 14 * lv : proc ? 4 : 3.4, h = active ? 0.5 + 6 * lv : proc ? 0.7 : 0.55;
+        if (!cy.next) cy.next = t + 1 + R() * 2;
+        if (active && f.onset && t - cy.lastTurn > 0.32) { turn(cy); cy.flash = 1; }
+        else if (!active && t > cy.next) { turn(cy); cy.next = t + (proc ? 0.8 : 1.2) + R() * 1.6; }
+        if (!free(cy, cy.dir, 0.6)) turn(cy);
+        cy.x += D[cy.dir][0] * spd * dt; cy.z += D[cy.dir][1] * spd * dt;
+        cy.x = clamp(cy.x, -S.A + 0.3, S.A - 0.3); cy.z = clamp(cy.z, S.z0 + 0.3, S.z1 - 0.3);
+        cy.h = follow(cy.h || 0.4, h, 0.5, 0.2, dt);
+        if (t - cy.sampled > 1 / 30) { cy.trail.push({ x: cy.x, z: cy.z, h: cy.h, t: t }); cy.sampled = t; }
+        while (cy.trail.length > 2 && t - cy.trail[1].t > S.LIFE) cy.trail.shift();
+        cy.flash = Math.max(0, cy.flash - dt * 4);
+      }
+      var g = r.ctx; g.drawImage(S.bg, 0, 0);
+      var sc = r.buf("lcglow", W, H), q = sc.getContext("2d");
+      q.globalCompositeOperation = "source-over"; q.clearRect(0, 0, W, H); q.globalCompositeOperation = "lighter";
+      // gold rings rolling out across the floor while she thinks
+      S.rings = follow(S.rings, proc ? 1 : 0, 0.08, 0.05, dt);
+      if (S.rings > 0.02) {
+        for (j = 0; j < 2; j++) {
+          var ph = ((t * 0.55 + j * 0.5) % 1), rad = 2 + ph * 30, zc = (S.z0 + S.z1) / 2;
+          q.beginPath();
+          for (i = 0; i <= 72; i++) { var an = i / 72 * TAU, wx = Math.cos(an) * rad, wz = zc + Math.sin(an) * rad * 0.6; if (wz < 10.5) wz = 10.5; if (i) q.lineTo(PX(wx, wz), PY(0, wz)); else q.moveTo(PX(wx, wz), PY(0, wz)); }
+          q.strokeStyle = rgba([255, 200, 90], 0.55 * (1 - ph) * S.rings); q.lineWidth = 2.2 * u; q.stroke();
+        }
+      }
+      // walls of light: bucketed by age so each bucket is one fill + one stroke
+      for (i = 0; i < 2; i++) {
+        var cyc = S.cyc[i], tr = cyc.trail.concat([{ x: cyc.x, z: cyc.z, h: cyc.h, t: t }]), B = 5, fills = [], tops = [], k;
+        for (k = 0; k < B; k++) { fills.push(new Path2D()); tops.push(new Path2D()); }
+        for (j = 1; j < tr.length; j++) {
+          var p0 = tr[j - 1], p1 = tr[j], life = 1 - (t - p1.t) / S.LIFE;
+          if (life <= 0) continue;
+          var bk = Math.min(B - 1, (life * B) | 0);
+          var ax = PX(p0.x, p0.z), ay = PY(0, p0.z), bx = PX(p1.x, p1.z), by = PY(0, p1.z), ty0 = PY(p0.h, p0.z), ty1 = PY(p1.h, p1.z);
+          fills[bk].moveTo(ax, ay); fills[bk].lineTo(bx, by); fills[bk].lineTo(bx, ty1); fills[bk].lineTo(ax, ty0); fills[bk].closePath();
+          tops[bk].moveTo(ax, ty0); tops[bk].lineTo(bx, ty1); tops[bk].moveTo(ax, ay); tops[bk].lineTo(bx, by);
+        }
+        var col = cyc.col, hot = mixc(col, [255, 255, 255], 0.55);
+        q.lineCap = "round"; q.lineJoin = "round";
+        for (k = 0; k < B; k++) {
+          var a = (k + 0.5) / B;
+          q.fillStyle = rgba(col, 0.3 * a); q.fill(fills[k]);
+          q.strokeStyle = rgba(hot, 0.95 * a); q.lineWidth = 2.2 * u; q.stroke(tops[k]);
+        }
+        // the cycle: a hot streak, its glow, and a pool of light on the floor
+        var d = D[cyc.dir], zz = cyc.z, sx = PX(cyc.x, zz), sy = PY(0.45, zz), bxk = PX(cyc.x - d[0] * 1.3, cyc.z - d[1] * 1.3), byk = PY(0.45, cyc.z - d[1] * 1.3);
+        var sz = 10 / zz, pool = q.createRadialGradient(sx, PY(0, zz), 0, sx, PY(0, zz), 110 * u * sz);
+        pool.addColorStop(0, rgba(col, 0.32 + 0.3 * cyc.flash)); pool.addColorStop(1, rgba(col, 0));
+        q.save(); q.translate(sx, PY(0, zz)); q.scale(1, 0.32); q.translate(-sx, -PY(0, zz));
+        q.fillStyle = pool; q.beginPath(); q.arc(sx, PY(0, zz), 110 * u * sz, 0, TAU); q.fill(); q.restore();
+        q.beginPath(); q.moveTo(bxk, byk); q.lineTo(sx, sy); q.strokeStyle = rgba(hot, 1); q.lineWidth = 10 * u * sz + 1.5; q.stroke();
+        var spr = S.spr[i], ss = spr.width * sz * (1 + 0.6 * cyc.flash);
+        q.drawImage(spr, sx - ss / 2, sy - ss / 2, ss, ss);
+      }
+      g.save(); g.globalCompositeOperation = "lighter"; g.drawImage(sc, 0, 0); g.restore();
+      r.bloom(sc, 0.7 + 0.5 * lv, 0.02, 2);
+    }
+  });
+
+  /* ---------- LCARS \u2014 the Starfleet computer console from Star Trek: The Next Generation ----------
+     Elbows, sidebar blocks and bar segments in the LCARS palette frame the transcript ("lcars" layout + text theme); below
+     it a row of rounded bars is the live spectrum: blue while you talk, lavender while Luna does, a gold chase while she
+     thinks. Syllables flash a sidebar block and roll the readouts. The frame is drawn once; highlights sit on top of it. */
+  register({
+    id: "lcars", name: "LCARS", layout: "lcars", text: "lcars", hiDpi: true,
+    blurb: "The Starfleet computer's LCARS console. Its bars light blue for you and lavender for Luna, and chase in gold while she thinks.",
+    init: function (r) {
+      var S = r.S, W = r.w, H = r.h, u = r.u, R = rng(1701), i;
+      var C = S.C = { orange: [255, 153, 102], peach: [255, 204, 153], lav: [204, 153, 204], blue: [153, 153, 255], sky: [153, 204, 255],
+                      gold: [255, 204, 102], pink: [255, 153, 204], tan: [204, 153, 102], red: [204, 102, 102] };
+      var mx = W * 0.035, my = H * 0.05, sw = W * 0.14, th = H * 0.065, ro = Math.min(sw * 0.85, th * 2.6), ri = th * 0.9;
+      var yA = my + th + H * 0.1, yB = H - my - th - H * 0.1, xE = mx + sw + W * 0.07, gapX = W * 0.006, gapY = H * 0.012;
+      S.fam = "'Antonio','Bahnschrift Condensed','Bahnschrift','Arial Narrow','Roboto Condensed',sans-serif";
+      function font(q, w, px) { q.font = w + " " + px.toFixed(1) + "px " + S.fam; try { q.fontStretch = "condensed"; } catch (e) {} }
+      S.font = font;
+      var bg = mkCanvas(W, H), g = bg.getContext("2d");
+      g.fillStyle = "#000"; g.fillRect(0, 0, W, H);
+      function elbow(top) {
+        var y0 = top ? my : H - my, s = top ? 1 : -1, yEnd = top ? yA : yB;
+        g.beginPath(); g.moveTo(mx, yEnd); g.lineTo(mx, y0 + s * ro); g.arcTo(mx, y0, mx + ro, y0, ro);
+        g.lineTo(xE, y0); g.lineTo(xE, y0 + s * th); g.lineTo(mx + sw + ri, y0 + s * th);
+        g.arcTo(mx + sw, y0 + s * th, mx + sw, y0 + s * (th + ri), ri); g.lineTo(mx + sw, yEnd); g.closePath();
+      }
+      elbow(true); g.fillStyle = rgba(C.orange, 1); g.fill();
+      elbow(false); g.fillStyle = rgba(C.lav, 1); g.fill();
+      // sidebar blocks between the elbows
+      var props = [0.22, 0.12, 0.34, 0.14, 0.18], cols = [C.lav, C.peach, C.blue, C.orange, C.tan], y = yA + gapY, avail = yB - gapY - y - gapY * (props.length - 1);
+      S.blocks = [];
+      for (i = 0; i < props.length; i++) {
+        var bh = avail * props[i]; S.blocks.push([mx, y, sw, bh, cols[i]]);
+        g.fillStyle = rgba(cols[i], 1); g.fillRect(mx, y, sw, bh);
+        g.fillStyle = "#000"; font(g, "600", Math.min(sw * 0.13, bh * 0.4)); g.textAlign = "right"; g.textBaseline = "bottom";
+        g.fillText(("0" + ((R() * 90 + 10) | 0)).slice(-2) + "-" + (1000 + ((R() * 8999) | 0)), mx + sw - sw * 0.06, y + bh - bh * 0.08);
+        y += bh + gapY;
+      }
+      // the top bar: segments, then the title
+      font(g, "600", th * 1.18); g.textAlign = "right"; g.textBaseline = "middle"; g.fillStyle = rgba(C.orange, 1);
+      var title = "VOICE INTERFACE", tw = g.measureText(title).width, tx = W - mx;
+      g.fillText(title, tx, my + th * 0.54);
+      function segs(x0, x1, yy, hh, parts, capRight) {
+        var tot = x1 - x0 - gapX * (parts.length - 1), x = x0, out = [];
+        parts.forEach(function (p, k) {
+          var w = tot * p[0]; out.push([x, yy, w, hh, p[1]]);
+          g.fillStyle = rgba(p[1], 1);
+          if (capRight && k === parts.length - 1) { g.beginPath(); g.moveTo(x, yy); g.lineTo(x + w - hh / 2, yy); g.arc(x + w - hh / 2, yy + hh / 2, hh / 2, -Math.PI / 2, Math.PI / 2); g.lineTo(x, yy + hh); g.closePath(); g.fill(); }
+          else g.fillRect(x, yy, w, hh);
+          x += w + gapX;
+        });
+        return out;
+      }
+      S.topSegs = segs(xE + gapX, tx - tw - W * 0.015, my, th, [[0.46, C.lav], [0.2, C.sky], [0.34, C.peach]], false);
+      S.botSegs = segs(xE + gapX, W - mx, H - my - th, th, [[0.16, C.blue], [0.42, C.peach], [0.26, C.lav], [0.16, C.orange]], true);
+      S.th = th; S.my = my; S.mx = mx;
+      // the spectrum area
+      S.vx0 = mx + sw + W * 0.045; S.vx1 = W - mx; S.vy0 = H * 0.565; S.vy1 = H - my - th - H * 0.05;
+      S.N = 28; S.h = new Float32Array(S.N); S.flash = new Float32Array(props.length);
+      var pitch = (S.vx1 - S.vx0) / S.N; S.pitch = pitch; S.pwid = pitch * 0.6;
+      font(g, "600", H * 0.028); g.textAlign = "left"; g.textBaseline = "middle"; g.fillStyle = rgba(C.orange, 1);
+      g.fillText("VOICE ANALYSIS", S.vx0, S.vy0);
+      g.fillStyle = rgba(C.peach, 0.9); g.fillRect(S.vx0, S.vy0 + H * 0.022, S.vx1 - S.vx0, Math.max(1, 1.5 * u));
+      for (i = 0; i < S.N; i++) {                                 // dark tracks behind each bar
+        var cx = S.vx0 + pitch * (i + 0.5), top = S.vy0 + H * 0.05;
+        roundRect(g, cx - S.pwid / 2, top, S.pwid, S.vy1 - top, S.pwid / 2); g.fillStyle = "rgba(60,48,70,0.45)"; g.fill();
+      }
+      S.bg = bg; S.nums = []; S.numT = -9; S.mode = 0; S.R = rng(47);
+    },
+    draw: function (r, f) {
+      var S = r.S, W = r.w, H = r.h, u = r.u, t = f.t, dt = f.dt, st = f.state, lv = f.level, C = S.C, R = S.R, i;
+      var talk = st === "listening" || st === "responding", proc = st === "processing";
+      var g = r.ctx; g.drawImage(S.bg, 0, 0);
+      // syllables flash a sidebar block; the readouts roll with the voice
+      if (f.onset && talk) S.flash[(R() * S.flash.length) | 0] = 1;
+      for (i = 0; i < S.flash.length; i++) S.flash[i] = Math.max(0, S.flash[i] - dt * 3);
+      if (t - S.numT > (talk ? 0.35 : proc ? 0.2 : 1.4)) {
+        S.numT = t; S.nums = S.botSegs.map(function () { return ((R() * 90 + 10) | 0) + "-" + ((R() * 9000 + 1000) | 0); });
+      }
+      var hl = r.buf("lchl", W, H), q = hl.getContext("2d");
+      q.globalCompositeOperation = "source-over"; q.clearRect(0, 0, W, H);
+      S.blocks.forEach(function (b, k) {
+        var a = S.flash[k] * 0.55 + (proc && ((t * 5) | 0) % S.blocks.length === k ? 0.4 : 0);
+        if (a > 0.01) { q.fillStyle = "rgba(255,255,255," + a.toFixed(3) + ")"; q.fillRect(b[0], b[1], b[2], b[3]); }
+      });
+      if (proc) S.topSegs.forEach(function (b, k) { if (((t * 4) | 0) % S.topSegs.length === k) { q.fillStyle = "rgba(255,255,255,0.35)"; q.fillRect(b[0], b[1], b[2], b[3]); } });
+      g.drawImage(hl, 0, 0);
+      S.font(g, "600", S.th * 0.46); g.textAlign = "right"; g.textBaseline = "bottom"; g.fillStyle = "#000";
+      S.botSegs.forEach(function (b, k) { if (b[2] > S.th * 2.2 && S.nums[k]) g.fillText(S.nums[k], b[0] + b[2] - S.th * (k === S.botSegs.length - 1 ? 0.7 : 0.25), b[1] + b[3] - S.th * 0.1); });
+      S.font(g, "600", H * 0.028); g.textAlign = "right"; g.textBaseline = "middle";
+      g.fillStyle = rgba(proc ? C.gold : st === "responding" ? C.lav : st === "listening" ? C.sky : C.tan, 1);
+      g.fillText(proc ? "COMPUTING" : st === "responding" ? "TRANSMITTING" : st === "listening" ? "RECEIVING" : "STANDBY", S.vx1, S.vy0);
+      // the spectrum bars
+      var top = S.vy0 + H * 0.05, span = S.vy1 - top, pw = S.pwid, bars = r.buf("lcbars", W, H), b2 = bars.getContext("2d");
+      b2.globalCompositeOperation = "source-over"; b2.clearRect(S.vx0 - 4, top - 4, S.vx1 - S.vx0 + 8, span + 8);
+      for (i = 0; i < S.N; i++) {
+        var target;
+        if (talk) {
+          var bi = i / (S.N - 1) * 30, b0 = bi | 0, bv = f.bands[b0] * (1 - (bi - b0)) + f.bands[Math.min(31, b0 + 1)] * (bi - b0);
+          target = clamp((bv - 0.28) / 0.72 * (0.9 + 0.3 * i / (S.N - 1)) * (0.55 + 0.6 * lv), 0, 1);
+        } else if (proc) target = 0.12 + 0.72 * Math.pow(0.5 + 0.5 * Math.sin(t * 5 - i * 0.45), 4);
+        else target = 0.05 + 0.05 * noise1(i * 0.8 + t * 1.2);
+        S.h[i] = target > S.h[i] ? S.h[i] + (target - S.h[i]) * (1 - Math.pow(0.25, dt * 30)) : Math.max(target, S.h[i] - dt * 1.1);
+        var hh = pw + (span - pw) * S.h[i], cx = S.vx0 + S.pitch * (i + 0.5);
+        var col = proc ? C.gold : st === "responding" ? (i % 2 ? C.pink : C.lav) : st === "listening" ? (i % 2 ? C.blue : C.sky) : C.tan;
+        roundRect(b2, cx - pw / 2, S.vy1 - hh, pw, hh, pw / 2); b2.fillStyle = rgba(col, talk || proc ? 1 : 0.55); b2.fill();
+      }
+      g.drawImage(bars, 0, 0);
+      r.bloom(bars, 0.12 + 0.2 * lv, 0.012, 1);
+    }
+  });
+
   /* ---------------- demo conversation (gallery + previews): real Luna speech data on a loop ---------------- */
   function simTexture(t) {
     var v = 0.30 + 0.38 * Math.abs(Math.sin(t * 3.3)) + 0.26 * Math.abs(Math.sin(t * 7.9 + 1.7)) * (0.5 + 0.5 * Math.sin(t * 1.3));
@@ -1692,7 +2192,7 @@ var VV_DEMO = {"user": {"frames": 136, "dur": 2.705, "b64": "AzkLICYAKzQ5LhYyMil
   }
   var DEMO_TEXT = {
     user: "Hey Luna, can you show me something beautiful?",
-    reply: "Of course. Here's a little light show: fifteen different looks, all dancing to my voice. Pick your favourite, and I'll wear it every time we talk."
+    reply: "Of course. Here's a little light show: nineteen different looks, all dancing to my voice. Pick your favourite, and I'll wear it every time we talk."
   };
   var demoClips = null;
   function getDemoClips() { if (!demoClips) demoClips = { user: unpackClip(VV_DEMO.user), luna: unpackClip(VV_DEMO.luna) }; return demoClips; }
@@ -1767,8 +2267,27 @@ var VV_DEMO = {"user": {"frames": 136, "dur": 2.705, "b64": "AzkLICYAKzQ5LhYyMil
     ".vv-t-terminal .vv-assistant{color:#aaffc8;text-shadow:0 0 8px rgba(80,255,140,.55),0 0 2px rgba(0,0,0,.9);}",
     ".vv-t-terminal.vv-l-bottom .vv-user{font-size:clamp(14px,1.7vw,24px);}",
     ".vv-t-terminal.vv-l-bottom .vv-assistant{font-size:clamp(16px,2vw,28px);}",
+    // Mother (Alien): uppercase aqua phosphor inside the terminal, a typed "> " inquiry and a block cursor on the status
+    ".vv-t-mother .vv-content{font-family:'Cascadia Mono','Consolas','Lucida Console','Courier New',monospace;text-transform:uppercase;letter-spacing:.04em;}",
+    ".vv-t-mother .vv-status{color:#8cffd6;text-shadow:0 0 8px rgba(90,255,200,.6);}",
+    ".vv-t-mother .vv-status:not(:empty)::after{content:'\\2588';margin-left:.35em;animation:vvBlink 1s steps(1) infinite;}",
+    ".vv-t-mother .vv-user{color:rgba(160,255,225,.72);text-shadow:0 0 6px rgba(90,255,200,.35);font-size:clamp(15px,1.9vw,26px);}",
+    ".vv-t-mother .vv-user::before{content:'> ';}",
+    ".vv-t-mother .vv-assistant{color:#b6ffe6;text-shadow:0 0 9px rgba(90,255,200,.55),0 0 2px rgba(0,0,0,.9);font-size:clamp(17px,2.3vw,31px);}",
+    ".vv-t-mother.vv-long .vv-assistant{font-size:clamp(14px,1.8vw,24px);}",
+    // Light Cycles (Tron): cyan for you, a warm glow for Luna
+    ".vv-t-tron .vv-status{color:#6fe8ff;text-shadow:0 0 10px rgba(60,220,255,.75);}",
+    ".vv-t-tron .vv-user{color:rgba(205,246,255,.84);text-shadow:0 0 8px rgba(60,220,255,.4),0 0 3px rgba(0,0,0,.9);}",
+    ".vv-t-tron .vv-assistant{color:#fff2e2;text-shadow:0 0 14px rgba(255,150,40,.5),0 0 3px rgba(0,0,0,.95);}",
+    // LCARS (Star Trek): flat condensed capitals in the console palette, inside the frame's upper panel
+    ".vv-l-lcars .vv-content{left:22%;right:5%;top:17%;max-height:36%;justify-content:flex-start;align-items:flex-start;text-align:left;gap:1.2vmin;}",
+    ".vv-t-lcars .vv-content{font-family:'Antonio','Bahnschrift Condensed','Bahnschrift','Arial Narrow','Roboto Condensed',sans-serif;font-stretch:condensed;text-transform:uppercase;letter-spacing:.03em;}",
+    ".vv-t-lcars .vv-status{color:#ff9966;letter-spacing:.12em;}",
+    ".vv-t-lcars .vv-user{color:#99ccff;font-size:clamp(17px,2.4vw,33px);}",
+    ".vv-t-lcars .vv-assistant{color:#ffcc99;font-size:clamp(19px,2.9vw,40px);max-height:25vh;}",
+    ".vv-t-lcars.vv-long .vv-assistant{font-size:clamp(16px,2.2vw,30px);}",
     "@keyframes vvBlink{50%{opacity:0;}}",
-    "@media (prefers-reduced-motion: reduce){.vv-overlay{transition:none;}.vv-t-terminal .vv-status::after{animation:none;}}"
+    "@media (prefers-reduced-motion: reduce){.vv-overlay{transition:none;}.vv-t-terminal .vv-status::after,.vv-t-mother .vv-status::after{animation:none;}}"
   ].join("");
   function injectStyle() {
     if (document.getElementById("vv-style")) return;
@@ -1818,7 +2337,7 @@ var VV_DEMO = {"user": {"frames": 136, "dur": 2.705, "b64": "AzkLICYAKzQ5LhYyMil
      The skin comes from input_select.voice_visual ("Surprise me" = a different one each turn), switched only between turns.
      Shows only on the wall-panel dashboard (/home-panel...) unless localStorage vvOverlay = "1" (force on) / "0" (off). */
   var OV = { stage: null, fb: null, raf: null, lastT: 0, lastFrame: 0, hideTimer: null, lastActive: false, userSnap: "", replySnap: "",
-             cur: "idle", lastSkin: null, demo: null, timers: [], dbg: null, dbgRaf: null, frameMs: 0, fpsCap: 30, started: false, dead: false };
+             cur: "idle", lastSkin: null, demo: null, timers: [], dbg: null, dbgRaf: null, frameMs: 0, fpsCap: 30, started: false, dead: false, navAt: 0 };
 
   function getHass() { if (window.__mockHass) return window.__mockHass; var ha = document.querySelector("home-assistant"); return ha && ha.hass; }
   function stOf(hass, id) { var s = hass && hass.states && hass.states[id]; if (!s) return undefined; var v = s.state; return (v === "unknown" || v === "unavailable") ? "" : v; }
@@ -2041,7 +2560,8 @@ var VV_DEMO = {"user": {"frames": 136, "dur": 2.705, "b64": "AzkLICYAKzQ5LhYyMil
     } else {
       if (S.shown && !OV.hideTimer) {
         S.text("", S.txt[1], S.txt[2]);
-        OV.hideTimer = setTimeout(function () { S.show(false); OV.hideTimer = null; stopLoop(); }, CFG.idleFadeMs);
+        var fadeMs = OV.navAt && Date.now() - OV.navAt < 30000 ? CFG.navFadeMs : CFG.idleFadeMs;   // a page switch: show it sooner
+        OV.hideTimer = setTimeout(function () { S.show(false); OV.hideTimer = null; OV.navAt = 0; stopLoop(); }, fadeMs);
       } else if (!S.shown) stopLoop();
     }
     OV.lastActive = active;
@@ -2092,13 +2612,60 @@ var VV_DEMO = {"user": {"frames": 136, "dur": 2.705, "b64": "AzkLICYAKzQ5LhYyMil
     var st = document.getElementById("vv-style"); if (st && st.parentNode) st.parentNode.removeChild(st);
   }
 
+  /* ---------------- voice control of the panel's pages ----------------
+     "Okay Nabu, show me the heating page" is matched on the Pi by Home Assistant's own agent
+     (config/custom_sentences/en/panel_pages.yaml); its intent_script (packages/panel_voice_nav.yaml) writes
+     "<view>|<unix seconds>" to input_text.wall_panel_page. Here, every browser showing the wall-panel dashboard
+     (the overlay's own rule; localStorage vvNav = "1" / "0" forces it on / off) switches to that view, the
+     same way panel-gestures.js does for a swipe. The timestamp makes a repeated request a new state.
+     A request made before this page loaded, or more than five minutes ago, is ignored.
+     PAGES must match the view paths in panel-tabs.yaml and the list in panel_pages.yaml. */
+  var NAV = {
+    ent: "input_text.wall_panel_page",
+    pages: ["overview", "lights", "utility-lights", "alarm", "solar", "doorbells", "cameras", "heating",
+            "media", "health", "traccar", "finance", "energy", "dollhouse", "scenes"],
+    seen: null, started: false, freshMs: 300000, last: ""
+  };
+  function navAllowed() {
+    var o = lsGet("vvNav");
+    if (o === "0") return false;
+    if (o === "1") return true;
+    return location.pathname.indexOf(CFG.panelPath) === 0;
+  }
+  function navTick() {
+    try {
+      var hass = getHass(), s = hass && hass.states && hass.states[NAV.ent];
+      if (!s) return;
+      var v = String(s.state || "");
+      if (NAV.seen === null) { NAV.seen = v; return; }          // asked before this page loaded: not for us
+      if (v === NAV.seen) return;
+      NAV.seen = v;
+      var parts = v.split("|"), page = parts[0], at = (+parts[1] || 0) * 1000;
+      if (NAV.pages.indexOf(page) < 0 || !navAllowed()) return;
+      if (at && Math.abs(Date.now() - at) > NAV.freshMs) return;  // stale (this browser was offline)
+      var path = CFG.panelPath + "/" + page;
+      if (location.pathname !== path) {
+        history.pushState(null, "", path);
+        window.dispatchEvent(new Event("location-changed"));
+      }
+      NAV.last = page;
+      OV.navAt = Date.now();                                     // the overlay fades quickly to show the page
+    } catch (e) {}
+  }
+  function startPanelNav() {
+    if (NAV.started || OV.dead) return;
+    NAV.started = true;
+    OV.timers.push(setInterval(navTick, 250));
+    navTick();
+  }
+
   /* ---------------- public API ---------------- */
   window.VoiceVisuals = {
     version: VERSION, skins: SKINS, skinByName: skinByName, SURPRISE: SURPRISE, CFG: CFG,
     Renderer: Renderer, FrameBuilder: FrameBuilder, Stage: Stage, Demo: Demo, DEMO_TEXT: DEMO_TEXT, analyzeBuffer: analyzeBuffer,
     isBusy: function () { return !!(OV.lastActive || OV.hideTimer || OV.demo); },
     destroy: destroyOverlay, playDemo: playDemo, stopDemo: stopDemo,
-    overlay: OV
+    overlay: OV, nav: NAV
   };
-  if (!window.__VV_NO_OVERLAY) startOverlay();
+  if (!window.__VV_NO_OVERLAY) { startOverlay(); startPanelNav(); }
 })();

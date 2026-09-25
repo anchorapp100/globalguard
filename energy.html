@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Energy — DECS Home Systems</title>
+<meta name="description" content="A Victron solar and battery system brought into Home Assistant: a live power-flow tab with the real costs, a measured account of where the energy goes, and an AI planner that works out the next two days every fifteen minutes and tests three tariffs against each other in the background.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* ---- energy page: local additions ---- */
+  body.p-energy{--accent:var(--live);--accent-soft:var(--live-soft)}
+  .pl-wire{fill:none;stroke:#243040;stroke-width:3;stroke-linecap:round;opacity:.35}
+  .pl-flow{fill:none;stroke-width:4;stroke-linecap:round;stroke-dasharray:2 12;opacity:.95;animation:plmove .9s linear infinite}
+  .pl-flow.slow{animation-duration:1.6s}
+  .pl-flow.off{animation:none;opacity:.25;stroke-dasharray:6 6}
+  @keyframes plmove{to{stroke-dashoffset:-14}}
+  .pl-node{fill:#0e151f;stroke:#26333f;stroke-width:1.4}
+  .pl-node.hi{fill:#101b28;stroke:#43d98a;stroke-width:1.6}
+  .pl-node.ghost{fill:none;stroke:#3a4552;stroke-dasharray:5 5}
+  .pl-t{font-family:"IBM Plex Mono",ui-monospace,monospace;fill:#9aa7b3}
+  .pl-title{fill:#e7edf3;font-weight:600}
+  .pl-cap{fill:#7c8a97}
+  .pl-badge{fill:#43d98a;font-weight:600}
+  .pl-warn{fill:#f4b159;font-weight:600}
+  @media (prefers-reduced-motion:reduce){.pl-flow{animation:none}}
+  .kit{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem;margin-top:1.3rem}
+  @media(max-width:900px){.kit{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:560px){.kit{grid-template-columns:1fr}}
+  .kit .k{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:.9rem 1rem;position:relative;overflow:hidden}
+  .kit .k::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--kc)}
+  .kit .kh{font-family:"Archivo",sans-serif;font-weight:700;color:var(--ink)}
+  .kit .kv{font-family:"IBM Plex Mono",monospace;font-size:.78rem;color:var(--faint);margin-top:.15rem}
+  .kit .kd{color:var(--muted);font-size:.92rem;margin-top:.45rem;line-height:1.5}
+  .meter{display:grid;grid-template-columns:9.5rem 1fr 4.2rem;gap:.8rem;align-items:center;font-family:"IBM Plex Mono",monospace;font-size:.82rem;color:var(--muted);padding:.42rem 0;border-top:1px solid var(--line)}
+  .meter:first-child{border-top:0}
+  .meter .bar{height:10px;border-radius:6px;background:var(--surface-2);overflow:hidden;border:1px solid var(--line)}
+  .meter .bar i{display:block;height:100%;border-radius:6px;background:var(--mc,var(--live))}
+  .meter b{color:var(--ink);font-weight:600;text-align:right}
+  @media(max-width:560px){.meter{grid-template-columns:7rem 1fr 3.6rem;font-size:.74rem}}
+  .arms{display:grid;grid-template-columns:repeat(4,1fr);gap:.7rem;margin-top:1.2rem}
+  @media(max-width:900px){.arms{grid-template-columns:repeat(2,1fr)}}
+  .arm{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:.85rem .95rem}
+  .arm.win{border-color:var(--live);box-shadow:0 0 0 1px var(--live) inset}
+  .arm .an{font-family:"Archivo",sans-serif;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:.5rem}
+  .arm .an i{width:10px;height:10px;border-radius:50%;background:var(--ac);display:inline-block}
+  .arm .ad{font-size:.9rem;color:var(--muted);margin-top:.35rem;line-height:1.45}
+  .say{display:flex;flex-direction:column;gap:.55rem;margin-top:1rem}
+  .say .q{align-self:flex-end;background:var(--accent-soft);color:var(--ink);border:1px solid var(--line);border-radius:14px 14px 4px 14px;padding:.55rem .85rem;max-width:34rem;font-size:.95rem}
+  .say .a{align-self:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:14px 14px 14px 4px;padding:.55rem .85rem;max-width:40rem;font-size:.95rem;color:var(--muted)}
+  .say .a b{color:var(--ink)}
+</style>
+</head>
+<body class="p-energy">
+
+<header class="nav"><div class="wrap">
+  <a class="brand" href="index.html"><span class="dot"></span> DECS&nbsp;Home&nbsp;Systems</a>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="globalguard.html">GlobalGuard</a>
+    <a href="homeassistant.html">Home&nbsp;Assistant</a>
+    <a href="wallpanel.html">Wall&nbsp;panel</a>
+    <a href="echo.html">Echo&nbsp;Voice</a>
+    <a href="energy.html" class="active">Energy</a>
+    <a href="cameras.html">Cameras</a>
+    <a href="presence.html">Presence</a>
+    <a href="roomscribe.html">Roomscribe</a>
+    <a href="traccar.html">Traccar</a>
+    <a href="fuel.html">Fuel</a>
+    <a href="finance.html">Finance</a>
+    <a href="fan.html">Fan</a>
+    <a href="rada.html">Rada&nbsp;shower</a>
+    <a href="theme.html">HA&nbsp;Theme</a>
+    <a href="technical.html">Technical</a>
+    <a href="roadmap.html">Roadmap</a>
+    <a href="claude.html">Claude&nbsp;Code</a>
+    <button class="themebtn" id="tt" aria-label="Toggle colour theme"><span id="ttic">◐</span> theme</button>
+  </nav>
+</div></header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">Victron solar · 32&nbsp;kWh battery · AI planner</span>
+        <h1 class="title">Solar that plans<br>the next <em>two days</em>.</h1>
+        <p class="lede">Kev's house runs on a Victron inverter, two roof arrays and a 32&nbsp;kWh DIY battery. Home&nbsp;Assistant now shows all of it live on the wall panel, with the real costs from the energy supplier alongside. Behind that sits a new planner: every fifteen minutes it forecasts the sun and the house, and works out the cheapest way through the next two days. An AI checks its homework four times a day. It runs in <b>shadow mode</b> for now: it plans and explains, but doesn't touch the inverter yet. Meanwhile it quietly tests three electricity tariffs against each other on the house's real data.</p>
+        <div class="meta-row">
+          <span class="chip">Victron GX · local Modbus</span>
+          <span class="chip">linear programming</span>
+          <span class="chip">Gemini as supervisor</span>
+          <span class="chip">shadow mode</span>
+        </div>
+      </div>
+      <div class="panel" role="img" aria-label="Energy status: solar, battery and grid read locally from the Victron GX; the planner re-solves every fifteen minutes in shadow mode; three tariffs are being compared live.">
+        <div class="head"><span>Energy · live</span><span>every 15&nbsp;min</span></div>
+        <div class="rows">
+          <div class="prow"><span class="led on"></span><span class="k">Solar</span><span class="v">2 planes · 12.6&nbsp;kWp</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">Battery</span><span class="v">32&nbsp;kWh · read over Modbus</span></div>
+          <div class="prow"><span class="led info"></span><span class="k">Planner</span><span class="v">48&nbsp;h plan · shadow</span></div>
+          <div class="prow"><span class="led info"></span><span class="k">Tariff trial</span><span class="v">3 tariffs · real data</span></div>
+          <div class="prow gone"><span class="led dead"></span><span class="k">Inverter writes</span><span class="v">not yet: planner advises only</span></div>
+        </div>
+        <div class="beacon">
+          <span class="lbl">SOC</span>
+          <svg viewBox="0 0 220 30" preserveAspectRatio="none" aria-hidden="true">
+            <line x1="0" y1="15" x2="220" y2="15" stroke="#26313d" stroke-width="1"/>
+            <polyline class="trace" points="0,26 20,26 32,8 55,6 80,9 105,12 130,6 150,5 175,14 200,22 220,24" fill="none" stroke="#43d98a" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+            <circle class="pulse-dot" cx="150" cy="5" r="2.6" style="fill:#43d98a"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- STATS -->
+<section style="padding-block:clamp(2.2rem,5vw,3.2rem)">
+  <div class="wrap reveal">
+    <div class="stats">
+      <div class="stat"><span class="big num-strong">32&nbsp;kWh</span><span class="lab">DIY battery</span></div>
+      <div class="stat"><span class="big num-strong">15&nbsp;min</span><span class="lab">between re-plans</span></div>
+      <div class="stat"><span class="big num-strong">~78%</span><span class="lab">measured grid round trip</span></div>
+      <div class="stat"><span class="big num-strong">22/30</span><span class="lab">days Flux came out ahead</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 01 THE KIT -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">01 · The kit</span><h2>Four boxes and a lot of watts</h2><p class="lede">Everything talks to Home&nbsp;Assistant over the local network. The Victron GX answers Modbus queries directly, so the live numbers never go near a cloud. The long history comes from Victron's own VRM portal, and the prices and bills from the supplier's API.</p></div>
+    <div class="kit">
+      <div class="k" style="--kc:#f4b159"><div class="kh">Solar</div><div class="kv">2 × 6.3&nbsp;kWp</div><div class="kd">Two roof planes facing opposite ways, so the house gets a long, flat day instead of one noon spike.</div></div>
+      <div class="k" style="--kc:#5cb3f2"><div class="kh">Inverter/charger</div><div class="kv">Victron MultiPlus 48/8000 + GX</div><div class="kd">Carries the whole house. The GX is the brain that the old controller and now the planner talk to.</div></div>
+      <div class="k" style="--kc:#43d98a"><div class="kh">Battery</div><div class="kv">2 × 16&nbsp;kWh DIY</div><div class="kd">Self-built rack batteries with swappable cells, so wear costs pence per cycle rather than pounds.</div></div>
+      <div class="k" style="--kc:#b79bf0"><div class="kh">Tariffs</div><div class="kv">cheap nights · paid exports</div><div class="kd">A time-of-use import tariff with a five-hour cheap window, plus a paid export tariff for what goes back to the grid.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 02 THE ENERGY TAB -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">02 · The Energy tab</span><h2>Where every watt is going, and what it costs</h2><p class="lede">A new tab on the wall panel. The centrepiece is a live power-flow diagram: solar, grid, battery and home around a glowing core, each line moving faster as more power flows through it. Under it sit today's totals, and above it the money: standing charge, peak and cheap-rate imports, export credit and the net, over a week, a month or a year.</p></div>
+    <figure>
+      <div class="demo-stage" role="img" aria-label="Illustration of the power-flow diagram: solar feeds the house and the battery, the battery tops up the house, and surplus flows out to the grid. Example values only.">
+        <svg viewBox="0 0 960 330" aria-hidden="true">
+          <path class="pl-wire" d="M246 90 C 360 90 390 150 450 165"/><path class="pl-flow" d="M246 90 C 360 90 390 150 450 165" stroke="#f4b159"/>
+          <path class="pl-wire" d="M510 165 C 570 150 600 90 714 90"/><path class="pl-flow slow" d="M510 165 C 570 150 600 90 714 90" stroke="#43d98a"/>
+          <path class="pl-wire" d="M450 180 C 390 200 360 250 246 250"/><path class="pl-flow" d="M450 180 C 390 200 360 250 246 250" stroke="#5cb3f2"/>
+          <path class="pl-wire" d="M510 180 C 570 200 600 250 714 250"/><path class="pl-flow" d="M510 180 C 570 200 600 250 714 250" stroke="#f4b159"/>
+          <circle cx="480" cy="172" r="30" fill="#101b28" stroke="#43d98a" stroke-width="1.6"/>
+          <circle cx="480" cy="172" r="9" fill="#43d98a" opacity=".9"/>
+          <rect class="pl-node hi" x="46" y="50" width="200" height="80" rx="12" style="stroke:#f4b159"/>
+          <text class="pl-t pl-title" x="146" y="82" text-anchor="middle" font-size="13">Solar</text>
+          <text class="pl-t pl-cap" x="146" y="104" text-anchor="middle" font-size="12">5.8 kW</text>
+          <rect class="pl-node" x="714" y="50" width="200" height="80" rx="12"/>
+          <text class="pl-t pl-title" x="814" y="82" text-anchor="middle" font-size="13">Battery</text>
+          <text class="pl-t pl-cap" x="814" y="104" text-anchor="middle" font-size="12">charging · 64%</text>
+          <rect class="pl-node" x="46" y="210" width="200" height="80" rx="12"/>
+          <text class="pl-t pl-title" x="146" y="242" text-anchor="middle" font-size="13">Home</text>
+          <text class="pl-t pl-cap" x="146" y="264" text-anchor="middle" font-size="12">0.6 kW</text>
+          <rect class="pl-node" x="714" y="210" width="200" height="80" rx="12"/>
+          <text class="pl-t pl-title" x="814" y="242" text-anchor="middle" font-size="13">Grid</text>
+          <text class="pl-t pl-cap" x="814" y="264" text-anchor="middle" font-size="12">exporting 2.1 kW</text>
+          <text class="pl-t pl-cap" x="480" y="228" text-anchor="middle" font-size="11">illustration · example values</text>
+        </svg>
+      </div>
+      <figcaption>The tab reads the inverter live through Home&nbsp;Assistant. The costs come from the supplier's half-hourly data, and a small Python service on the Pi fetches them every thirty minutes. It's the same self-contained web-app pattern as the other panel tabs.</figcaption>
+    </figure>
+    <div class="grid-3" style="margin-top:1.4rem">
+      <div class="card feat"><h3>Real costs, not estimates</h3><p>Every half hour's usage is multiplied by the rate that applied at that moment, so the cheap five-hour window and the peak day rate are costed exactly. Today's figures come from the inverter live, because the supplier's data lags by a day.</p></div>
+      <div class="card feat"><h3>Savings, measured</h3><p>A savings card compares what the house actually paid with what it would have paid on a flat rate with no panels or battery. It also works out whether charging the battery overnight really earns its keep, using the energy the battery actually delivered.</p></div>
+      <div class="card feat"><h3>A year of solar, drillable</h3><p>The Solar tab gained a day / week / month / year view of solar against consumption, with self-sufficiency and the battery's charge overlaid, drawn from Victron's own history.</p></div>
+    </div>
+    <div class="demo-note" style="margin-top:1.4rem"><b>Two lessons that changed the numbers.</b> <span>First, export earnings have to come from <b>measured energy times the rate in force that month</b>, not from the bills: suppliers bank export credit and pay it out in lumps, so a twelve-month window of bills can over-count by more than a third. Second, self-sufficiency must only count grid power that went <em>into the house</em>. This battery also charges from the grid every night, and counting that made the house look 0% self-sufficient.</span></div>
+  </div>
+</section>
+
+<!-- 03 WHAT WE MEASURED -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">03 · Where the energy goes</span><h2>The old controller was burning money politely</h2><p class="lede">Before building anything new, we measured what the existing setup actually did. The old controller, a Node-RED flow running on the GX, looked busy and sensible. The data said otherwise: it exported every spare watt of solar once the battery passed about 17%, so by eleven at night the battery was nearly empty and the house bought peak-rate power before the cheap window opened. Every morning it also sold the night's cheap charge back to the grid, which at a realistic round trip barely broke even.</p></div>
+    <div class="grid-2">
+      <div class="card feat">
+        <h3>Measured conversion losses</h3>
+        <div style="margin-top:.7rem">
+          <div class="meter" style="--mc:#43d98a"><span>Solar → battery (DC)</span><span class="bar"><i style="width:96%"></i></span><b>~96%</b></div>
+          <div class="meter" style="--mc:#5cb3f2"><span>Inverting, mid load</span><span class="bar"><i style="width:93%"></i></span><b>~93%</b></div>
+          <div class="meter" style="--mc:#5cb3f2"><span>Charging from grid</span><span class="bar"><i style="width:90%"></i></span><b>~90%</b></div>
+          <div class="meter" style="--mc:#f4b159"><span>Grid → battery → grid</span><span class="bar"><i style="width:78%"></i></span><b>~78%</b></div>
+        </div>
+        <p style="margin-top:.8rem">About 7.8&nbsp;kWh a day was being lost in conversion, most of it from pushing grid power through the battery and back out again.</p>
+      </div>
+      <div class="card feat">
+        <h3>What that means</h3>
+        <p><b>Store solar, don't grid-cycle for pennies.</b> Solar going straight into the battery on the DC side loses almost nothing. Buying power, storing it and selling it back loses a fifth.</p>
+        <p><b>Spread the work.</b> The charger and inverter are most efficient at moderate power. Pushing them above their 6.4&nbsp;kW rating, as the old flow did, wastes the most.</p>
+        <p><b>Keep a reserve that fits the evening.</b> Running the battery to the floor before the cheap window means paying peak rate for the last hour.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 04 THE PLANNER -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">04 · The planner</span><h2>Maths makes the plan, AI checks it</h2><p class="lede">The new planner is a Python service on the Pi. Every fifteen minutes it reads the inverter live, pulls a solar forecast for each roof plane and the house's typical usage, and solves a linear programme over the next 36 to 48 hours in fifteen-minute slots. The result is when to charge from the grid, when to hold, when to export and when to let the battery carry the house, all at the lowest cost for the real tariff. The solve takes about half a second.</p></div>
+    <figure>
+      <div class="demo-stage" role="img" aria-label="Planner data path: live inverter readings, per-plane solar forecasts and the house's usage profile feed a linear programme that re-plans every fifteen minutes. Gemini reviews the plan four times a day and may only nudge three knobs within fixed limits. The plan goes to the Energy tab, Home Assistant sensors and voice; writing schedules to the inverter is the next step and is not switched on.">
+        <svg viewBox="0 0 960 330" aria-hidden="true">
+          <path class="pl-wire" d="M236 70 C 300 70 320 150 380 160"/><path class="pl-flow" d="M236 70 C 300 70 320 150 380 160" stroke="#5cb3f2"/>
+          <path class="pl-wire" d="M236 165 L 380 165"/><path class="pl-flow" d="M236 165 L 380 165" stroke="#f4b159"/>
+          <path class="pl-wire" d="M236 260 C 300 260 320 180 380 170"/><path class="pl-flow" d="M236 260 C 300 260 320 180 380 170" stroke="#b79bf0"/>
+          <path class="pl-wire" d="M580 165 C 640 165 650 90 720 80"/><path class="pl-flow" d="M580 165 C 640 165 650 90 720 80" stroke="#43d98a"/>
+          <path class="pl-wire" d="M580 170 L 720 170"/><path class="pl-flow" d="M580 170 L 720 170" stroke="#43d98a"/>
+          <path class="pl-wire" d="M580 175 C 640 175 650 250 720 260"/><path class="pl-flow off" d="M580 175 C 640 175 650 250 720 260" stroke="#7c8a97"/>
+          <path class="pl-wire" d="M480 110 L 480 132"/><path class="pl-flow slow" d="M480 110 L 480 132" stroke="#f4b159"/>
+          <rect class="pl-node" x="26" y="36" width="210" height="68" rx="12"/>
+          <text class="pl-t pl-title" x="131" y="64" text-anchor="middle" font-size="12">Inverter, live</text>
+          <text class="pl-t pl-cap" x="131" y="84" text-anchor="middle" font-size="10">SOC · solar · load · grid</text>
+          <rect class="pl-node" x="26" y="131" width="210" height="68" rx="12"/>
+          <text class="pl-t pl-title" x="131" y="159" text-anchor="middle" font-size="12">Solar forecast</text>
+          <text class="pl-t pl-cap" x="131" y="179" text-anchor="middle" font-size="10">2 planes + learned bias</text>
+          <rect class="pl-node" x="26" y="226" width="210" height="68" rx="12"/>
+          <text class="pl-t pl-title" x="131" y="254" text-anchor="middle" font-size="12">House + tariff</text>
+          <text class="pl-t pl-cap" x="131" y="274" text-anchor="middle" font-size="10">14-day profile · live rates</text>
+          <rect class="pl-node hi" x="380" y="132" width="200" height="72" rx="12"/>
+          <text class="pl-t pl-title" x="480" y="162" text-anchor="middle" font-size="13">Linear programme</text>
+          <text class="pl-t pl-cap" x="480" y="183" text-anchor="middle" font-size="10">48 h · 15-min slots · 0.5 s</text>
+          <rect class="pl-node" x="390" y="46" width="180" height="64" rx="12" style="stroke:#f4b159"/>
+          <text class="pl-t pl-title" x="480" y="72" text-anchor="middle" font-size="12">Gemini supervisor</text>
+          <text class="pl-t pl-cap" x="480" y="92" text-anchor="middle" font-size="10">4× a day · 3 clamped knobs</text>
+          <rect class="pl-node" x="720" y="46" width="214" height="68" rx="12"/>
+          <text class="pl-t pl-title" x="827" y="74" text-anchor="middle" font-size="12">Energy tab</text>
+          <text class="pl-t pl-cap" x="827" y="94" text-anchor="middle" font-size="10">timeline · briefing · what-ifs</text>
+          <rect class="pl-node" x="720" y="136" width="214" height="68" rx="12"/>
+          <text class="pl-t pl-title" x="827" y="164" text-anchor="middle" font-size="12">Home Assistant</text>
+          <text class="pl-t pl-cap" x="827" y="184" text-anchor="middle" font-size="10">sensors · voice · alerts</text>
+          <rect class="pl-node ghost" x="720" y="226" width="214" height="68" rx="12"/>
+          <text class="pl-t pl-title" x="827" y="254" text-anchor="middle" font-size="12" style="fill:#7c8a97">Inverter schedule</text>
+          <text class="pl-t pl-warn" x="827" y="274" text-anchor="middle" font-size="10">next step · not switched on</text>
+        </svg>
+      </div>
+      <figcaption>The maths decides; the AI supervises. Gemini sees the exact plan, both solar forecasts and the weather, and may only move three knobs within fixed limits: the reserve (10–40%), confidence in the solar forecast (0.6–1.2×) and expected household use (0.8–1.5×). Then the planner re-solves. On its first run it spotted that the forecast promised a sunny day while the weather said drizzle, and cut the solar estimate by 30%.</figcaption>
+    </figure>
+    <div class="grid-3" style="margin-top:1.4rem">
+      <div class="card feat"><h3>Guardrails in code</h3><p>The AI can't write a schedule, only nudge the numbers it's allowed. The reserve never drops below 10%. Charge rates stay inside what the kit is rated for. If a forecast or the AI goes missing, the plan still stands on the maths alone.</p></div>
+      <div class="card feat"><h3>A plan you can read</h3><p>The Energy tab draws the whole plan on one timeline: solar as an area, the house as a line, bars for grid charging and export, the battery's charge with its reserve, and the buy and sell prices underneath. Tap any slot to see why it does what it does.</p></div>
+      <div class="card feat"><h3>Shadow first</h3><p>Nothing is written to the inverter yet. When it goes live, the plan will be sent as a 48-slot schedule that the GX runs locally. If the Pi stops, the inverter carries on safely by itself.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 05 THE TARIFF TRIAL -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">05 · The tariff trial</span><h2>Three tariffs, one real house, every half hour</h2><p class="lede">Choosing a tariff usually means guessing. Here the planner runs a live experiment instead. Alongside the real tariff it keeps two virtual batteries: one planned for a flexible three-rate tariff, and one for the fixed deal on offer at renewal. Each plans with the same forecasts. Half an hour later, when the real metered data arrives, each virtual battery is settled against what the sun and the house actually did. Losses come from the measured efficiencies above, so no tariff gets a free lunch.</p></div>
+    <div class="arms">
+      <div class="arm" style="--ac:#5cb3f2"><div class="an"><i></i>Current tariff</div><div class="ad">Planned the same way, to show what the planner alone is worth.</div></div>
+      <div class="arm" style="--ac:#7c8a97"><div class="an"><i></i>What actually happened</div><div class="ad">The old controller's real behaviour on the real meter, the baseline.</div></div>
+      <div class="arm win" style="--ac:#43d98a"><div class="an"><i></i>Flux (three-rate)</div><div class="ad">Ahead on 22 of 30 days, and never needed a peak-rate unit.</div></div>
+      <div class="arm" style="--ac:#f4b159"><div class="an"><i></i>Fixed renewal</div><div class="ad">Behind the three-rate tariff every single day of the backfill.</div></div>
+    </div>
+    <div class="grid-2" style="margin-top:1.4rem">
+      <div class="card feat"><h3>A month in seventy seconds</h3><p>To avoid waiting weeks, the trial was backfilled over the last 30 days. It replayed each day using the forecasts that were actually available the day before, from a weather service that keeps its past forecast runs, rather than what the sun really did. The modelled losses matched the real meter to within 1%.</p></div>
+      <div class="card feat"><h3>The bug it caught</h3><p>The backfill showed the planner buying peak-rate power on some evenings: it drained the battery to exactly the reserve, and an evening busier than forecast tipped it over. The fix was a safety margin, planning for 30% more household use in the most expensive slots. Peak buying fell by more than 80%, and the plan came out cheaper overall.</p></div>
+    </div>
+    <div class="demo-note" style="margin-top:1.4rem"><b>What it showed.</b> With the old controller's habits, the three-rate tariff would actually cost money. With a planner driving it, it's the clear winner. The trial keeps running until the decision is due, so the answer comes from the house's own data rather than a comparison site.</div>
+  </div>
+</section>
+
+<!-- 06 VOICE -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">06 · Ask the house</span><h2>The plan, by voice and on the phone</h2><p class="lede">Home&nbsp;Assistant reads the planner's output into ordinary sensors: the action for right now, the next grid charge and whether the planner is healthy. So the rest of the house can use them. Luna, the <a href="echo.html">local voice assistant</a>, answers straight from them in well under a second, without calling the AI at all.</p></div>
+    <div class="say">
+      <div class="q">“What's the energy plan?”</div>
+      <div class="a"><b>Luna:</b> the planner's own one-paragraph briefing: what it expects from the sun, when it will charge from the grid and to what level, and what it's worth against running the battery with no plan.</div>
+      <div class="q">“Which tariff is winning?”</div>
+      <div class="a"><b>Luna:</b> the trial's current leader, by how much per day, and on how many days it came out ahead.</div>
+    </div>
+    <p class="lede" style="margin-top:1.4rem">If the planner stops producing plans for half an hour, Kev's phone gets an alert, and an all-clear when it recovers. A plan nobody notices has gone stale is worse than no plan.</p>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- CLOSING -->
+<section>
+  <div class="wrap reveal">
+    <div class="close">
+      <span class="eyebrow" style="color:var(--live)">Energy, at home</span>
+      <h2 style="margin-top:1rem">Measure first, then let the maths drive.</h2>
+      <p>The flashy part is the AI. The part that matters is the measuring: real conversion losses, real half-hourly prices and real forecasts, so every decision is costed honestly. The planner will get its hands on the inverter only after weeks of shadow running show it beats what's there. Everything runs on the Pi at home; the only cloud calls are the forecasts, the supplier's prices and the AI's four check-ins a day.</p>
+      <div class="sig"><span class="dot" style="background:var(--live);box-shadow:0 0 8px var(--live)"></span><span>Victron · local Modbus</span><span>·</span><span>LP planner · shadow</span><span>·</span><span>see it on the <a href="wallpanel.html" style="color:var(--live)">Wall panel</a></span></div>
+    </div>
+  </div>
+</section>
+
+<footer>Energy · Victron solar &amp; battery · live costs · AI planner in shadow mode · tariff trial · <a href="wallpanel.html">Wall panel</a> · <a href="echo.html">Echo Voice</a> · <a href="fuel.html">Fuel</a> · <a href="index.html">DECS Home Systems</a></footer>
+
+<script src="app.js"></script>
+</body>
+</html>

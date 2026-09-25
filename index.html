@@ -20,10 +20,12 @@
     <a href="homeassistant.html">Home&nbsp;Assistant</a>
     <a href="wallpanel.html">Wall&nbsp;panel</a>
     <a href="echo.html">Echo&nbsp;Voice</a>
+    <a href="energy.html">Energy</a>
     <a href="cameras.html">Cameras</a>
     <a href="presence.html">Presence</a>
     <a href="roomscribe.html">Roomscribe</a>
     <a href="traccar.html">Traccar</a>
+    <a href="fuel.html">Fuel</a>
     <a href="finance.html">Finance</a>
     <a href="fan.html">Fan</a>
     <a href="rada.html">Rada&nbsp;shower</a>
@@ -54,7 +56,7 @@
         <div class="head"><span>System status</span><span>DECS · Pi 4</span></div>
         <div class="rows">
           <div class="prow"><span class="led on"></span><span class="k">Alarm</span><span class="v">GlobalGuard bridge — live</span></div>
-          <div class="prow"><span class="led info"></span><span class="k">Solar</span><span class="v">Victron · Modbus live</span></div>
+          <div class="prow"><span class="led info"></span><span class="k">Solar</span><span class="v">Victron live · AI planner</span></div>
           <div class="prow"><span class="led on"></span><span class="k">Devices</span><span class="v">40+ entities · local</span></div>
           <div class="prow"><span class="led warn"></span><span class="k">Panel</span><span class="v">wall tablet · on</span></div>
           <div class="prow gone"><span class="led dead"></span><span class="k">Cloud</span><span class="v">nothing phoning home</span></div>
@@ -89,7 +91,7 @@
 <!-- 01 THREE STRANDS -->
 <section>
   <div class="wrap reveal">
-    <div class="sec-head col"><span class="eyebrow">01 · Thirteen strands</span><h2>One project, thirteen write-ups</h2></div>
+    <div class="sec-head col"><span class="eyebrow">01 · Fifteen strands</span><h2>One project, fifteen write-ups</h2></div>
     <div class="grid-2">
       <a class="card link feat" href="globalguard.html">
         <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/></svg></div>
@@ -109,7 +111,12 @@
       <a class="card link feat" href="echo.html">
         <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></div>
         <h3>Echo Voice</h3>
-        <p>A 2016 Echo Dot rooted and freed from Amazon, now a local Home&nbsp;Assistant voice satellite: wake words on the device, Whisper on the RTX&nbsp;5070, Gemini for answers, and Luna's voice lighting up the wall panel in nineteen live visuals. <b style="color:var(--accent)">Read &amp; try it →</b></p>
+        <p>A 2016 Echo Dot rooted and freed from Amazon, now a local Home&nbsp;Assistant voice satellite: wake words on the device, Whisper on the RTX&nbsp;5070, Gemini for answers, and Luna's voice lighting up the wall panel in twenty-three live visuals, now open source. <b style="color:var(--accent)">Read &amp; try it →</b></p>
+      </a>
+      <a class="card link feat" href="energy.html">
+        <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></div>
+        <h3>Energy &amp; the AI planner</h3>
+        <p>The Victron solar and 32&nbsp;kWh battery live on the wall panel with the real costs, a measured account of where the energy goes, and a planner that re-solves the next two days every fifteen minutes, with an AI checking its homework. It also runs a live trial of three tariffs on the house's own data. <b style="color:var(--accent)">Read &amp; see it →</b></p>
       </a>
       <a class="card link feat" href="cameras.html">
         <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="2" y="6" width="13" height="12" rx="2"/><path d="M15 10l7-4v12l-7-4z"/></svg></div>
@@ -130,6 +137,11 @@
         <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 21s-7-5.7-7-11a7 7 0 0 1 14 0c0 5.3-7 11-7 11z"/></svg></div>
         <h3>Traccar GPS</h3>
         <p>Two phones and the work van tracked through a self-hosted Traccar server on a keyless Esri dark map — addresses named to the actual house by a self-hosted property API, and a Day mode that draws the whole day's route and stops straight from Traccar. <b style="color:var(--accent)">Read &amp; try it →</b></p>
+      </a>
+      <a class="card link feat" href="fuel.html">
+        <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/><path d="M3 21h12M7 8h4"/><path d="M14 10h2a2 2 0 0 1 2 2v4a1.5 1.5 0 0 0 3 0V9l-3-3"/></svg></div>
+        <h3>Fuel prices &amp; the van</h3>
+        <p>Every UK forecourt's price from the government's open data, the van's real fuel level from its tracker, a low-fuel alert naming the best places to fill, and an honest weekly check of the fuel card against the pumps, updated by the supplier's own Friday text. <b style="color:var(--accent)">Read &amp; see it →</b></p>
       </a>
       <a class="card link feat" href="finance.html">
         <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></div>
@@ -165,9 +177,9 @@
   <div class="wrap reveal">
     <div class="sec-head col"><span class="eyebrow">Recently added</span><h2>Latest to land</h2></div>
     <div class="grid-3">
-      <div class="card feat"><h3>Echo Voice</h3><p>An Echo Dot freed from Amazon as a local voice satellite that now hears you from across the room — Whisper on the GPU, Gemini for answers, and nineteen live visuals for Luna's voice on the wall panel. <a href="echo.html" style="color:var(--accent)">New page →</a></p></div>
-      <div class="card feat"><h3>Roomscribe (MR)</h3><p>Native Quest&nbsp;3 mixed-reality device mapping — pin Home&nbsp;Assistant devices onto the real fixtures and control them in passthrough. <a href="roomscribe.html" style="color:var(--accent)">New page →</a></p></div>
-      <div class="card feat"><h3>Gas leak detector</h3><p>A Shelly Gas SHGS-1 brought into Home&nbsp;Assistant — polled locally, no cloud — as a clear&nbsp;/&nbsp;mild&nbsp;/&nbsp;heavy status plus a gas-detected sensor, with a live tile on the wall panel's <a href="wallpanel.html" style="color:var(--accent)">Alarm tab</a>.</p></div>
+      <div class="card feat"><h3>Energy &amp; the AI planner</h3><p>A live power-flow tab with the real costs, and a planner that works out the cheapest way through the next two days. It runs in shadow mode for now, while it trials three tariffs on real data. <a href="energy.html" style="color:var(--accent)">New page →</a></p></div>
+      <div class="card feat"><h3>Fuel prices &amp; the van</h3><p>Open-data pump prices on the Traccar map, the van's fuel level from the OBD port, a low-fuel alert with the best three places to fill, and the fuel card checked against the pumps. <a href="fuel.html" style="color:var(--accent)">New page →</a></p></div>
+      <div class="card feat"><h3>Twenty-three visuals, open source</h3><p>Luna's voice visuals gained four film tributes and four 1980s arcade games. Long replies now page through in time with her speech. And the whole engine is on GitHub for anyone's Home&nbsp;Assistant. <a href="echo.html#visuals" style="color:var(--accent)">Echo Voice →</a></p></div>
     </div>
   </div>
 </section>
@@ -185,7 +197,7 @@
   </div>
 </section>
 
-<footer>DECS Home Systems · built &amp; documented locally on one Pi · <a href="globalguard.html">GlobalGuard</a> · <a href="homeassistant.html">Home Assistant</a> · <a href="wallpanel.html">Wall panel</a> · <a href="echo.html">Echo Voice</a> · <a href="cameras.html">Cameras</a> · <a href="presence.html">Presence</a> · <a href="roomscribe.html">Roomscribe</a> · <a href="traccar.html">Traccar</a> · <a href="finance.html">Finance</a> · <a href="fan.html">Fan</a> · <a href="rada.html">Rada&nbsp;shower</a> · <a href="roadmap.html">Roadmap</a></footer>
+<footer>DECS Home Systems · built &amp; documented locally on one Pi · <a href="globalguard.html">GlobalGuard</a> · <a href="homeassistant.html">Home Assistant</a> · <a href="wallpanel.html">Wall panel</a> · <a href="echo.html">Echo Voice</a> · <a href="energy.html">Energy</a> · <a href="cameras.html">Cameras</a> · <a href="presence.html">Presence</a> · <a href="roomscribe.html">Roomscribe</a> · <a href="traccar.html">Traccar</a> · <a href="fuel.html">Fuel</a> · <a href="finance.html">Finance</a> · <a href="fan.html">Fan</a> · <a href="rada.html">Rada&nbsp;shower</a> · <a href="roadmap.html">Roadmap</a></footer>
 
 <script src="app.js"></script>
 </body>

@@ -50,10 +50,12 @@
     <a href="homeassistant.html">Home&nbsp;Assistant</a>
     <a href="wallpanel.html">Wall&nbsp;panel</a>
     <a href="echo.html">Echo&nbsp;Voice</a>
+    <a href="energy.html">Energy</a>
     <a href="cameras.html">Cameras</a>
     <a href="presence.html">Presence</a>
     <a href="roomscribe.html">Roomscribe</a>
     <a href="traccar.html" class="active">Traccar</a>
+    <a href="fuel.html">Fuel</a>
     <a href="finance.html">Finance</a>
     <a href="fan.html">Fan</a>
     <a href="rada.html">Rada&nbsp;shower</a>
@@ -137,7 +139,7 @@
       <div class="home dead"><div class="ht">Raw OpenStreetMap</div><div class="hs">✗ blocks apps</div><div class="hv">The free fallback — OSM's own tiles, CSS-darkened — works in a browser but <b>violates OSM's tile policy for apps</b>: their volunteer servers returned an "access blocked" tile (osm.wiki/blocked).</div></div>
       <div class="home live"><div class="ht">Esri Dark Gray</div><div class="hs">✓ keyless · permitted</div><div class="hv">Esri's <b>"Dark Gray Canvas"</b> — a genuine dark cartographic style, keyless and allowed for embedding. Its base is deepened to match the panel while the street labels stay bright.</div></div>
     </div>
-    <div class="demo-note" style="margin-top:1.4rem"><b>The trap worth remembering.</b> CartoDB's blocked tiles return an HTTP <b>200</b> with the words baked into the image — so an automated "did it load?" check passes while a human sees "API KEY REQUIRED" splashed across the map. The only reliable test was to actually look at it.</div>
+    <div class="demo-note" style="margin-top:1.4rem"><b>The trap worth remembering.</b> <span>CartoDB's blocked tiles return an HTTP <b>200</b> with the words baked into the image — so an automated "did it load?" check passes while a human sees "API KEY REQUIRED" splashed across the map. The only reliable test was to actually look at it.</span></div>
   </div>
 </section>
 
@@ -202,6 +204,18 @@
   </div>
 </section>
 
+<!-- 06 FUEL -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">06 · Fuel</span><h2>The van's fuel, and where to fill it</h2><p class="lede">The van's tracker turned out to read the fuel gauge too. Its card on this tab now shows the fuel level and range, and a new <b>Fuel</b> button lays every nearby forecourt's price over the map. The pins are coloured cheapest to dearest, with the three cheapest numbered, and a <b>Fuel map</b> button opens a full price map of its own. The data comes from the government's Fuel Finder open data, which covers every forecourt in the UK. When the tank runs low, Kev's phone gets the best three places to fill.</p></div>
+    <div class="grid-3">
+      <div class="card feat"><h3>Fuel level &amp; range</h3><p>The tracker reports the engine computer's fuel level while the engine runs. The van's real economy is learned from it, so the percentage becomes miles.</p></div>
+      <div class="card feat"><h3>Prices on the map</h3><p>Diesel, petrol, super or premium, ranked in view, with stale prices greyed out. Stations that take the fuel card show the card price and the pump price side by side.</p></div>
+      <div class="card feat"><h3>The whole story</h3><p>How the data works, the value ranking, the low-fuel alert, and the weekly card-versus-pump check fed by a Friday text. <a href="fuel.html" style="color:var(--accent)">Read the Fuel page →</a></p></div>
+    </div>
+  </div>
+</section>
+
 <div class="wrap"><hr class="divider"></div>
 
 <!-- CLOSING -->
@@ -216,7 +230,7 @@
   </div>
 </section>
 
-<footer>Traccar GPS · self-hosted server · keyless Esri dark map · Grid property addresses · day routes &amp; stops · <a href="wallpanel.html">Wall panel</a> · <a href="echo.html">Echo Voice</a> · <a href="index.html">DECS Home Systems</a></footer>
+<footer>Traccar GPS · self-hosted server · keyless Esri dark map · Grid property addresses · day routes &amp; stops · <a href="wallpanel.html">Wall panel</a> · <a href="echo.html">Echo Voice</a> · <a href="energy.html">Energy</a> · <a href="index.html">DECS Home Systems</a></footer>
 
 <script src="app.js"></script>
 </body>

@@ -239,3 +239,5 @@ footer{padding:2.4rem 0 3.4rem;color:var(--faint);font-family:"IBM Plex Mono",mo
 .chan.voice.on i{background:var(--amber-bright);box-shadow:0 0 9px var(--amber-bright)}
 .demo-note{display:flex;align-items:flex-start;gap:.5rem;margin-top:.95rem;font-family:"IBM Plex Mono",monospace;font-size:.73rem;line-height:1.55;color:var(--faint)}
 .demo-note b{color:var(--muted);font-weight:600}
+.demo-note>b:first-child{flex:0 0 auto;max-width:13rem}
+@media (max-width:640px){.demo-note{flex-direction:column;gap:.2rem}.demo-note>b:first-child{max-width:none}}

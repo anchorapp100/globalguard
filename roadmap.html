@@ -22,6 +22,7 @@
 .epill.quick{color:var(--live);border-color:color-mix(in srgb,var(--live) 42%,transparent);background:var(--live-soft)}
 .epill.weekend{color:var(--amber-bright);border-color:color-mix(in srgb,var(--amber-bright) 42%,transparent);background:var(--amber-soft)}
 .epill.ambitious{color:var(--alert);border-color:color-mix(in srgb,var(--alert) 42%,transparent);background:var(--alert-soft)}
+.epill.shipped{color:var(--info);border-color:color-mix(in srgb,var(--info) 42%,transparent);background:var(--info-soft)}
 
 /* hero legend panel */
 .road-legend{align-self:stretch}
@@ -63,6 +64,7 @@
 /* ---------- LCARS bridge console (committed-dark stage) ---------- */
 .lc{background:#000;border-radius:14px;padding:12px;font-family:"Antonio","Archivo",system-ui,sans-serif;color:#000;-webkit-user-select:none;user-select:none}
 .lc *{box-sizing:border-box}
+@media(max-width:820px){.grid-2>.card{min-width:0}.lc{overflow-x:auto}}
 .lc-head{display:flex;gap:8px;height:46px;margin-bottom:8px}
 .lc-elbow{width:124px;flex:none;background:#ff9900;border-radius:32px 8px 0 0}
 .lc-bar{flex:1;min-width:0;background:#99ccff;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 16px;color:#000;font-weight:600;letter-spacing:.12em;text-transform:uppercase;font-size:.76rem;overflow:hidden}
@@ -109,10 +111,12 @@
     <a href="homeassistant.html">Home&nbsp;Assistant</a>
     <a href="wallpanel.html">Wall&nbsp;panel</a>
     <a href="echo.html">Echo&nbsp;Voice</a>
+    <a href="energy.html">Energy</a>
     <a href="cameras.html">Cameras</a>
     <a href="presence.html">Presence</a>
     <a href="roomscribe.html">Roomscribe</a>
     <a href="traccar.html">Traccar</a>
+    <a href="fuel.html">Fuel</a>
     <a href="finance.html">Finance</a>
     <a href="fan.html">Fan</a>
     <a href="rada.html">Rada&nbsp;shower</a>
@@ -207,6 +211,7 @@
         <div class="feat-top"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M19.1 4.9l-1.8 1.8M6.7 17.3l-1.8 1.8"/></svg></div><span class="epill weekend">a weekend</span></div>
         <h3>Solar-aware automation</h3>
         <p>The Victron data's already live — so run the big loads when the sun's up and the battery's full. The washing machine, the immersion, the car: all wait for surplus, and hold back the moment you'd be importing. Free energy, spent on purpose.</p>
+        <p class="card-meta"><span class="cm-dot"></span>Under way: an AI planner now plans the next two days in shadow mode · <a href="energy.html" style="color:inherit">see the Energy page</a></p>
       </div>
       <div class="card feat">
         <div class="feat-top"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 2a7 7 0 00-4 12c.7.6 1 1.2 1 2h6c0-.8.3-1.4 1-2A7 7 0 0012 2z"/></svg></div><span class="epill quick">quick win</span></div>
@@ -258,13 +263,17 @@
       <button class="dbtn" type="button" data-filter="ambitious">Ambitious</button>
     </div>
     <div class="ideas" id="idea-list">
-      <div class="idea" data-effort="quick"><div class="txt"><h3>HA Energy dashboard</h3><p>Wire the Victron feeds into Home Assistant's native power-flow diagram.</p></div><span class="epill quick">quick win</span></div>
+      <div class="idea" data-effort="quick"><div class="txt"><h3>HA Energy dashboard</h3><p>Done, and then some: a live power-flow Energy tab with the real costs, savings and a year of solar history. See the <a href="energy.html" style="color:var(--accent)">Energy page</a>.</p></div><span class="epill shipped">shipped</span></div>
       <div class="idea" data-effort="quick"><div class="txt"><h3>Per-array solar breakdown</h3><p>Map the three MPPTs to the 2.1 / 6.3 / 4.2&nbsp;kWp arrays and chart each on its own.</p></div><span class="epill quick">quick win</span></div>
       <div class="idea" data-effort="quick"><div class="txt"><h3>Fully Kiosk self-heal</h3><p>Auto-restart on crash plus start-on-boot, so the wall panel never needs babysitting.</p></div><span class="epill quick">quick win</span></div>
-      <div class="idea" data-effort="quick"><div class="txt"><h3>Voice scenes</h3><p>"Movie night", "good morning", "everyone out" — one phrase, a dozen actions.</p></div><span class="epill quick">quick win</span></div>
+      <div class="idea" data-effort="quick"><div class="txt"><h3>Voice scenes</h3><p>Done: describe a scene or an automation to Luna and it's built, checked by Home&nbsp;Assistant and read back. See <a href="echo.html" style="color:var(--accent)">Echo Voice</a>.</p></div><span class="epill shipped">shipped</span></div>
       <div class="idea" data-effort="quick"><div class="txt"><h3>Panel backup-battery swap</h3><p>Replace the alarm panel's dead clock battery so a power cut can't reset it.</p></div><span class="epill quick">quick win</span></div>
       <div class="idea" data-effort="weekend"><div class="txt"><h3>Second-household voice control</h3><p>Full alarm voice control from a second family member's own account.</p></div><span class="epill weekend">a weekend</span></div>
       <div class="idea" data-effort="weekend"><div class="txt"><h3>Rada digital shower in HA</h3><p>Surface the Sense shower's state and chase real control — the <a href="rada.html" style="color:var(--accent)">BLE teardown is on its own page</a>.</p></div><span class="epill weekend">a weekend</span></div>
+      <div class="idea" data-effort="quick"><div class="txt"><h3>Fuel prices every 30 minutes</h3><p>Register for the Fuel Finder API and swap the twice-a-day file for prices that are never more than half an hour old. See the <a href="fuel.html" style="color:var(--accent)">Fuel page</a>.</p></div><span class="epill quick">quick win</span></div>
+      <div class="idea" data-effort="quick"><div class="txt"><h3>“Where's the cheapest diesel?”</h3><p>Ask Luna: the best three near the van, card or pump, and the winner sent to the phone with directions.</p></div><span class="epill quick">quick win</span></div>
+      <div class="idea" data-effort="weekend"><div class="txt"><h3>Fuel log &amp; real mpg</h3><p>Every fill-up is already spotted from the fuel gauge; cost them and chart real miles per gallon, month by month.</p></div><span class="epill weekend">a weekend</span></div>
+      <div class="idea" data-effort="ambitious"><div class="txt"><h3>The planner takes the controls</h3><p>After weeks in shadow mode, the energy planner writes its 48-slot schedule to the inverter, and the GX runs it locally with a safe fallback.</p></div><span class="epill ambitious">ambitious</span></div>
     </div>
     <p class="ideas-empty" id="idea-empty">Nothing that ambitious down here — the big swings live up in sections 02 and 03.</p>
   </div>

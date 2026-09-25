@@ -43,10 +43,12 @@
     <a href="homeassistant.html">Home&nbsp;Assistant</a>
     <a href="wallpanel.html">Wall&nbsp;panel</a>
     <a href="echo.html">Echo&nbsp;Voice</a>
+    <a href="energy.html">Energy</a>
     <a href="cameras.html">Cameras</a>
     <a href="presence.html">Presence</a>
     <a href="roomscribe.html">Roomscribe</a>
     <a href="traccar.html">Traccar</a>
+    <a href="fuel.html">Fuel</a>
     <a href="finance.html">Finance</a>
     <a href="fan.html">Fan</a>
     <a href="rada.html">Rada&nbsp;shower</a>
@@ -160,6 +162,9 @@
       <div class="step"><div class="idx">05</div><div><h3>Routing the alarm through a real remote</h3><p>An ESP32 driving an <b>opto-isolated relay</b> taps the alarm's own key fob — so arm, part-arm, disarm and a held panic all fire instantly through the panel's genuine radio, from Home Assistant and from Google voice with Kevin's own trigger words, including a no-PIN "disarm security".</p></div></div>
       <div class="step"><div class="idx">06</div><div><h3>Wiring in the screens</h3><p>Both Samsung TVs, the Shield, the Nest displays and Linda's cast TV pulled into a Media tab that shows a room's album art the moment it starts playing — after a genuinely stubborn fight to make a Samsung wake over Wi-Fi, and a networking dead-end that turned out to be nothing of the sort.</p></div></div>
       <div class="step"><div class="idx">07</div><div><h3>Scanning the house for what's next</h3><p>A full network sweep to inventory every device and find the gaps — which surfaced a Harmony hub for the IR-only set-top boxes, and research confirming a set of cheap mesh bulbs would extend the reverse-engineered bulb network rather than fragment it.</p></div></div>
+      <div class="step"><div class="idx">08</div><div><h3>Giving the house a voice of its own</h3><p>An Echo Dot rooted and freed from Amazon became Luna, a local Home&nbsp;Assistant voice with Whisper on the GPU and Gemini for answers. Then came a wall-panel engine of twenty-three live visuals that follow her real audio and page long answers in time with her speech. The engine is now <a href="echo.html#visuals">open source</a>.</p></div></div>
+      <div class="step"><div class="idx">09</div><div><h3>Measuring the energy, then planning it</h3><p>The Victron system's real conversion losses measured, a year of fifteen-minute history replayed through a tariff simulator, and an <a href="energy.html">AI-supervised planner</a> built to re-solve the next two days every fifteen minutes. It runs in shadow mode while it trials three tariffs on the house's own data.</p></div></div>
+      <div class="step"><div class="idx">10</div><div><h3>Finding the cheapest diesel</h3><p>The government's open fuel-price data, the van's fuel gauge read through its tracker, a low-fuel alert that ranks by value, and a weekly check of the fuel card against the pumps. It's fed by the supplier's Friday text, forwarded by the phone itself. <a href="fuel.html">The fuel page</a>.</p></div></div>
     </div>
   </div>
 </section>
@@ -229,7 +234,7 @@
   </div>
 </section>
 
-<footer>Claude Code · the agent on the keyboard · orchestrated by Kevin, driven in the loop · <a href="index.html">DECS Home Systems</a> · <a href="homeassistant.html">Home Assistant</a> · <a href="wallpanel.html">Wall panel</a> · <a href="echo.html">Echo Voice</a></footer>
+<footer>Claude Code · the agent on the keyboard · orchestrated by Kevin, driven in the loop · <a href="index.html">DECS Home Systems</a> · <a href="homeassistant.html">Home Assistant</a> · <a href="wallpanel.html">Wall panel</a> · <a href="echo.html">Echo Voice</a> · <a href="energy.html">Energy</a></footer>
 
 <script src="app.js"></script>
 </body>

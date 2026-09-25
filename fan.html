@@ -46,10 +46,12 @@
     <a href="homeassistant.html">Home&nbsp;Assistant</a>
     <a href="wallpanel.html">Wall&nbsp;panel</a>
     <a href="echo.html">Echo&nbsp;Voice</a>
+    <a href="energy.html">Energy</a>
     <a href="cameras.html">Cameras</a>
     <a href="presence.html">Presence</a>
     <a href="roomscribe.html">Roomscribe</a>
     <a href="traccar.html">Traccar</a>
+    <a href="fuel.html">Fuel</a>
     <a href="finance.html">Finance</a>
     <a href="fan.html" class="active">Fan</a>
     <a href="rada.html">Rada&nbsp;shower</a>
@@ -152,7 +154,7 @@
       </div>
       <figcaption>The component installs into <code>/config/custom_components/ble_adv</code> on the Pi; HA runs in a privileged, host-network container with the Pi's Bluetooth passed through, so it can open a raw HCI socket and transmit directly — no proxy in between.</figcaption>
     </figure>
-    <div class="demo-note" style="margin-top:1.6rem"><b>How it was captured.</b> There's nothing to scan for, so the pairing is done by <em>imitation</em>. HA's config-flow ("Duplicate paired phone-app config") listens on the Pi's Bluetooth while you press a button in FanLampPro standing next to the fan; it offers a couple of candidate code-sets, you pick the one that makes the fan's light blink, and that's the binding. One press, done — and because it's just a code-set, not a bonded connection, it's rock-solid afterwards.</div>
+    <div class="demo-note" style="margin-top:1.6rem"><b>How it was captured.</b> <span>There's nothing to scan for, so the pairing is done by <em>imitation</em>. HA's config-flow ("Duplicate paired phone-app config") listens on the Pi's Bluetooth while you press a button in FanLampPro standing next to the fan; it offers a couple of candidate code-sets, you pick the one that makes the fan's light blink, and that's the binding. One press, done — and because it's just a code-set, not a bonded connection, it's rock-solid afterwards.</span></div>
   </div>
 </section>
 
@@ -204,7 +206,7 @@ light.fan_main_light:
   </div>
 </section>
 
-<footer>BLE ceiling fan · ha-ble-adv on the Pi's Bluetooth · no hub, no cloud · <a href="wallpanel.html">Wall panel</a> · <a href="echo.html">Echo Voice</a> · <a href="homeassistant.html">Home Assistant</a> · <a href="index.html">DECS Home Systems</a></footer>
+<footer>BLE ceiling fan · ha-ble-adv on the Pi's Bluetooth · no hub, no cloud · <a href="wallpanel.html">Wall panel</a> · <a href="echo.html">Echo Voice</a> · <a href="energy.html">Energy</a> · <a href="homeassistant.html">Home Assistant</a> · <a href="index.html">DECS Home Systems</a></footer>
 
 <script src="app.js"></script>
 </body>

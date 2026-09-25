@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fuel — DECS Home Systems</title>
+<meta name="description" content="Live pump prices for every UK forecourt from the government's Fuel Finder open data, the work van's real fuel level from its OBD tracker, a low-fuel alert that names the best places to fill, and an honest check of the fuel card against the pumps, fed automatically by the supplier's Friday text.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* ---- fuel page: local additions ---- */
+  :root{--fuel:#B4540C;--fuel-soft:#F8E6D6}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--fuel:#FF9A4A;--fuel-soft:#2A170A}}
+  :root[data-theme="dark"]{--fuel:#FF9A4A;--fuel-soft:#2A170A}
+  body.p-fuel{--accent:var(--fuel);--accent-soft:var(--fuel-soft)}
+  .pl-wire{fill:none;stroke:#243040;stroke-width:3;stroke-linecap:round;opacity:.35}
+  .pl-flow{fill:none;stroke-width:4;stroke-linecap:round;stroke-dasharray:2 12;opacity:.95;animation:plmove .9s linear infinite}
+  .pl-flow.slow{animation-duration:1.6s}
+  @keyframes plmove{to{stroke-dashoffset:-14}}
+  .pl-node{fill:#0e151f;stroke:#26333f;stroke-width:1.4}
+  .pl-node.hi{fill:#101b28;stroke:#ff9a4a;stroke-width:1.6}
+  .pl-t{font-family:"IBM Plex Mono",ui-monospace,monospace;fill:#9aa7b3}
+  .pl-title{fill:#e7edf3;font-weight:600}
+  .pl-cap{fill:#7c8a97}
+  .pl-badge{fill:#ff9a4a;font-weight:600}
+  @media (prefers-reduced-motion:reduce){.pl-flow{animation:none}}
+  /* mock-ups of the panel UI (always dark, like the wall panel) */
+  .mock{background:#0b111a;border:1px solid #26333f;border-radius:16px;padding:1.1rem 1.2rem;color:#e7edf3;font-family:"Hanken Grotesk",system-ui,sans-serif}
+  .mock .mt{font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:#7c8a97;margin-bottom:.7rem}
+  .pins{display:flex;flex-wrap:wrap;gap:1.1rem 1.2rem;align-items:flex-end;padding:.4rem 0 .6rem}
+  .pin{position:relative;display:inline-flex;align-items:center;gap:4px;font:800 13px/1 "Hanken Grotesk",system-ui,sans-serif;color:#0b111a;background:var(--c);border:1.5px solid #0b111a;border-radius:9px;padding:5px 8px;box-shadow:0 3px 10px -3px rgba(0,0,0,.8);font-variant-numeric:tabular-nums}
+  .pin::after{content:"";position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--c);border-bottom:0}
+  .pin .rk{display:inline-grid;place-items:center;min-width:17px;height:17px;border-radius:50%;background:#0b111a;color:var(--c);font-size:10px}
+  .pin svg{width:13px;height:13px;fill:#0b111a}
+  .pin.split{padding:0;gap:0}
+  .pin.split .cp,.pin.split .pp{display:inline-flex;align-items:center;gap:3px;padding:5px 7px}
+  .pin.split .cp{background:#f0f4f8;border-radius:7.5px 0 0 7.5px}
+  .pin.split .pp{border-radius:0 7.5px 7.5px 0}
+  .pin.split.pumpwin .cp{background:#9aa6b2;color:#3a4552}.pin.split.pumpwin .cp svg{fill:#3a4552}
+  .pin.split.cardwin .pp{background:#3a4552;color:#9aa6b2}.pin.split.cardwin .cp{box-shadow:inset 0 0 0 2px #39d98a}
+  .pin.stale{background:#3a4552;color:#9aa6b2;border-style:dashed}.pin.stale::after{border-top-color:#3a4552}
+  .pinlab{display:block;font:500 .72rem/1.3 "IBM Plex Mono",monospace;color:#7c8a97;margin-top:.7rem;text-align:center}
+  .pinwrap{display:flex;flex-direction:column;align-items:center}
+  .cmp{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+  .cmp .c{background:rgba(255,255,255,.03);border:1px solid #243040;border-radius:11px;padding:.55rem .8rem}
+  .cmp .c.win{border-color:#39d98a;background:rgba(57,217,138,.1)}
+  .cmp label{display:block;font:600 .64rem/1.3 "IBM Plex Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:#7c8a97}
+  .cmp .v{font:800 1.35rem/1.2 "Hanken Grotesk",sans-serif;font-variant-numeric:tabular-nums}
+  .cmp .a{font-size:.72rem;color:#5b6875}
+  .verdict{margin-top:.7rem;font-size:.92rem;color:#c3d0dd}.verdict .bad{color:#ffb638}.verdict .good{color:#39d98a}
+  .notif{background:#161f2b;border:1px solid #26333f;border-radius:18px;padding:.9rem 1rem;max-width:26rem}
+  .notif .nh{display:flex;align-items:center;gap:.5rem;font:600 .72rem/1 "IBM Plex Mono",monospace;color:#7c8a97}
+  .notif .nh i{width:18px;height:18px;border-radius:50%;background:#18bcf2;display:inline-block}
+  .notif .nt{font-weight:800;margin-top:.55rem;color:#eff4f9}
+  .notif .nb{font-size:.9rem;color:#c3d0dd;margin-top:.25rem;line-height:1.5;white-space:pre-line}
+  .notif .na{display:flex;gap:1.2rem;margin-top:.7rem;font:700 .8rem/1 "Hanken Grotesk",sans-serif;color:#ffb638}
+  .sms{background:#2a2f36;color:#e7edf3;border-radius:18px;padding:.8rem 1rem;max-width:24rem;font-size:.95rem;line-height:1.5}
+  .sms .from{font:600 .7rem/1 "IBM Plex Mono",monospace;color:#9aa7b3;margin-bottom:.35rem}
+  .flowrow{display:grid;grid-template-columns:1fr auto 1fr;gap:1rem;align-items:center}
+  @media(max-width:820px){.flowrow{grid-template-columns:1fr}.flowrow .arrow{transform:rotate(90deg);justify-self:center}}
+  .arrow{font:700 1.6rem/1 "Archivo",sans-serif;color:var(--accent)}
+</style>
+</head>
+<body class="p-fuel">
+
+<header class="nav"><div class="wrap">
+  <a class="brand" href="index.html"><span class="dot"></span> DECS&nbsp;Home&nbsp;Systems</a>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="globalguard.html">GlobalGuard</a>
+    <a href="homeassistant.html">Home&nbsp;Assistant</a>
+    <a href="wallpanel.html">Wall&nbsp;panel</a>
+    <a href="echo.html">Echo&nbsp;Voice</a>
+    <a href="energy.html">Energy</a>
+    <a href="cameras.html">Cameras</a>
+    <a href="presence.html">Presence</a>
+    <a href="roomscribe.html">Roomscribe</a>
+    <a href="traccar.html">Traccar</a>
+    <a href="fuel.html" class="active">Fuel</a>
+    <a href="finance.html">Finance</a>
+    <a href="fan.html">Fan</a>
+    <a href="rada.html">Rada&nbsp;shower</a>
+    <a href="theme.html">HA&nbsp;Theme</a>
+    <a href="technical.html">Technical</a>
+    <a href="roadmap.html">Roadmap</a>
+    <a href="claude.html">Claude&nbsp;Code</a>
+    <button class="themebtn" id="tt" aria-label="Toggle colour theme"><span id="ttic">◐</span> theme</button>
+  </nav>
+</div></header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">Fuel Finder open data · OBD fuel level · fuel card</span>
+        <h1 class="title">Where to fill,<br>and the <em>truth</em> about the card.</h1>
+        <p class="lede">Since 2026 every forecourt in the UK has to publish its prices within 30 minutes of changing them, and the government shares the lot as open data. This build puts those prices on the wall panel's map. It reads the work van's real fuel level from its tracker and warns Kev's phone when the tank gets low, naming the best places to fill. It also checks, week by week, whether the business fuel card is actually cheaper than the pumps. The card's price arrives by text every Friday, and now that text updates Home&nbsp;Assistant by itself.</p>
+        <div class="meta-row">
+          <span class="chip">GOV.UK Fuel Finder</span>
+          <span class="chip">no API key</span>
+          <span class="chip">OBD fuel level</span>
+          <span class="chip">card vs pump</span>
+        </div>
+      </div>
+      <div class="panel" role="img" aria-label="Fuel status: prices for about eight thousand forecourts refreshed every fifteen minutes; the van's fuel level read from its OBD tracker; the fuel card price arrives from the Friday text; a low-fuel alert below fifteen percent.">
+        <div class="head"><span>Fuel · live</span><span>every 15&nbsp;min</span></div>
+        <div class="rows">
+          <div class="prow"><span class="led on"></span><span class="k">Prices</span><span class="v">8,100 forecourts · open data</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">Van</span><span class="v">fuel level from the OBD port</span></div>
+          <div class="prow"><span class="led info"></span><span class="k">Fuel card</span><span class="v">Friday text · automatic</span></div>
+          <div class="prow"><span class="led info"></span><span class="k">Alert</span><span class="v">below 15% · best 3 places</span></div>
+          <div class="prow gone"><span class="led dead"></span><span class="k">Stale prices</span><span class="v">greyed after 14 days</span></div>
+        </div>
+        <div class="beacon">
+          <span class="lbl">TANK</span>
+          <svg viewBox="0 0 220 30" preserveAspectRatio="none" aria-hidden="true">
+            <line x1="0" y1="15" x2="220" y2="15" stroke="#26313d" stroke-width="1"/>
+            <polyline class="trace" points="0,20 25,21 50,22 75,23 100,24 125,25 150,26 160,6 185,7 210,8 220,9" fill="none" stroke="#ff9a4a" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+            <circle class="pulse-dot" cx="160" cy="6" r="2.6" style="fill:#ff9a4a"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- STATS -->
+<section style="padding-block:clamp(2.2rem,5vw,3.2rem)">
+  <div class="wrap reveal">
+    <div class="stats">
+      <div class="stat"><span class="big num-strong">8,121</span><span class="lab">UK forecourts priced</span></div>
+      <div class="stat"><span class="big num-strong">30&nbsp;min</span><span class="lab">legal reporting window</span></div>
+      <div class="stat"><span class="big num-strong">3</span><span class="lab">best places per alert</span></div>
+      <div class="stat"><span class="big num-strong">10&nbsp;of&nbsp;169</span><span class="lab">pumps the card beat this week</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 01 THE DATA -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">01 · The data</span><h2>Every forecourt in the country, for free</h2><p class="lede">Fuel Finder is a legal requirement, not a website. Since February&nbsp;2026 every UK forecourt must report a price change within 30&nbsp;minutes, and the regulator can fine the ones that don't. The data comes two ways: an API with 30-minute freshness that needs a free registration, and a CSV of every station that needs nothing at all. This build uses the CSV: about 7.8&nbsp;MB, refreshed twice a day. A small service on the Pi checks it every fifteen minutes with a conditional request, so an unchanged file costs one tiny "not modified" reply.</p></div>
+    <figure>
+      <div class="demo-stage" role="img" aria-label="Data path: the Fuel Finder CSV is checked by a Python service on the Pi every fifteen minutes; it writes every forecourt's prices to a compressed file for the Traccar tab's fuel layer and the fuel map. Separately the van's OBD tracker reports its fuel level to Traccar, the service learns the van's consumption, and Home Assistant turns both into sensors and a low-fuel alert.">
+        <svg viewBox="0 0 960 330" aria-hidden="true">
+          <path class="pl-wire" d="M236 80 L 380 150"/><path class="pl-flow" d="M236 80 L 380 150" stroke="#ff9a4a"/>
+          <path class="pl-wire" d="M236 250 L 380 180"/><path class="pl-flow slow" d="M236 250 L 380 180" stroke="#5cb3f2"/>
+          <path class="pl-wire" d="M580 150 C 640 150 650 80 720 76"/><path class="pl-flow" d="M580 150 C 640 150 650 80 720 76" stroke="#ff9a4a"/>
+          <path class="pl-wire" d="M580 180 C 640 180 650 250 720 254"/><path class="pl-flow" d="M580 180 C 640 180 650 250 720 254" stroke="#43d98a"/>
+          <rect class="pl-node hi" x="26" y="44" width="210" height="76" rx="12"/>
+          <text class="pl-t pl-title" x="131" y="74" text-anchor="middle" font-size="12">Fuel Finder CSV</text>
+          <text class="pl-t pl-cap" x="131" y="94" text-anchor="middle" font-size="10">every UK forecourt · keyless</text>
+          <text class="pl-t pl-cap" x="131" y="109" text-anchor="middle" font-size="10">Open Government Licence</text>
+          <rect class="pl-node" x="26" y="212" width="210" height="76" rx="12"/>
+          <text class="pl-t pl-title" x="131" y="242" text-anchor="middle" font-size="12">Van tracker (OBD)</text>
+          <text class="pl-t pl-cap" x="131" y="262" text-anchor="middle" font-size="10">fuel % while the engine runs</text>
+          <text class="pl-t pl-cap" x="131" y="277" text-anchor="middle" font-size="10">via self-hosted Traccar</text>
+          <rect class="pl-node hi" x="380" y="120" width="200" height="90" rx="12"/>
+          <text class="pl-t pl-title" x="480" y="152" text-anchor="middle" font-size="13">Pi fuel service</text>
+          <text class="pl-t pl-cap" x="480" y="173" text-anchor="middle" font-size="10">15 min · 304 if unchanged</text>
+          <text class="pl-t pl-cap" x="480" y="189" text-anchor="middle" font-size="10">learns the van's economy</text>
+          <rect class="pl-node" x="720" y="40" width="214" height="72" rx="12"/>
+          <text class="pl-t pl-title" x="827" y="70" text-anchor="middle" font-size="12">Maps on the panel</text>
+          <text class="pl-t pl-cap" x="827" y="90" text-anchor="middle" font-size="10">Traccar layer · fuel map</text>
+          <rect class="pl-node" x="720" y="218" width="214" height="72" rx="12"/>
+          <text class="pl-t pl-title" x="827" y="248" text-anchor="middle" font-size="12">Home Assistant</text>
+          <text class="pl-t pl-cap" x="827" y="268" text-anchor="middle" font-size="10">sensors · low-fuel alert</text>
+        </svg>
+      </div>
+      <figcaption>Home&nbsp;Assistant serves a compressed copy of the station file, so the whole of the UK loads on the panel in about 0.6&nbsp;MB and revalidates for free. The van's position and fuel level stay private: they're read through Home&nbsp;Assistant's login, never from a public file.</figcaption>
+    </figure>
+    <div class="demo-note" style="margin-top:1.4rem"><b>Open data needs a sanity filter.</b> <span>On the first run, the cheapest diesel within ten miles was 16p under everything around it. It hadn't reported a price for a month. So a price not reported for <b>two weeks</b> is greyed out on the map and never recommended, and anything over a week old is marked "may be out of date".</span></div>
+  </div>
+</section>
+
+<!-- 02 THE TANK -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">02 · The van's tank</span><h2>The fuel gauge, read from the diagnostic port</h2><p class="lede">The van already carried a Teltonika OBD tracker for the <a href="traccar.html">Traccar map</a>. It turns out it reads the engine computer's fuel-level value too, reported to Traccar as a bare number with no label. It only arrives while the engine is running, so the service keeps the last reading while the van is parked.</p></div>
+    <div class="grid-3">
+      <div class="card feat"><h3>Learned economy</h3><p>Pairs of readings 40&nbsp;km or more apart, with no fill-up between them, give the van's real consumption: about 0.16% of the tank per kilometre, or 11&nbsp;L/100&nbsp;km. That turns a percentage into miles you can drive.</p></div>
+      <div class="card feat"><h3>Fill-ups, found</h3><p>A jump of 12 points or more is a fill-up. It's matched to the forecourt where the van last parked, which is the groundwork for a fuel log with litres, cost and real mpg.</p></div>
+      <div class="card feat"><h3>On the Traccar tab</h3><p>The van's card now shows its fuel level and range next to its speed and battery voltage, with a gauge that turns red below the alert level.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 03 WHERE TO FILL -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">03 · Where to fill</span><h2>Cheapest isn't the same as best</h2><p class="lede">A station nine miles away can be 7p a litre cheaper and still cost more, because you burn fuel getting there and back. So the recommendations rank by <b>value</b>: the price times the litres needed to fill the tank, plus the fuel for the round trip, taking the road as about 1.35 times the straight-line distance. When the van's level drops below the alert threshold (15% by default), Kev's phone gets one alert per low spell with the best three places and a navigation button. It re-arms after the next fill-up.</p></div>
+    <div class="flowrow">
+      <div class="mock">
+        <div class="mt">Phone notification · example</div>
+        <div class="notif">
+          <div class="nh"><i></i>Home Assistant · now</div>
+          <div class="nt">⛽ Van fuel 10% · about 39 miles left</div>
+          <div class="nb">Best places to fill near the van:
+1. Supermarket: 193.9p, 3.4 mi
+2. Independent: 197.4p, 1.3 mi
+3. Main-road garage: 196.9p, 2.2 mi
+Cheapest pump: independent, 189.9p, 9.0 mi</div>
+          <div class="na"><span>GO: SUPERMARKET</span><span>GO: INDEPENDENT</span></div>
+        </div>
+      </div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="card feat" style="margin:0"><h3>Why the 9-mile one isn't first</h3><p>At 10% there are about 63 litres to put in. Saving 7p a litre saves about £4.40, but getting there and back is about 24 miles by road, which burns about £8 of fuel. The value ranking sees that; a plain price sort doesn't. The first alert went out for real, at 10% with about 39 miles left.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 04 THE MAPS -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">04 · The maps</span><h2>A fuel layer on the tracker, and a map of its own</h2><p class="lede">On the Traccar tab a new <b>Fuel</b> button puts price pins on the map, coloured from cheapest (green) to dearest (red), with the three cheapest in view numbered and listed. A selector switches between diesel, petrol, super and premium diesel. A <b>Fuel map</b> button opens a full map with a ranked list around the van or the house, sortable by value, price or distance. Tap a station to see every grade with how fresh each price is, its hours, and a button that sends it to the phone with directions.</p></div>
+    <div class="mock">
+      <div class="mt">Map pins · example values</div>
+      <div class="pins">
+        <div class="pinwrap"><span class="pin" style="--c:#39d98a"><b class="rk">1</b>193.9</span><span class="pinlab">best value</span></div>
+        <div class="pinwrap"><span class="pin" style="--c:#ffcf5c">197.4</span><span class="pinlab">typical</span></div>
+        <div class="pinwrap"><span class="pin" style="--c:#ff5a5a">214.9</span><span class="pinlab">motorway</span></div>
+        <div class="pinwrap"><span class="pin stale">177.9</span><span class="pinlab">not reported for a month</span></div>
+        <div class="pinwrap"><span class="pin split pumpwin" style="--c:#ff8a5a"><span class="cp"><svg viewBox="0 0 24 24"><path d="M20,8H4V6H20M20,18H4V12H20M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z"/></svg>202.6</span><span class="pp">201.7</span></span><span class="pinlab">card site: pump cheaper</span></div>
+        <div class="pinwrap"><span class="pin split cardwin" style="--c:#ffcf5c"><span class="cp"><svg viewBox="0 0 24 24"><path d="M20,8H4V6H20M20,18H4V12H20M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z"/></svg>200.4</span><span class="pp">201.7</span></span><span class="pinlab">card site: card cheaper</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 05 THE FUEL CARD -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">05 · The fuel card</span><h2>Is the card actually cheaper? Mostly, no.</h2><p class="lede">The van runs on a UK Fuels card, fuelplus through Radius, with a <b>fixed weekly diesel price</b> quoted without VAT and valid from Monday. At the supermarket forecourts that take it the price is a little higher: 3p more in September. So every station that takes the card shows both prices, <b>card | pump</b>, with VAT added to the card price so the two compare fairly. The dearer half is greyed, and the station's own panel says plainly which way to pay.</p></div>
+    <div class="grid-2">
+      <div class="mock">
+        <div class="mt">A card site, tapped · example values</div>
+        <div class="cmp">
+          <div class="c"><label>Your card</label><div class="v">202.6p</div><div class="a">168.84p + VAT</div></div>
+          <div class="c win"><label>Pump price</label><div class="v">201.7p</div><div class="a">reported 4 days ago</div></div>
+        </div>
+        <div class="verdict"><span class="bad">Pay at the pump here: 0.9p a litre cheaper than your card.</span> From Monday the card is 200.4p, 1.3p under today's pump.</div>
+      </div>
+      <div class="card feat" style="margin:0"><h3>What the first week showed</h3><p>With VAT added, this week's card price beat only <b>10 of 169</b> pumps within ten miles. The supermarkets' own pumps were cheaper than the card's supermarket price every time. Next week's card price is lower, but 130 pumps are still cheaper. Kev had suspected as much. Now the map shows it at a glance, every week, without anyone doing the maths.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 06 THE FRIDAY TEXT -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">06 · The Friday text</span><h2>Nobody types the price in</h2><p class="lede">Radius texts next week's card price every Friday afternoon. The plan was for the phone's Home&nbsp;Assistant app to read the notification. That sensor turned out not to exist in this build of the app, so a free automation app, MacroDroid, now does one job: when a text arrives containing "fuel price", it sends that text, and nothing else, to a private Home&nbsp;Assistant webhook. A script reads the week and the price, stores it as next week's price and sends a summary. At midnight on Monday it becomes the current price.</p></div>
+    <div class="flowrow">
+      <div class="mock">
+        <div class="mt">The text · account number masked</div>
+        <div class="sms"><div class="from">Radius · Friday 17:05</div>Account ••••••. Fuel price for w/c 28.09.26. Your UK Fuels fuel price is 167ppl. Our T&amp;Cs can be found at ukfuels.co.uk.</div>
+      </div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="mock">
+        <div class="mt">A few minutes later</div>
+        <div class="notif">
+          <div class="nh"><i></i>Home Assistant · now</div>
+          <div class="nt">⛽ Card diesel from Mon 28 Sep: 167.00p + VAT</div>
+          <div class="nb">200.4p with VAT, down 1.84p on this week.
+Cheaper at the pump near home right now:
+Supermarket: 193.9p, 3.4 mi
+Independent: 197.4p, 1.3 mi</div>
+        </div>
+      </div>
+    </div>
+    <div class="grid-3" style="margin-top:1.4rem">
+      <div class="card feat"><h3>Only that text leaves the phone</h3><p>A notification sensor would have passed every message to Home&nbsp;Assistant. MacroDroid only fires on the fuel text. The webhook address is kept in Home&nbsp;Assistant's secrets file, and Home&nbsp;Assistant showed it to Kev in its own notifications, so it never went through a chat.</p></div>
+      <div class="card feat"><h3>GET, not POST</h3><p>The first real test never arrived. Home&nbsp;Assistant's log showed MacroDroid sends GET by default, and the webhook only accepted POST. It accepts both now, with the text in the address's query string.</p></div>
+      <div class="card feat"><h3>Works away from home</h3><p>The text lands at five o'clock on a Friday, often on the road. The webhook is reachable through the house's secure public address, and was tested from outside before it was trusted.</p></div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- CLOSING -->
+<section>
+  <div class="wrap reveal">
+    <div class="close">
+      <span class="eyebrow" style="color:var(--fuel)">Fuel, at home</span>
+      <h2 style="margin-top:1rem">Open data, one tracker and one text a week.</h2>
+      <p>No paid price feed, no fuel-card API, nothing new in the van. The government's open data gives every pump price, the tracker that was already there gives the fuel level, and the supplier's own Friday text keeps the card price current. What's next: the 30-minute API once it's registered, a fuel log with real mpg, and asking Luna "where's the cheapest diesel?"</p>
+      <div class="sig"><span class="dot" style="background:var(--fuel);box-shadow:0 0 8px var(--fuel)"></span><span>Fuel Finder · open data</span><span>·</span><span>OBD fuel level</span><span>·</span><span>on the <a href="traccar.html" style="color:var(--fuel)">Traccar tab</a></span></div>
+    </div>
+  </div>
+</section>
+
+<footer>Fuel · Fuel Finder open data (Open Government Licence v3.0) · OBD fuel level · low-fuel alert · fuel card vs pump · <a href="traccar.html">Traccar</a> · <a href="energy.html">Energy</a> · <a href="index.html">DECS Home Systems</a></footer>
+
+<script src="app.js"></script>
+</body>
+</html>

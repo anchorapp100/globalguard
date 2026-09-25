@@ -188,10 +188,12 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
     <a href="homeassistant.html">Home&nbsp;Assistant</a>
     <a href="wallpanel.html">Wall&nbsp;panel</a>
     <a href="echo.html" class="active">Echo&nbsp;Voice</a>
+    <a href="energy.html">Energy</a>
     <a href="cameras.html">Cameras</a>
     <a href="presence.html">Presence</a>
     <a href="roomscribe.html">Roomscribe</a>
     <a href="traccar.html">Traccar</a>
+    <a href="fuel.html">Fuel</a>
     <a href="finance.html">Finance</a>
     <a href="fan.html">Fan</a>
     <a href="rada.html">Rada&nbsp;shower</a>
@@ -641,7 +643,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
 </section>
 
 <!-- 06 THE PANEL SEES THE VOICE -->
-<section style="background:var(--surface-2)">
+<section id="visuals" style="background:var(--surface-2)">
   <div class="wrap reveal">
     <div class="sec-head col"><span class="eyebrow">06 · The panel sees the voice</span><h2>A screen for a speaker that has none</h2><p class="lede">When the Dot starts a conversation, the wall panel — a laptop in kiosk mode — fades to a full-screen visual with the transcript, and fades back five seconds after Luna finishes. It follows the Dot's state live: listening, thinking, replying.</p></div>
     <div class="steps wide">
@@ -649,6 +651,9 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
       <div class="step"><span class="idx">your voice</span><div class="body"><h3>Reactive to you, through the panel's microphone</h3><p>Browsers only allow the microphone on a secure page, so the panel loads Home&nbsp;Assistant through a LAN-only HTTPS name: local DNS points it at the Pi, and Caddy serves it with a real Let's&nbsp;Encrypt certificate issued over a DNS challenge — nothing exposed to the internet. A Chromium "treat as secure" flag was tried first and simply didn't work in kiosk mode.</p></div></div>
       <div class="step"><span class="idx">her voice</span><div class="body"><h3>Luna's own audio, in sync with the Dot</h3><p>The panel's mic barely hears the Dot's small speaker across the room. But Home&nbsp;Assistant records every assist run, including the URL of the exact reply audio. The moment the Dot starts replying, the panel fetches that same audio, analyses it — a 20&nbsp;ms loudness envelope, a 32-band spectrum and the waveform — and plays the analysis back in time with the Dot, starting 0.3&nbsp;s after the audio is ready (measured against the Dot's own logs). Every syllable she speaks lands on screen.</p></div></div>
       <div class="step"><span class="idx">then</span><div class="body"><h3>Twenty-three visuals and a way to choose</h3><p>Lens Flares became one skin of a small engine: shared audio analysis (512-point FFT, 32 bands from 80&nbsp;Hz to 7&nbsp;kHz, syllable-onset detection), a renderer with bloom, and eleven skins that each draw a frame in a few milliseconds. Four more followed on request: a digital LED spectrum analyser, Paint Splash (after the wall panel's own paint-splash screensaver), Fireworks and Synthwave. Then four from the films: HAL&nbsp;9000's red eye from <i>2001</i> and MOTHER's terminal from <i>Alien</i>, which Kev asked for, plus <i>Tron</i>'s light cycles and a <i>Star&nbsp;Trek</i> LCARS console, which Claude picked for him. Then four from the arcade, for a fan of early-1980s games: Pac-Man, Space Invaders, Williams' Defender and Asteroids, each a little game played by the conversation, with the maze, sprites and rocks redrawn from scratch in the style of the era. The choice is a Home&nbsp;Assistant helper, set from the Scenes tab or a gallery page with live previews and a full-screen demo — or <b>Surprise me</b>, a different one every conversation. A small loader checks for new versions and hot-swaps them between conversations, dodging Home&nbsp;Assistant's month-long cache on local files. If a skin ever errors, the panel falls back to Lens Flares.</p></div></div>
+      <div class="step"><span class="idx">long replies</span><div class="body"><h3>Captions that keep up with her</h3><p>Ask Luna for the energy plan and she talks for half a minute, far more than fits on the screen. Three things went wrong at first: the reply sensor only holds 255 characters, so the text was cut off; it never moved on; and the visual faded while she was still talking. Now the panel takes her <b>whole reply</b> from Home&nbsp;Assistant's own record of the run, and splits it into pages that fit the box. It turns each page at the <b>real pauses in her audio</b>, matching the punctuation, in order, to the silences in the clip. The Dot fetches the whole clip before it speaks, and it reports "idle" up to eleven seconds before a long answer is finished. So the visual now stays up until the Dot's <b>speaker</b> actually stops, and the panel learns the start delay from every turn.</p></div></div>
+      <div class="step"><span class="idx">voice paging</span><div class="body"><h3>“Show me the heating page”</h3><p>The same script that draws the visuals can also move the panel. Asking Luna for a tab (heating, cameras, energy, the map…) is matched by a local sentence in Home&nbsp;Assistant, with no AI involved. That sets a small helper, and the panel switches to the page and fades the visual out quickly so you can see it.</p></div></div>
+      <div class="step"><span class="idx">open source</span><div class="body"><h3>On GitHub for anyone's Home&nbsp;Assistant</h3><p>The engine and twenty-two of the visuals are published as <a href="https://github.com/anchorapp100/ha-visualisations" target="_blank" rel="noopener">ha-visualisations</a> under the MIT licence. Copy four files, add one dashboard resource and talk to your assistant. With no configuration it follows the first Assist satellite it finds and the speaker on the same device, captions and all. The film and arcade visuals are credited as fan tributes: everything is drawn in code, and nothing is taken from the originals.</p></div></div>
     </div>
 
 
@@ -656,7 +661,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
       <div>
         <h3 style="font-size:1.3rem;font-weight:800;margin-bottom:.6rem">How the words get on screen</h3>
         <p style="color:var(--muted)">EchoLocal publishes the Dot to Home&nbsp;Assistant with three things the panel needs: the satellite's <b style="color:var(--ink)">state</b> (idle, listening, thinking, replying), a <b style="color:var(--ink)">last heard</b> sensor holding Whisper's transcript of what you said, and a <b style="color:var(--ink)">last reply</b> sensor holding Luna's answer. The overlay is a small script loaded into the wall-panel dashboard, so it reads those straight from the page's own live Home&nbsp;Assistant connection, several times a second — no token, no extra server.</p>
-        <p style="color:var(--muted);margin-top:.8rem">The visual is a canvas filling the screen; the words are a separate HTML layer on top of it. When a conversation starts it remembers the previous turn's text so nothing stale flashes up, then shows "Listening" or "Thinking", your words when Whisper's transcript lands, and Luna's the moment the reply exists. Each visual places the text where its art isn't — beside Lens Flares and Galaxy, above the meters and the aurora, over the ribbons — in white with a soft shadow, warm amber on the VU panel, or green terminal type on the oscilloscope. Long answers step down a size, and everything fades five seconds after the Dot goes quiet.</p>
+        <p style="color:var(--muted);margin-top:.8rem">The visual is a canvas filling the screen; the words are a separate HTML layer on top of it. When a conversation starts it remembers the previous turn's text so nothing stale flashes up, then shows "Listening" or "Thinking", your words when Whisper's transcript lands, and Luna's the moment the reply exists. Each visual places the text where its art isn't — beside Lens Flares and Galaxy, above the meters and the aurora, over the ribbons — in white with a soft shadow, warm amber on the VU panel, or green terminal type on the oscilloscope. Long answers page through in time with her speech (below), and everything fades five seconds after the Dot’s speaker goes quiet.</p>
         <p style="color:var(--muted);margin-top:.8rem">The words always arrive a beat before Luna speaks: Home&nbsp;Assistant has the reply text as soon as Gemini answers, while the Dot waits for Piper to finish the audio.</p>
       </div>
       <div>
@@ -797,7 +802,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem;min-width:36rem}
   </div>
 </section>
 
-<footer>DECS Home Systems · built &amp; documented locally on one Pi · <a href="globalguard.html">GlobalGuard</a> · <a href="homeassistant.html">Home Assistant</a> · <a href="wallpanel.html">Wall panel</a> · <a href="echo.html">Echo Voice</a> · <a href="cameras.html">Cameras</a> · <a href="presence.html">Presence</a> · <a href="roomscribe.html">Roomscribe</a> · <a href="traccar.html">Traccar</a> · <a href="finance.html">Finance</a> · <a href="fan.html">Fan</a> · <a href="rada.html">Rada&nbsp;shower</a> · <a href="roadmap.html">Roadmap</a></footer>
+<footer>DECS Home Systems · built &amp; documented locally on one Pi · <a href="globalguard.html">GlobalGuard</a> · <a href="homeassistant.html">Home Assistant</a> · <a href="wallpanel.html">Wall panel</a> · <a href="echo.html">Echo Voice</a> · <a href="energy.html">Energy</a> · <a href="cameras.html">Cameras</a> · <a href="presence.html">Presence</a> · <a href="roomscribe.html">Roomscribe</a> · <a href="traccar.html">Traccar</a> · <a href="fuel.html">Fuel</a> · <a href="finance.html">Finance</a> · <a href="fan.html">Fan</a> · <a href="rada.html">Rada&nbsp;shower</a> · <a href="roadmap.html">Roadmap</a></footer>
 
 <script src="app.js"></script>
 <script>window.__VV_NO_OVERLAY = true; window.__VV_NO_FONT = true;</script>

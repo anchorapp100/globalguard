@@ -244,7 +244,7 @@
 </section>
 
 <!-- 05 WAR STORIES -->
-<section style="background:var(--surface-2)">
+<section id="fixes" style="background:var(--surface-2)">
   <div class="wrap reveal">
     <div class="sec-head col"><span class="eyebrow">05 · Hard-won fixes</span><h2>The bugs that fought back</h2><p class="lede">Half the work was in the surprises — an alarm mode wearing a disguise, a redirect that quietly ate every command, a cloud assistant that lied about failure.</p></div>
     <div class="logs">
@@ -273,6 +273,11 @@
         <dt>Cause</dt><dd>The fob-pressing ESP had been moved next to the Pi, where the Wi-Fi is <b style="color:var(--ink)">−84&nbsp;dBm</b>. Too weak to finish the handshake, it looped on <span class="mono" style="font-size:.9em">Auth Expired</span> and never joined the network — so no command ever reached it. The hardware was fine the whole time.</dd>
         <dt class="fix">Fix</dt><dd class="fix">Stop trusting the air. The ESP now talks to the Pi down a <b style="color:var(--ink)">hardwired USB-serial line</b> — no Wi-Fi in the control path — so arm and disarm can't be lost again. Full write-up on the <a href="technical.html#alarm" style="color:var(--accent)">Technical page</a>.</dd>
       </dl></div>
+      <div class="log"><h3><span class="no">#6</span> Buttons that armed nothing but the screen</h3><dl class="grid">
+        <dt>Symptom</dt><dd>The new bedside Echo Show's Night, Day and Disarm buttons changed the alarm state in Home Assistant, and the lights pulsed red, then green — but the real panel never armed.</dd>
+        <dt>Cause</dt><dd>The scripts behind the buttons still pressed the <b style="color:var(--ink)">old Wi-Fi fob bridge</b>, retired three weeks earlier for the hardwired line in #5. Home Assistant shows a new alarm state straight away, before the panel confirms anything, so the dead route looked as if it worked.</dd>
+        <dt class="fix">Fix</dt><dd class="fix">All four scripts — Night, Day, Disarm and House Panic — now go through the alarm panel, the route the wall panel already used, down the USB line to the fob. The bridge's own log confirmed every press, and the panel followed each one.</dd>
+      </dl></div>
     </div>
   </div>
 </section>
@@ -287,6 +292,7 @@
       <div class="card feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></div><h3>By voice</h3><p>"Night Security", "Day Security" and "House Panic" through Google, plus a <b style="color:var(--ink)">PIN-gated</b> disarm — all landing on the fob, all local.</p></div>
     </div>
     <p style="color:var(--muted);max-width:46rem;margin-top:1.4rem">The full build — the isolated-relay wiring, the now-hardwired serial firmware, the confirm-and-retry failsafe and the finished photos — is on the <a href="technical.html#alarm" style="color:var(--accent)">Technical page</a>, along with a planned <a href="technical.html#tone" style="color:var(--accent)">tone-ACK</a> that will let the bridge hear the panel confirm.</p>
+    <p style="color:var(--muted);max-width:46rem;margin-top:.8rem">The <a href="echo.html#show" style="color:var(--accent)">Echo Show by the bed</a> has its own Night, Day and Disarm buttons, and they take the same route to the fob (<a href="#fixes" style="color:var(--accent)">fix&nbsp;#6</a>).</p>
   </div>
 </section>
 

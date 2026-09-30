@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Grid Music — DECS Home Systems</title>
+<meta name="description" content="Grid Music: a Tron-styled fork of an open-source YouTube Music app for Android, with Google Maps controls, widgets, casting and endless radio, and a house version on the Pi that plays on the Echo Show, Nest displays and speakers by voice.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* ---- Grid Music page: local additions ---- */
+  :root{--gm:#0E7C93;--gm-soft:#D8F1F7;--gm-orange:#C2620B}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--gm:#4FDDFF;--gm-soft:#0A2530;--gm-orange:#FF8C1A}}
+  :root[data-theme="dark"]{--gm:#4FDDFF;--gm-soft:#0A2530;--gm-orange:#FF8C1A}
+  body.p-music{--accent:var(--gm);--accent-soft:var(--gm-soft)}
+  .pl-wire{fill:none;stroke:#243040;stroke-width:3;stroke-linecap:round;opacity:.35}
+  .pl-flow{fill:none;stroke-width:4;stroke-linecap:round;stroke-dasharray:2 12;opacity:.95;animation:plmove .9s linear infinite}
+  .pl-flow.slow{animation-duration:1.6s}
+  @keyframes plmove{to{stroke-dashoffset:-14}}
+  .pl-node{fill:#0e151f;stroke:#26333f;stroke-width:1.4}
+  .pl-node.hi{fill:#0d1c26;stroke:#4fddff;stroke-width:1.6}
+  .pl-t{font-family:"IBM Plex Mono",ui-monospace,monospace;fill:#9aa7b3}
+  .pl-title{fill:#e7edf3;font-weight:600}
+  .pl-cap{fill:#7c8a97}
+  @media (prefers-reduced-motion:reduce){.pl-flow,.eqb rect{animation:none}}
+  /* equaliser in the hero panel */
+  .eqb rect{fill:#4fddff;transform-box:fill-box;transform-origin:bottom;animation:eqb 1.1s ease-in-out infinite}
+  .eqb rect:nth-child(2n){animation-duration:.8s;fill:#6fc3df}.eqb rect:nth-child(3n){animation-duration:1.35s}
+  .eqb rect:nth-child(5n){fill:#ff8c1a;animation-duration:.95s}
+  @keyframes eqb{0%,100%{transform:scaleY(.25)}50%{transform:scaleY(1)}}
+  /* screenshots */
+  .shot{margin:1.2rem 0 0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#070d14}
+  .shot img{display:block;width:100%;height:auto}
+  .shot figcaption{margin:0;padding:.7rem 1rem;background:var(--surface);border-top:1px solid var(--line);text-align:left;font-family:"Hanken Grotesk",sans-serif;font-size:.86rem;letter-spacing:0;color:var(--muted)}
+  .phones{display:flex;gap:1.1rem;justify-content:center;flex-wrap:wrap;margin-top:1.2rem}
+  .phones .shot{margin:0;flex:0 1 250px;min-width:0}
+  /* palette */
+  .swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(9.5rem,1fr));gap:.8rem;margin-top:1.3rem}
+  .sw{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+  .sw i{display:block;height:3.4rem}
+  .sw b{display:block;padding:.55rem .7rem 0;font-size:.88rem}
+  .sw span{display:block;padding:.1rem .7rem .6rem;font:500 .72rem/1.3 "IBM Plex Mono",monospace;color:var(--muted)}
+  /* voice commands */
+  .mock{background:#0b111a;border:1px solid #26333f;border-radius:16px;padding:1.1rem 1.2rem;color:#e7edf3;font-family:"Hanken Grotesk",system-ui,sans-serif}
+  .mock .mt{font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:#7c8a97;margin-bottom:.8rem}
+  .say{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:.4rem 1.2rem;align-items:baseline;padding:.5rem 0;border-top:1px solid #1c2530}
+  .say:first-of-type{border-top:0}
+  .say q{font:600 .92rem/1.4 "IBM Plex Mono",monospace;color:#4fddff;quotes:"“" "”"}
+  .say span{font-size:.88rem;color:#c3d0dd}
+  @media(max-width:700px){.say{grid-template-columns:1fr;gap:.15rem}}
+  /* proof columns */
+  .proof{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}
+  @media(max-width:900px){.proof{grid-template-columns:1fr}}
+  .proof .card ul{margin:.6rem 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:.45rem}
+  .proof .card li{position:relative;padding-left:1.15rem;font-size:.9rem;color:var(--muted)}
+  .proof .card li::before{content:"";position:absolute;left:0;top:.5em;width:.5rem;height:.5rem;border-radius:50%;background:var(--c,var(--live))}
+  .proof .real{--c:var(--live)}.proof .sim{--c:var(--amber-bright)}.proof .not{--c:var(--faint)}
+  /* to-do list (same look as the roadmap) */
+  .epill{font-family:"IBM Plex Mono",monospace;font-size:.66rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;border-radius:999px;padding:.32rem .62rem;display:inline-flex;align-items:center;gap:.42rem;border:1px solid;white-space:nowrap;line-height:1}
+  .epill::before{content:"";width:.46rem;height:.46rem;border-radius:50%;background:currentColor;box-shadow:0 0 7px currentColor;flex:none}
+  .epill.quick{color:var(--live);border-color:color-mix(in srgb,var(--live) 42%,transparent);background:var(--live-soft)}
+  .epill.weekend{color:var(--amber-bright);border-color:color-mix(in srgb,var(--amber-bright) 42%,transparent);background:var(--amber-soft)}
+  .epill.ambitious{color:var(--alert);border-color:color-mix(in srgb,var(--alert) 42%,transparent);background:var(--alert-soft)}
+  .ideas{display:flex;flex-direction:column;gap:.7rem;margin-top:1.2rem}
+  .idea{display:flex;justify-content:space-between;align-items:center;gap:1rem;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:.9rem 1.15rem;box-shadow:var(--shadow)}
+  .idea .txt{min-width:0}
+  .idea h3{font-size:1rem;font-weight:700;margin:0}
+  .idea p{font-size:.87rem;color:var(--muted);margin:.16rem 0 0}
+  .idea .epill{flex:none}
+  .todo-h{font:600 .74rem/1 "IBM Plex Mono",monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin:2rem 0 0}
+  .legend{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1.1rem}
+  @media(max-width:560px){.idea{flex-direction:column;align-items:flex-start}}
+</style>
+</head>
+<body class="p-music">
+
+<header class="nav"><div class="wrap">
+  <a class="brand" href="index.html"><span class="dot"></span> DECS&nbsp;Home&nbsp;Systems</a>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="globalguard.html">GlobalGuard</a>
+    <a href="homeassistant.html">Home&nbsp;Assistant</a>
+    <a href="wallpanel.html">Wall&nbsp;panel</a>
+    <a href="echo.html">Echo&nbsp;Voice</a>
+    <a href="energy.html">Energy</a>
+    <a href="cameras.html">Cameras</a>
+    <a href="presence.html">Presence</a>
+    <a href="roomscribe.html">Roomscribe</a>
+    <a href="traccar.html">Traccar</a>
+    <a href="fuel.html">Fuel</a>
+    <a href="gridmusic.html" class="active">Grid&nbsp;Music</a>
+    <a href="finance.html">Finance</a>
+    <a href="fan.html">Fan</a>
+    <a href="rada.html">Rada&nbsp;shower</a>
+    <a href="theme.html">HA&nbsp;Theme</a>
+    <a href="technical.html">Technical</a>
+    <a href="roadmap.html">Roadmap</a>
+    <a href="claude.html">Claude&nbsp;Code</a>
+    <button class="themebtn" id="tt" aria-label="Toggle colour theme"><span id="ttic">◐</span> theme</button>
+  </nav>
+</div></header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">Android app · house speakers · YouTube Music</span>
+        <h1 class="title">A music player of our own,<br>in the pocket <em>and</em> in the house.</h1>
+        <p class="lede">It began as a copy of an open-source YouTube Music app, changed so that it shows up in Google Maps' music controls. Then it got a Tron makeover, home-screen widgets, casting, endless radio and listening stats. The second half lives on the Pi and plays on the house's own speakers, by voice or from the wall panel.</p>
+        <div class="meta-row">
+          <span class="chip">Android</span>
+          <span class="chip">Home Assistant</span>
+          <span class="chip">GPL-3.0 fork</span>
+          <span class="chip">Tron theme</span>
+        </div>
+      </div>
+      <div class="panel" role="img" aria-label="Grid Music status: the phone app is installed on the Galaxy S23; the house version runs as a service on the Pi and can play on nine speakers; seven voice commands; proven on real hardware on the Echo Show and the Citation One; the Nest displays, the soundbar and the car are still to try.">
+        <div class="head"><span>Grid Music · status</span><span>30&nbsp;Sep&nbsp;2026</span></div>
+        <div class="rows">
+          <div class="prow"><span class="led on"></span><span class="k">Phone app</span><span class="v">installed · Galaxy S23</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">House version</span><span class="v">Pi service · 9 speakers</span></div>
+          <div class="prow"><span class="led info"></span><span class="k">Voice</span><span class="v">7 commands</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">Proven live</span><span class="v">Echo Show · Citation One</span></div>
+          <div class="prow"><span class="led info"></span><span class="k">Still to try</span><span class="v">Nest displays · soundbar · car</span></div>
+        </div>
+        <div class="beacon">
+          <span class="lbl">NOW</span>
+          <svg class="eqb" viewBox="0 0 220 34" preserveAspectRatio="none" aria-hidden="true">
+            <rect x="2" y="2" width="8" height="30" rx="2"/><rect x="16" y="2" width="8" height="30" rx="2"/><rect x="30" y="2" width="8" height="30" rx="2"/>
+            <rect x="44" y="2" width="8" height="30" rx="2"/><rect x="58" y="2" width="8" height="30" rx="2"/><rect x="72" y="2" width="8" height="30" rx="2"/>
+            <rect x="86" y="2" width="8" height="30" rx="2"/><rect x="100" y="2" width="8" height="30" rx="2"/><rect x="114" y="2" width="8" height="30" rx="2"/>
+            <rect x="128" y="2" width="8" height="30" rx="2"/><rect x="142" y="2" width="8" height="30" rx="2"/><rect x="156" y="2" width="8" height="30" rx="2"/>
+            <rect x="170" y="2" width="8" height="30" rx="2"/><rect x="184" y="2" width="8" height="30" rx="2"/><rect x="198" y="2" width="8" height="30" rx="2"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- STATS -->
+<section style="padding-block:clamp(2.2rem,5vw,3.2rem)">
+  <div class="wrap reveal">
+    <div class="stats">
+      <div class="stat"><span class="big num-strong">92&nbsp;+&nbsp;41</span><span class="lab">automatic tests: phone, then house</span></div>
+      <div class="stat"><span class="big num-strong">4</span><span class="lab">home-screen widgets</span></div>
+      <div class="stat"><span class="big num-strong">9</span><span class="lab">speakers it can play on</span></div>
+      <div class="stat"><span class="big num-strong">7</span><span class="lab">voice commands</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 01 WHERE IT STARTED -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">01 · Where it started</span><h2>An open-source player, read before it was installed</h2><p class="lede"><b>Umihi Music</b> is a free Android app by ilianoKokoro that plays YouTube Music without the official app's limits. It's built on the NewPipe Extractor and released under the GPL-3.0 licence, which lets anyone change it. So the plan was a personal copy: the same app, working the same way, with upgrades.</p></div>
+    <div class="grid-3">
+      <div class="card feat"><h3>Read before installing</h3><p>The code was checked before anything went on the phone. It talks to YouTube and Google, to GitHub to look for updates, and to two lyrics sites. No trackers, no analytics, nothing sent anywhere else. Verdict: safe to use.</p></div>
+      <div class="card feat"><h3>The brief</h3><p>Exactly the same app, working exactly the same way, with upgrades on top, and it has to appear as a music app in Google Maps so the playback controls show while driving.</p></div>
+      <div class="card feat"><h3>Kept honest</h3><p>It's a fork and it says so. The About screen names the original project and every library under it, and the release build has no self-updater, so it can never be swapped for the original by accident.</p></div>
+    </div>
+    <div class="demo-note" style="margin-top:1.4rem"><b>First round of upgrades.</b> <span>Picked from a list of ideas: the car's Play button resuming the last queue, a browsable library for Maps and Android Auto, pinned playlists, offline badges, dragging songs to reorder, automatic downloads of new songs, and an encrypted login.</span></div>
+  </div>
+</section>
+
+<!-- 02 THE MAPS PUZZLE -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">02 · The Maps puzzle</span><h2>Maps only offered two music apps</h2><p class="lede">The first build was correct: it announced itself to Android as a proper media app. Maps still offered only YouTube Music and Spotify. It turns out Maps doesn't ask Android which music apps exist. It carries its own short list of package names, and nothing outside that list can appear.</p></div>
+    <div class="steps">
+      <div class="step"><span class="idx">01</span><div><h3>Read Maps' own list</h3><p>Maps names four music apps it supports: Google Play Music, YouTube Music, Pandora and Spotify. A fifth app can't join, however well it behaves.</p></div></div>
+      <div class="step"><span class="idx">02</span><div><h3>A cheap experiment first</h3><p>Before redesigning anything, the same app was built a second time under one of those four names (Pandora's), with a single build option. Nothing else changed.</p></div></div>
+      <div class="step"><span class="idx">03</span><div><h3>It worked</h3><p>Maps listed it at once and controls it: play, pause, skip and the track details. That copy became the everyday build.</p></div></div>
+    </div>
+    <div class="demo-note" style="margin-top:1.4rem"><b>What that costs.</b> <span>The copy has its own login and shares nothing with the real Pandora app, and it isn't pretending to be Pandora. It simply uses the name Maps trusts. The only consequence is that the real Pandora app can't be installed beside it.</span></div>
+  </div>
+</section>
+
+<!-- 03 THE STYLE -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">03 · The style</span><h2>Tron, because the house already has a Grid</h2><p class="lede">Four name and logo concepts were on the table first: Envoy, Blacktop, Steelwave and Juke. Then the brief got sharper: a theme from the Tron film colours, a Tron-style logo, and the name <b>Grid Music</b>.</p></div>
+    <div class="swatches">
+      <div class="sw"><i style="background:#070D14"></i><b>The Grid</b><span>#070D14 · dark background</span></div>
+      <div class="sw"><i style="background:#4FDDFF"></i><b>Program cyan</b><span>#4FDDFF · main colour</span></div>
+      <div class="sw"><i style="background:#6FC3DF"></i><b>Friendly blue</b><span>#6FC3DF · from the film</span></div>
+      <div class="sw"><i style="background:#FF8C1A"></i><b>Clu orange</b><span>#FF8C1A · film orange, brightened</span></div>
+      <div class="sw"><i style="background:#F0F9FC"></i><b>Encom daylight</b><span>#F0F9FC · light mode</span></div>
+    </div>
+    <div class="grid-2" style="margin-top:1.4rem">
+      <div class="card feat"><h3>Dark is the Grid, light is daylight</h3><p>Dark mode is black-blue with cyan light-lines and a touch of orange. Light mode is ice-white with the same cyan and orange darkened so they stay readable. Headings are set in Orbitron. The theme picker also keeps the classic look and a "match my wallpaper" option.</p></div>
+      <div class="card feat"><h3>One logo, four cuts</h3><p>A neon identity disc: cyan rings, one orange segment and a play button, over a faint grid floor. The same drawing becomes the launcher icon, the round icon, the one-colour themed icon and the notification glyph, and a script redraws all of them, so changing the design is one edit.</p></div>
+    </div>
+    <figure class="shot"><img src="images/gm-logo-sheet.png" width="960" height="250" alt="The Grid Music icon family: rounded launcher icon, round icon, two small sizes, the one-colour themed icon and a notification glyph, all showing a neon ring with an orange segment around a play button" loading="lazy"><figcaption><b>The icon family.</b> Launcher, round, small sizes, the one-colour themed icon and the notification glyph, all generated from one drawing.</figcaption></figure>
+  </div>
+</section>
+
+<!-- 04 PHONE UPGRADES -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">04 · The phone app's upgrades</span><h2>What the copy does that the original doesn't</h2><p class="lede">Everything the original does still works. On top of that:</p></div>
+    <div class="grid-3">
+      <div class="card feat"><h3>In the car</h3><p>A browsable library for Maps and Android Auto: Recently played, Downloaded, Playlists (pinned first) and Favourites. The car's Play button resumes the last queue, and voice requests like "play X" work. "Start with Bluetooth" plays when a chosen device, such as the car, connects.</p></div>
+      <div class="card feat"><h3>Your playlists</h3><p>Pin playlists to the top with a long-press, see which are available offline, and drag songs to reorder your own. New songs download over Wi-Fi every twelve hours, and one switch keeps the whole Favourites list on the phone.</p></div>
+      <div class="card feat"><h3>Like and dislike</h3><p>Like adds the song to your YouTube Favourites. Dislike skips it. Both are on the player, the notification and the Maps and Android Auto controls.</p></div>
+      <div class="card feat"><h3>Endless queue</h3><p>When the queue runs out, the app asks YouTube Music for songs like the last one and carries on, so the music never just stops.</p></div>
+      <div class="card feat"><h3>Even volume</h3><p>YouTube publishes how loud each song is. Loud songs are turned down to match the quiet ones. It only ever turns things down, never up.</p></div>
+      <div class="card feat"><h3>Fades and sleep</h3><p>An optional fade out and in between songs, and a sleep timer that eases the volume down instead of cutting off.</p></div>
+      <div class="card feat"><h3>Tron visualiser</h3><p>Glowing bars that move to the music on the player screen, with an orange peak cap that drifts down. It steps aside while the phone's hardware audio offload is on.</p></div>
+      <div class="card feat"><h3>Listening stats</h3><p>A local record of what's been played: top songs and artists over a week, a month, a year or all time. Optionally it sends plays to ListenBrainz, a free open listening-history service.</p></div>
+      <div class="card feat"><h3>Private by default</h3><p>The login is encrypted with the phone's secure keystore, cookie logging was removed, backups leave the login out, and there's no self-updater.</p></div>
+    </div>
+    <figure class="shot"><img src="images/gm-widgets.png" width="880" height="406" alt="Two Grid Music widgets on the dark theme: a quick-play strip with Favourites, Downloaded, Recent and Shuffle buttons, and a wide bar showing the logo, the name Grid Music and previous, play and next buttons" loading="lazy"><figcaption><b>Widgets.</b> Four sizes: a quick-play strip (Favourites, Downloaded, Recent, Shuffle), a bar, a tile and a full player with like and dislike. Two shown.</figcaption></figure>
+    <div class="phones">
+      <figure class="shot"><img src="images/gm-phone-stats.jpg" width="450" height="1000" alt="The listening stats sheet on a phone, showing 22 plays, top songs and top artists for the last 30 days" loading="lazy"><figcaption><b>Stats.</b> Example data.</figcaption></figure>
+      <figure class="shot"><img src="images/gm-phone-settings.jpg" width="450" height="1000" alt="Settings on a phone: music visualiser, level the volume, fade between songs, then the Listening and Devices sections" loading="lazy"><figcaption><b>Settings.</b> The new switches, in the Tron theme.</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- 05 PLAYING ON OTHER DEVICES -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">05 · Playing on other devices</span><h2>A "Play on…" button for the whole house</h2><p class="lede">A button on the player opens a list: Chromecast, Nest and Google TV; Home Assistant media players; and DLNA TVs and soundbars. The phone swaps its player for a remote one and runs a small web server, and the speaker pulls the song from it as a plain audio address. The phone then carries on as the remote control.</p></div>
+    <div class="grid-2">
+      <div class="card feat"><h3>Home Assistant knows</h3><p>A switch tells Home Assistant what's playing, as a sensor with the song, artist, picture and where it's playing, so automations can react: dim the lights, show it on a dashboard.</p></div>
+      <div class="card feat"><h3>Back to the phone</h3><p>Choosing "This phone" in the same list moves playback back, and the volume slider controls whichever device is playing.</p></div>
+    </div>
+    <div class="demo-note" style="margin-top:1.4rem"><b>The first try timed out.</b> <span>On the real speakers it just sat there. Android removes Cast speakers from its list unless something is actively scanning, so by the time the app tried to connect the speaker had vanished. The fix: keep scanning while connecting, and look the speaker up again by its ID just before selecting it. After that it played on the devices that were picked.</span></div>
+  </div>
+</section>
+
+<!-- 06 THE HOUSE VERSION -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">06 · The house version</span><h2>The same idea, without the phone</h2><p class="lede">"Play on…" worked, but it needed the phone awake and nearby. The house version moves the work to the Pi. A small service signs in to YouTube Music, keeps a queue for each speaker, stores the songs on disk and hands each speaker a signed link to play. Home Assistant carries the voice commands and the buttons to it.</p></div>
+    <figure>
+      <div class="demo-stage" role="img" aria-label="How the house version works: you speak or tap, Home Assistant passes the request to the Grid Music service on the Pi, the service gets songs from YouTube Music and gives the speakers signed links to play.">
+        <svg viewBox="0 0 960 320" aria-hidden="true">
+          <path class="pl-wire" d="M226 160 L 270 160"/><path class="pl-flow" d="M226 160 L 270 160" stroke="#4fddff"/>
+          <path class="pl-wire" d="M470 160 L 514 160"/><path class="pl-flow" d="M470 160 L 514 160" stroke="#4fddff"/>
+          <path class="pl-wire" d="M714 140 C 736 120 736 80 754 70"/><path class="pl-flow slow" d="M714 140 C 736 120 736 80 754 70" stroke="#ff8c1a"/>
+          <path class="pl-wire" d="M714 180 C 736 200 736 250 754 262"/><path class="pl-flow" d="M714 180 C 736 200 736 250 754 262" stroke="#43d98a"/>
+          <rect class="pl-node" x="26" y="112" width="200" height="96" rx="12"/>
+          <text class="pl-t pl-title" x="126" y="148" text-anchor="middle" font-size="13">You</text>
+          <text class="pl-t pl-cap" x="126" y="170" text-anchor="middle" font-size="10">say it · tap it</text>
+          <text class="pl-t pl-cap" x="126" y="186" text-anchor="middle" font-size="10">voice · wall panel · phone</text>
+          <rect class="pl-node" x="270" y="112" width="200" height="96" rx="12"/>
+          <text class="pl-t pl-title" x="370" y="148" text-anchor="middle" font-size="13">Home Assistant</text>
+          <text class="pl-t pl-cap" x="370" y="170" text-anchor="middle" font-size="10">7 voice commands</text>
+          <text class="pl-t pl-cap" x="370" y="186" text-anchor="middle" font-size="10">the Music page</text>
+          <rect class="pl-node hi" x="514" y="100" width="200" height="120" rx="12"/>
+          <text class="pl-t pl-title" x="614" y="138" text-anchor="middle" font-size="13">Grid Music service</text>
+          <text class="pl-t pl-cap" x="614" y="160" text-anchor="middle" font-size="10">a queue per speaker</text>
+          <text class="pl-t pl-cap" x="614" y="176" text-anchor="middle" font-size="10">song cache on the Pi</text>
+          <text class="pl-t pl-cap" x="614" y="192" text-anchor="middle" font-size="10">signed, expiring links</text>
+          <rect class="pl-node" x="754" y="32" width="190" height="76" rx="12"/>
+          <text class="pl-t pl-title" x="849" y="64" text-anchor="middle" font-size="12">YouTube Music</text>
+          <text class="pl-t pl-cap" x="849" y="84" text-anchor="middle" font-size="10">search · radio · your library</text>
+          <rect class="pl-node" x="754" y="224" width="190" height="76" rx="12"/>
+          <text class="pl-t pl-title" x="849" y="252" text-anchor="middle" font-size="12">The speakers</text>
+          <text class="pl-t pl-cap" x="849" y="274" text-anchor="middle" font-size="10">Show · Dot · Citation One</text>
+          <text class="pl-t pl-cap" x="849" y="288" text-anchor="middle" font-size="10">Nest · soundbar</text>
+        </svg>
+      </div>
+      <figcaption>The speakers fetch each song from the Pi over the house network. Only the Pi can control the service; the links it hands out expire.</figcaption>
+    </figure>
+    <div class="grid-3" style="margin-top:1.4rem">
+      <div class="card feat"><h3>Finds and stores songs</h3><p>Search, radio and the personal library come from YouTube Music. A song is fetched once into a cache on the Pi, and the next one is fetched while the current one plays, so changes are quick.</p></div>
+      <div class="card feat"><h3>Keeps the queue</h3><p>One watcher per speaker asks Home Assistant what it's doing once a second. Idle near the end of a song means it finished, so the next one starts. Idle earlier means someone stopped it, so the service stops driving. Something else cast to the speaker means it steps aside. When the queue runs out, radio carries on.</p></div>
+      <div class="card feat"><h3>Different speakers, different habits</h3><p>Cast speakers get the song with its title, artist and picture. The Echo Show and Dot get a plain audio link, the way the radio does. There's also a silent test speaker that just lets the clock run.</p></div>
+    </div>
+
+    <div class="mock" style="margin-top:1.4rem">
+      <div class="mt">Things you can say · added beside the radio, TV and "stop the music" commands</div>
+      <div class="say"><q>Play my Favourites</q><span>Plays your liked songs on the speaker you asked. Add "in the living room" to choose another, or "on shuffle".</span></div>
+      <div class="say"><q>Play my workout playlist</q><span>Finds the playlist by name, even roughly.</span></div>
+      <div class="say"><q>Play the song Derezzed</q><span>Plays the best match, then songs like it. "Play Derezzed by Daft Punk" works too.</span></div>
+      <div class="say"><q>Play music by Daft Punk</q><span>Searches for the artist and plays a mix.</span></div>
+      <div class="say"><q>Play something like this</q><span>Builds a new queue from the song that's playing.</span></div>
+      <div class="say"><q>Skip · go back · pause the song · resume the music</q><span>Acts on whichever speaker Grid Music is playing on.</span></div>
+      <div class="say"><q>What song is this?</q><span>Reads out the title and artist.</span></div>
+      <div class="say"><q>Like this song · dislike this song</q><span>Likes add to Favourites. Dislike also skips.</span></div>
+    </div>
+    <div class="demo-note" style="margin-top:1.4rem"><b>No clashes.</b> <span>Every phrase was checked offline against Home Assistant's own sentence matcher, including the existing radio, TV and stop phrases, so a new command can't quietly steal an old one.</span></div>
+
+    <figure class="shot"><img src="images/gm-music-page.jpg" width="1280" height="800" alt="The Grid Music page: speaker chips along the top, a now-playing card with album art, progress, transport buttons, like, dislike and volume on the left, and search results for Daft Punk on the right" loading="lazy"><figcaption><b>The Music page.</b> Opened from a Grid Music button on the Media tab and usable on a phone too: speaker chips, now playing, search, Favourites, playlists, queue and recent songs. Screenshot uses sample data; album art belongs to its owners.</figcaption></figure>
+  </div>
+</section>
+
+<!-- 07 FIELD NOTES -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">07 · Field notes</span><h2>What went wrong, and what it taught us</h2></div>
+    <div class="grid-2">
+      <div class="card feat"><h3>A download that crawled</h3><p>Fetching a whole song in one request came down at about 30&nbsp;KB/s: 55 seconds for 1.7&nbsp;MB. Asking for it in 2&nbsp;MB pieces took under three seconds, which is exactly what downloader tools do.</p></div>
+      <div class="card feat"><h3>Home Assistant remembers what you tell it</h3><p>Its history keeps the contents of every service call. So the YouTube login is never sent through Home Assistant: it goes straight to the Pi. And the Music page watches a sensor, which is stored nowhere, instead of calling a service every couple of seconds, which, left open all day, would have written about 35,000 rows.</p></div>
+      <div class="card feat"><h3>The Echo Show says very little</h3><p>It reports only playing, paused or idle: no position, no length, no seeking, and "paused" after a stop. So the service times each song itself, moves on when the song must be over, and the Music page says so if a speaker can't jump around in a song.</p></div>
+      <div class="card feat"><h3>A dead login looks alive</h3><p>Asking YouTube for playlists with an expired cookie returns an empty list, not an error, so the sign-in check couldn't tell. It now needs a real account name back before it believes the login.</p></div>
+      <div class="card feat"><h3>Test silently first</h3><p>Every voice command ran against the silent test speaker before any real speaker played a note. Real speakers were then tried one at a time, each with its owner's say-so, and with short jingles instead of full songs.</p></div>
+      <div class="card feat"><h3>Keeping it alive</h3><p>YouTube changes break the tools that read it every few weeks. A weekly check looks for newer versions of the phone app's extractor, and the Pi updates its own two libraries every night, tests a real song, and rolls back if the test fails.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 08 WHERE IT STANDS -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">08 · Where it stands</span><h2>What's proven, and what isn't yet</h2><p class="lede">An honest split, as of 30 September 2026.</p></div>
+    <div class="proof">
+      <div class="card real"><h3>Seen working on real hardware</h3><ul>
+        <li>Google Maps controlling the phone app</li>
+        <li>Casting from the phone to the chosen devices</li>
+        <li>Echo Show: start, pause, resume, stop, moving on by itself</li>
+        <li>Citation One: start, song details and art, moving on, endless radio, stop</li>
+      </ul></div>
+      <div class="card sim"><h3>Tested only in simulation</h3><ul>
+        <li>The widgets in a real launcher</li>
+        <li>Pinning, reordering and auto-download with a real login</li>
+        <li>Start with Bluetooth in the car</li>
+        <li>The visualiser and even volume, judged by ear</li>
+        <li>The Music page inside the real wall panel</li>
+        <li>Favourites playing on a real speaker</li>
+      </ul></div>
+      <div class="card not"><h3>Not tried yet</h3><ul>
+        <li>Pause, resume and seek on a Cast speaker</li>
+        <li>The Echo Dot and the Nest displays</li>
+        <li>Liking and disliking on the real account</li>
+        <li>The soundbar and the speaker groups</li>
+      </ul></div>
+    </div>
+  </div>
+</section>
+
+<!-- 09 TO-DO -->
+<section id="todo">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">09 · To-do</span><h2>What's next</h2><p class="lede">Everything below is an idea, not a promise. They're grouped by what they do and tagged by effort, using the same tags as the <a href="roadmap.html" style="color:var(--accent)">roadmap</a>.</p></div>
+    <div class="legend">
+      <span class="epill quick">quick win</span><span class="epill weekend">a weekend</span><span class="epill ambitious">ambitious</span>
+    </div>
+
+    <div class="todo-h">Finish what's there</div>
+    <div class="ideas">
+      <div class="idea"><div class="txt"><h3>Try pause, resume and seek on a Cast speaker</h3><p>The one step of the Citation One test that didn't run.</p></div><span class="epill quick">quick win</span></div>
+      <div class="idea"><div class="txt"><h3>Try the Echo Dot and a Nest display</h3><p>Same two paths as the speakers already tried, but not run yet.</p></div><span class="epill quick">quick win</span></div>
+      <div class="idea"><div class="txt"><h3>Phone alerts when something breaks</h3><p>"Your YouTube login has expired" or "songs have stopped loading", instead of the music just going quiet.</p></div><span class="epill quick">quick win</span></div>
+      <div class="idea"><div class="txt"><h3>Fetch the next radio batch early</h3><p>The six-second wait at the end of a radio run is the next songs being fetched too late. Two songs early removes it.</p></div><span class="epill quick">quick win</span></div>
+      <div class="idea"><div class="txt"><h3>Keep Favourites stored on the Pi</h3><p>About 650&nbsp;MB for 182 songs: instant starts, and it survives a YouTube hiccup.</p></div><span class="epill quick">quick win</span></div>
+    </div>
+
+    <div class="todo-h">More ways to play</div>
+    <div class="ideas">
+      <div class="idea"><div class="txt"><h3>"Move the music to the living room"</h3><p>The same queue carries on in another room and the old speaker stops.</p></div><span class="epill quick">quick win</span></div>
+      <div class="idea"><div class="txt"><h3>Sleep timer and wake-up music by voice</h3><p>"Stop the music in 30 minutes" with a fade, and "wake me with my Favourites at seven", starting quietly.</p></div><span class="epill quick">quick win</span></div>
+      <div class="idea"><div class="txt"><h3>Play by mood, album or artist</h3><p>"Something chilled for cooking", "play the album Discovery".</p></div><span class="epill quick">quick win</span></div>
+      <div class="idea"><div class="txt"><h3>A second account, by wake word</h3><p>"Play my Favourites" would use the library of whoever's wake word started it, given a second YouTube login.</p></div><span class="epill weekend">a weekend</span></div>
+      <div class="idea"><div class="txt"><h3>Play everywhere, in sync</h3><p>The Show, Dot and Citation One together. They aren't in a Cast group, so they'd drift apart without more work.</p></div><span class="epill weekend">a weekend</span></div>
+      <div class="idea"><div class="txt"><h3>Music that follows you</h3><p>The queue moves from room to room using the <a href="presence.html" style="color:var(--accent)">presence sensors</a>.</p></div><span class="epill ambitious">ambitious</span></div>
+    </div>
+
+    <div class="todo-h">Sound</div>
+    <div class="ideas">
+      <div class="idea"><div class="txt"><h3>Even volume between songs on the Pi</h3><p>The phone app already does this; on the Pi it would be done once, when a song is stored.</p></div><span class="epill weekend">a weekend</span></div>
+      <div class="idea"><div class="txt"><h3>Smoother changes between songs</h3><p>A true crossfade isn't possible through Home Assistant, but a shorter gap probably is.</p></div><span class="epill weekend">a weekend</span></div>
+    </div>
+
+    <div class="todo-h">Screens</div>
+    <div class="ideas">
+      <div class="idea"><div class="txt"><h3>A dedicated Music tab on the wall panel</h3><p>Today the page hangs off the Media tab. A real tab means adding it to the navigation bar of every view.</p></div><span class="epill weekend">a weekend</span></div>
+      <div class="idea"><div class="txt"><h3>Lyrics in time with the song</h3><p>On the panel and on the Show's screen. The phone app already fetches them this way.</p></div><span class="epill weekend">a weekend</span></div>
+      <div class="idea"><div class="txt"><h3>A big now-playing page on the Show</h3><p>Large art and controls on its display, next to the existing doorbell and dashboard pages.</p></div><span class="epill weekend">a weekend</span></div>
+      <div class="idea"><div class="txt"><h3>Drag to reorder the queue, save it as a playlist</h3><p>Both already exist in the phone app's world; the Music page only lists and removes.</p></div><span class="epill weekend">a weekend</span></div>
+      <div class="idea"><div class="txt"><h3>A native Home Assistant media player</h3><p>So the Next and Previous buttons on the Media tab's "Around the house" tiles, and Home Assistant's own media browser, control the Grid Music queue.</p></div><span class="epill weekend">a weekend</span></div>
+    </div>
+
+    <div class="todo-h">Linking the phone and the house</div>
+    <div class="ideas">
+      <div class="idea"><div class="txt"><h3>"House speakers" in the phone's Play on… list</h3><p>The Pi would hold the queue, so the phone could be switched off.</p></div><span class="epill weekend">a weekend</span></div>
+      <div class="idea"><div class="txt"><h3>Log in once, everywhere</h3><p>A button in the app that sends its YouTube login to the Pi, so the browser steps are never needed again.</p></div><span class="epill weekend">a weekend</span></div>
+      <div class="idea"><div class="txt"><h3>Shared listening history and stats</h3><p>One record across the app and the house, with ListenBrainz for both.</p></div><span class="epill weekend">a weekend</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- CLOSING -->
+<section>
+  <div class="wrap reveal">
+    <div class="close">
+      <span class="eyebrow" style="color:var(--gm)">Grid Music</span>
+      <h2 style="margin-top:1rem">One idea, in two places.</h2>
+      <p>A free, open-source player turned into something that fits: it appears in the car's controls, looks like it belongs to the house, and plays on the speakers you're standing next to. The phone app and the Pi service are separate builds, so either keeps working without the other.</p>
+      <p style="font-size:.85rem">Built on Umihi Music by ilianoKokoro (GPL-3.0), the NewPipe Extractor, AndroidX Media3, Jetpack Compose and the Google Cast SDK; the house version uses ytmusicapi and yt-dlp. Not affiliated with or endorsed by YouTube, Google, Disney or MetaBrainz. The Tron theme is a colour tribute to the films. The app isn't distributed: the changes are kept in a private repository, and any copy handed to someone else would come with its source under the same licence.</p>
+      <div class="sig"><span class="dot" style="background:var(--gm);box-shadow:0 0 8px var(--gm)"></span><span>Android app</span><span>·</span><span>House speakers</span><span>·</span><span>see the <a href="roadmap.html" style="color:var(--gm)">roadmap</a></span></div>
+    </div>
+  </div>
+</section>
+
+<footer>Grid Music · Android app (fork of Umihi Music, GPL-3.0) · house version on the Pi · <a href="echo.html">Echo Voice</a> · <a href="wallpanel.html">Wall panel</a> · <a href="roadmap.html">Roadmap</a> · <a href="index.html">DECS Home Systems</a></footer>
+
+<script src="app.js"></script>
+</body>
+</html>

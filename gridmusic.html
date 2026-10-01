@@ -110,7 +110,7 @@
       <div>
         <span class="eyebrow">Android app · house speakers · YouTube Music</span>
         <h1 class="title">A music player of our own,<br>in the pocket <em>and</em> in the house.</h1>
-        <p class="lede">It began as a copy of an open-source YouTube Music app, changed so that it shows up in Google Maps' music controls. Then it got a Tron makeover, home-screen widgets, casting, endless radio and listening stats. The second half lives on the Pi and plays on the house's own speakers, by voice or from the wall panel.</p>
+        <p class="lede">It began as a copy of an open-source YouTube Music app, changed so that it shows up in Google Maps' music controls. Then it got a Tron makeover, home-screen widgets, casting, endless radio and listening stats. The second half lives on the Pi and plays on the house's own speakers, by voice or from the wall panel. Now the two are linked: one login, one listening history, one set of suggestions.</p>
         <div class="meta-row">
           <span class="chip">Android</span>
           <span class="chip">Home Assistant</span>
@@ -118,12 +118,12 @@
           <span class="chip">Tron theme</span>
         </div>
       </div>
-      <div class="panel" role="img" aria-label="Grid Music status: the phone app is installed on the Galaxy S23; the house version runs as a service on the Pi and can play on nine speakers; seven voice commands; proven on real hardware on the Echo Show and the Citation One; the Nest displays, the soundbar and the car are still to try.">
-        <div class="head"><span>Grid Music · status</span><span>30&nbsp;Sep&nbsp;2026</span></div>
+      <div class="panel" role="img" aria-label="Grid Music status: the phone app is installed on the Galaxy S23; the house version runs as a service on the Pi and can play on nine speakers; ten voice commands; the phone and the house linked; proven on real hardware on the Echo Show and the Citation One; the Nest displays, the soundbar and the car are still to try.">
+        <div class="head"><span>Grid Music · status</span><span>1&nbsp;Oct&nbsp;2026</span></div>
         <div class="rows">
           <div class="prow"><span class="led on"></span><span class="k">Phone app</span><span class="v">installed · Galaxy S23</span></div>
           <div class="prow"><span class="led on"></span><span class="k">House version</span><span class="v">Pi service · 9 speakers</span></div>
-          <div class="prow"><span class="led info"></span><span class="k">Voice</span><span class="v">7 commands</span></div>
+          <div class="prow"><span class="led info"></span><span class="k">Voice</span><span class="v">10 commands</span></div>
           <div class="prow"><span class="led on"></span><span class="k">Proven live</span><span class="v">Echo Show · Citation One</span></div>
           <div class="prow"><span class="led info"></span><span class="k">Still to try</span><span class="v">Nest displays · soundbar · car</span></div>
         </div>
@@ -148,10 +148,10 @@
 <section style="padding-block:clamp(2.2rem,5vw,3.2rem)">
   <div class="wrap reveal">
     <div class="stats">
-      <div class="stat"><span class="big num-strong">92&nbsp;+&nbsp;41</span><span class="lab">automatic tests: phone, then house</span></div>
+      <div class="stat"><span class="big num-strong">253&nbsp;+&nbsp;128</span><span class="lab">automatic tests: phone, then house</span></div>
       <div class="stat"><span class="big num-strong">4</span><span class="lab">home-screen widgets</span></div>
       <div class="stat"><span class="big num-strong">9</span><span class="lab">speakers it can play on</span></div>
-      <div class="stat"><span class="big num-strong">7</span><span class="lab">voice commands</span></div>
+      <div class="stat"><span class="big num-strong">10</span><span class="lab">voice commands</span></div>
     </div>
   </div>
 </section>
@@ -253,7 +253,7 @@
           <text class="pl-t pl-cap" x="126" y="186" text-anchor="middle" font-size="10">voice · wall panel · phone</text>
           <rect class="pl-node" x="270" y="112" width="200" height="96" rx="12"/>
           <text class="pl-t pl-title" x="370" y="148" text-anchor="middle" font-size="13">Home Assistant</text>
-          <text class="pl-t pl-cap" x="370" y="170" text-anchor="middle" font-size="10">7 voice commands</text>
+          <text class="pl-t pl-cap" x="370" y="170" text-anchor="middle" font-size="10">10 voice commands</text>
           <text class="pl-t pl-cap" x="370" y="186" text-anchor="middle" font-size="10">the Music page</text>
           <rect class="pl-node hi" x="514" y="100" width="200" height="120" rx="12"/>
           <text class="pl-t pl-title" x="614" y="138" text-anchor="middle" font-size="13">Grid Music service</text>
@@ -294,16 +294,45 @@
   </div>
 </section>
 
-<!-- 07 FIELD NOTES -->
+<!-- 07 PHONE AND HOUSE -->
 <section>
   <div class="wrap reveal">
-    <div class="sec-head col"><span class="eyebrow">07 · Field notes</span><h2>What went wrong, and what it taught us</h2></div>
+    <div class="sec-head col"><span class="eyebrow">07 · Phone and house, as one</span><h2>Log in once, and the two learn from each other</h2><p class="lede">The phone app and the house version began as separate things. Now they are linked over the home network, so a login, a listening history, a "not for me" and a set of suggestions are shared, and a song can move between the phone and any room without losing its place.</p></div>
+    <div class="grid-3">
+      <div class="card feat"><h3>A private link</h3><p>The house makes a secret key the first time it runs, and the Music page shows it once to be typed into the app. Every request is signed with it, and the YouTube login is also encrypted inside the request, so nothing usable crosses the network in the clear. A wrong key is refused, guessing is locked out, and making a new key locks out every phone at once.</p></div>
+      <div class="card feat"><h3>Log in once</h3><p>A button sends the app's own YouTube login to the house, which checks with YouTube that it really works before keeping it. A login copied out of a browser tab had stopped working within about two hours; the phone's own login is a separate session, so it lasts.</p></div>
+      <div class="card feat"><h3>House speakers in "Play on…"</h3><p>Choose a speaker and the phone hands over its queue and its place in the song. The house then holds the queue, so the phone can be switched off, and the app becomes a remote for it.</p></div>
+      <div class="card feat"><h3>Warnings you'd otherwise miss</h3><p>The house asks YouTube every half hour whether the login still works, and warns the phone when it expires, when songs stop loading, or when the nightly update had to roll back. Each problem warns at most once every six hours, even across restarts.</p></div>
+      <div class="card feat"><h3>Even volume</h3><p>Songs are mastered at wildly different loudness. Loud ones are turned down to a common level once, when they are stored on the Pi. Quiet ones are never boosted, which would only add distortion.</p></div>
+      <div class="card feat"><h3>Move the music</h3><p>"Move the music to the living room" carries on with the same queue from the same place, and stops the first speaker. The Echo Show and Dot can't start part-way, so the house gives them a copy of the song cut to begin there. They also answer "stop" by pausing with the old song still loaded, so a stop is followed by a moment of silence that leaves them truly idle.</p></div>
+      <div class="card feat"><h3>Lyrics in time</h3><p>Time-synced lyrics on the Music page, lit line by line as the song sings, and a full-screen version for the Echo Show's display.</p></div>
+      <div class="card feat"><h3>Suggestions</h3><p>A <em>For you</em> page on the Music page and in the app: songs and collections picked from your likes and everything you play, each saying why ("Because you play…"), with YouTube Music's own personalised shelves underneath. "Not for me" hides a song or an artist everywhere. "Play something I might like" does it by voice.</p></div>
+      <div class="card feat"><h3>One listening history</h3><p>What the phone plays is sent to the house, so the stats and the suggestions cover everything, and what the house plays comes back into the phone's stats. Nothing is counted twice, and ListenBrainz hears each play exactly once.</p></div>
+    </div>
+    <div class="mock" style="margin-top:1.4rem">
+      <div class="mt">More things you can say</div>
+      <div class="say"><q>Move the music to the living room</q><span>Same queue, same place in the song; the speaker it left stops. "Bring the music here" moves it to the speaker you're talking to.</span></div>
+      <div class="say"><q>Show the lyrics</q><span>Puts the lyrics on the Echo Show in the room, line by line.</span></div>
+      <div class="say"><q>Play something I might like · surprise me</q><span>Plays the suggested songs, picked from your likes and listening. Add "in the bedroom" to choose a room.</span></div>
+    </div>
+    <div class="demo-note" style="margin-top:1.4rem"><b>Secrets stay put.</b> <span>The YouTube login, the link key and the ListenBrainz token never go through Home Assistant, which stores the contents of every service call. The key is only ever shown to the Music page as a reply, and the login travels from the phone straight to the Pi.</span></div>
+  </div>
+</section>
+
+<!-- 08 FIELD NOTES -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">08 · Field notes</span><h2>What went wrong, and what it taught us</h2></div>
     <div class="grid-2">
       <div class="card feat"><h3>A download that crawled</h3><p>Fetching a whole song in one request came down at about 30&nbsp;KB/s: 55 seconds for 1.7&nbsp;MB. Asking for it in 2&nbsp;MB pieces took under three seconds, which is exactly what downloader tools do.</p></div>
       <div class="card feat"><h3>Home Assistant remembers what you tell it</h3><p>Its history keeps the contents of every service call. So the YouTube login is never sent through Home Assistant: it goes straight to the Pi. And the Music page watches a sensor, which is stored nowhere, instead of calling a service every couple of seconds, which, left open all day, would have written about 35,000 rows.</p></div>
       <div class="card feat"><h3>The Echo Show says very little</h3><p>It reports only playing, paused or idle: no position, no length, no seeking, and "paused" after a stop. So the service times each song itself, moves on when the song must be over, and the Music page says so if a speaker can't jump around in a song.</p></div>
       <div class="card feat"><h3>A dead login looks alive</h3><p>Asking YouTube for playlists with an expired cookie returns an empty list, not an error, so the sign-in check couldn't tell. It now needs a real account name back before it believes the login.</p></div>
       <div class="card feat"><h3>Test silently first</h3><p>Every voice command ran against the silent test speaker before any real speaker played a note. Real speakers were then tried one at a time, each with its owner's say-so, and with short jingles instead of full songs.</p></div>
+      <div class="card feat"><h3>A login that lasted two hours</h3><p>Copying the login out of a browser tab worked, then stopped within about two hours: YouTube quietly renews the session behind an open tab. The phone app's own login is a separate session that isn't renewed, so the phone now sends that one, and the house checks it with YouTube every half hour and warns when it dies.</p></div>
+      <div class="card feat"><h3>"Stop" meant "pause"</h3><p>Moving music away from the Echo Show left it paused for as long as we watched, a hundred seconds and more, with the old song still loaded and one press from coming back. Measured with thirty seconds of silence so nobody had to hear it. The cure is a one-second silent clip played over the top: it ends, and the speaker is genuinely idle.</p></div>
+      <div class="card feat"><h3>Two speakers, two queues</h3><p>Each speaker keeps its own queue, so picking another speaker and pressing play started a second copy while the first carried on. The Music page now asks "move it here?" when you pick a quiet speaker while another is playing, and the Echo Show can now pick up from the same second.</p></div>
+      <div class="card feat"><h3>Two addresses that look alike</h3><p>The house's address and Home Assistant's both ask for an address and a secret, and one was pasted into the other: every request got a polite refusal. Each box now says what it is looking at and won't accept the other's address.</p></div>
       <div class="card feat"><h3>Keeping it alive</h3><p>YouTube changes break the tools that read it every few weeks. A weekly check looks for newer versions of the phone app's extractor, and the Pi updates its own two libraries every night, tests a real song, and rolls back if the test fails.</p></div>
     </div>
   </div>
@@ -312,13 +341,15 @@
 <!-- 08 WHERE IT STANDS -->
 <section style="background:var(--surface-2)">
   <div class="wrap reveal">
-    <div class="sec-head col"><span class="eyebrow">08 · Where it stands</span><h2>What's proven, and what isn't yet</h2><p class="lede">An honest split, as of 30 September 2026.</p></div>
+    <div class="sec-head col"><span class="eyebrow">09 · Where it stands</span><h2>What's proven, and what isn't yet</h2><p class="lede">An honest split, as of 1 October 2026.</p></div>
     <div class="proof">
       <div class="card real"><h3>Seen working on real hardware</h3><ul>
         <li>Google Maps controlling the phone app</li>
         <li>Casting from the phone to the chosen devices</li>
         <li>Echo Show: start, pause, resume, stop, moving on by itself</li>
         <li>Citation One: start, song details and art, moving on, endless radio, stop</li>
+        <li>The phone linked to the house, with the YouTube login sent from the app and all the Favourites visible again</li>
+        <li>Moving the music between the Citation One and the Echo Show, carrying on from the same place</li>
       </ul></div>
       <div class="card sim"><h3>Tested only in simulation</h3><ul>
         <li>The widgets in a real launcher</li>
@@ -326,7 +357,9 @@
         <li>Start with Bluetooth in the car</li>
         <li>The visualiser and even volume, judged by ear</li>
         <li>The Music page inside the real wall panel</li>
-        <li>Favourites playing on a real speaker</li>
+        <li>A moved-away Echo Show going properly idle (measured with silence, not yet with music)</li>
+        <li>Lyrics on the Echo Show's screen: the page and view exist, not yet seen on the display</li>
+        <li>The For you picks and "Not for me": built and tried on real data, still being judged by ear</li>
       </ul></div>
       <div class="card not"><h3>Not tried yet</h3><ul>
         <li>Pause, resume and seek on a Cast speaker</li>
@@ -341,7 +374,7 @@
 <!-- 09 TO-DO -->
 <section id="todo">
   <div class="wrap reveal">
-    <div class="sec-head col"><span class="eyebrow">09 · To-do</span><h2>What's next</h2><p class="lede">Everything below is an idea, not a promise. They're grouped by what they do and tagged by effort, using the same tags as the <a href="roadmap.html" style="color:var(--accent)">roadmap</a>.</p></div>
+    <div class="sec-head col"><span class="eyebrow">10 · To-do</span><h2>What's next</h2><p class="lede">Everything below is an idea, not a promise. They're grouped by what they do and tagged by effort, using the same tags as the <a href="roadmap.html" style="color:var(--accent)">roadmap</a>.</p></div>
     <div class="legend">
       <span class="epill quick">quick win</span><span class="epill weekend">a weekend</span><span class="epill ambitious">ambitious</span>
     </div>
@@ -350,14 +383,12 @@
     <div class="ideas">
       <div class="idea"><div class="txt"><h3>Try pause, resume and seek on a Cast speaker</h3><p>The one step of the Citation One test that didn't run.</p></div><span class="epill quick">quick win</span></div>
       <div class="idea"><div class="txt"><h3>Try the Echo Dot and a Nest display</h3><p>Same two paths as the speakers already tried, but not run yet.</p></div><span class="epill quick">quick win</span></div>
-      <div class="idea"><div class="txt"><h3>Phone alerts when something breaks</h3><p>"Your YouTube login has expired" or "songs have stopped loading", instead of the music just going quiet.</p></div><span class="epill quick">quick win</span></div>
       <div class="idea"><div class="txt"><h3>Fetch the next radio batch early</h3><p>The six-second wait at the end of a radio run is the next songs being fetched too late. Two songs early removes it.</p></div><span class="epill quick">quick win</span></div>
       <div class="idea"><div class="txt"><h3>Keep Favourites stored on the Pi</h3><p>About 650&nbsp;MB for 182 songs: instant starts, and it survives a YouTube hiccup.</p></div><span class="epill quick">quick win</span></div>
     </div>
 
     <div class="todo-h">More ways to play</div>
     <div class="ideas">
-      <div class="idea"><div class="txt"><h3>"Move the music to the living room"</h3><p>The same queue carries on in another room and the old speaker stops.</p></div><span class="epill quick">quick win</span></div>
       <div class="idea"><div class="txt"><h3>Sleep timer and wake-up music by voice</h3><p>"Stop the music in 30 minutes" with a fade, and "wake me with my Favourites at seven", starting quietly.</p></div><span class="epill quick">quick win</span></div>
       <div class="idea"><div class="txt"><h3>Play by mood, album or artist</h3><p>"Something chilled for cooking", "play the album Discovery".</p></div><span class="epill quick">quick win</span></div>
       <div class="idea"><div class="txt"><h3>A second account, by wake word</h3><p>"Play my Favourites" would use the library of whoever's wake word started it, given a second YouTube login.</p></div><span class="epill weekend">a weekend</span></div>
@@ -365,26 +396,23 @@
       <div class="idea"><div class="txt"><h3>Music that follows you</h3><p>The queue moves from room to room using the <a href="presence.html" style="color:var(--accent)">presence sensors</a>.</p></div><span class="epill ambitious">ambitious</span></div>
     </div>
 
+    <div class="todo-h">Suggestions and lyrics</div>
+    <div class="ideas">
+      <div class="idea"><div class="txt"><h3>Suggest by mood or time of day</h3><p>"Something calm for the evening", from the same likes and listening.</p></div><span class="epill weekend">a weekend</span></div>
+      <div class="idea"><div class="txt"><h3>Lyrics on the Show whenever music plays there</h3><p>An opt-in switch, so the display follows the song without being asked.</p></div><span class="epill quick">quick win</span></div>
+    </div>
+
     <div class="todo-h">Sound</div>
     <div class="ideas">
-      <div class="idea"><div class="txt"><h3>Even volume between songs on the Pi</h3><p>The phone app already does this; on the Pi it would be done once, when a song is stored.</p></div><span class="epill weekend">a weekend</span></div>
       <div class="idea"><div class="txt"><h3>Smoother changes between songs</h3><p>A true crossfade isn't possible through Home Assistant, but a shorter gap probably is.</p></div><span class="epill weekend">a weekend</span></div>
     </div>
 
     <div class="todo-h">Screens</div>
     <div class="ideas">
       <div class="idea"><div class="txt"><h3>A dedicated Music tab on the wall panel</h3><p>Today the page hangs off the Media tab. A real tab means adding it to the navigation bar of every view.</p></div><span class="epill weekend">a weekend</span></div>
-      <div class="idea"><div class="txt"><h3>Lyrics in time with the song</h3><p>On the panel and on the Show's screen. The phone app already fetches them this way.</p></div><span class="epill weekend">a weekend</span></div>
       <div class="idea"><div class="txt"><h3>A big now-playing page on the Show</h3><p>Large art and controls on its display, next to the existing doorbell and dashboard pages.</p></div><span class="epill weekend">a weekend</span></div>
       <div class="idea"><div class="txt"><h3>Drag to reorder the queue, save it as a playlist</h3><p>Both already exist in the phone app's world; the Music page only lists and removes.</p></div><span class="epill weekend">a weekend</span></div>
       <div class="idea"><div class="txt"><h3>A native Home Assistant media player</h3><p>So the Next and Previous buttons on the Media tab's "Around the house" tiles, and Home Assistant's own media browser, control the Grid Music queue.</p></div><span class="epill weekend">a weekend</span></div>
-    </div>
-
-    <div class="todo-h">Linking the phone and the house</div>
-    <div class="ideas">
-      <div class="idea"><div class="txt"><h3>"House speakers" in the phone's Play on… list</h3><p>The Pi would hold the queue, so the phone could be switched off.</p></div><span class="epill weekend">a weekend</span></div>
-      <div class="idea"><div class="txt"><h3>Log in once, everywhere</h3><p>A button in the app that sends its YouTube login to the Pi, so the browser steps are never needed again.</p></div><span class="epill weekend">a weekend</span></div>
-      <div class="idea"><div class="txt"><h3>Shared listening history and stats</h3><p>One record across the app and the house, with ListenBrainz for both.</p></div><span class="epill weekend">a weekend</span></div>
     </div>
   </div>
 </section>

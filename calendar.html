@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Family Calendar — DECS Home Systems</title>
+<meta name="description" content="A Google-style family calendar built into Home Assistant: own logins for each person, live sync, alerts, the wall panel, labels, where everyone has been, health from Withings and followed calendars like Stremio. Every security and privacy measure, explained.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* ---- calendar page: local additions ---- */
+  body.p-cal{--accent:var(--violet);--accent-soft:var(--violet-soft)}
+  .feats{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin-top:1.3rem}
+  @media(max-width:900px){.feats{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:560px){.feats{grid-template-columns:1fr}}
+  .feats .f{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:.9rem 1rem;position:relative;overflow:hidden}
+  .feats .f::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--fc,var(--accent))}
+  .feats .fh{font-family:"Archivo",sans-serif;font-weight:700;color:var(--ink)}
+  .feats .fd{color:var(--muted);font-size:.93rem;margin-top:.4rem;line-height:1.5}
+  .guard{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin-top:1.4rem}
+  @media(max-width:820px){.guard{grid-template-columns:1fr}.guard>.g{min-width:0}}
+  .g{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:1.15rem 1.25rem}
+  .g h3{font-size:1.06rem;font-weight:700;display:flex;align-items:center;gap:.55rem}
+  .g h3 .gi{width:1.9rem;height:1.9rem;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);display:inline-flex;align-items:center;justify-content:center;color:var(--accent);flex:none}
+  .g ul{list-style:none;margin:.75rem 0 0;padding:0;display:flex;flex-direction:column;gap:.5rem}
+  .g li{position:relative;padding-left:1.15rem;color:var(--muted);font-size:.94rem;line-height:1.5}
+  .g li::before{content:"";position:absolute;left:0;top:.55em;width:.45rem;height:.45rem;border-radius:2px;background:var(--accent);opacity:.75}
+  .g li b{color:var(--ink);font-weight:600}
+  .ticks{list-style:none;margin:.75rem 0 0;padding:0;display:flex;flex-direction:column;gap:.5rem}
+  .ticks li{position:relative;padding-left:1.15rem;color:var(--muted);font-size:.94rem;line-height:1.5}
+  .ticks li::before{content:"";position:absolute;left:0;top:.55em;width:.45rem;height:.45rem;border-radius:2px;background:var(--accent);opacity:.75}
+  .g code{font-family:"IBM Plex Mono",monospace;font-size:.84em;background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:.03em .35em;color:var(--ink)}
+  .path{display:flex;flex-wrap:wrap;align-items:stretch;gap:.5rem;margin-top:1.3rem}
+  .path .hop{flex:1 1 9.5rem;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:.75rem .85rem;min-width:0}
+  .path .hop .hn{font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  .path .hop .ht{font-family:"Archivo",sans-serif;font-weight:700;color:var(--ink);margin-top:.2rem}
+  .path .hop .hd{font-size:.86rem;color:var(--muted);margin-top:.3rem;line-height:1.45}
+  .path .arrow{align-self:center;color:var(--faint);font-family:"IBM Plex Mono",monospace}
+  @media(max-width:700px){.path .arrow{display:none}}
+  .wk{display:grid;grid-template-columns:2.6rem repeat(3,1fr);border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface);font-size:.78rem}
+  .wk .hd{padding:.45rem .5rem;border-bottom:1px solid var(--line);color:var(--muted);font-family:"IBM Plex Mono",monospace;font-size:.7rem}
+  .wk .tm{position:relative;height:17rem;border-right:1px solid var(--line)}
+  .wk .tm span{position:absolute;right:.35rem;transform:translateY(-50%);font-family:"IBM Plex Mono",monospace;font-size:.62rem;color:var(--faint)}
+  .wk .col{position:relative;height:17rem;border-left:1px solid var(--line)}
+  .wk .strip{position:absolute;width:4px;border-radius:2px;left:4px}
+  .wk .strip.b{left:10px}
+  .wk .trav{background:repeating-linear-gradient(180deg,var(--sc) 0 3px,transparent 3px 5px)}
+  .wk .away{opacity:.55}
+  .wk .gap{background:repeating-linear-gradient(135deg,var(--line) 0 2px,transparent 2px 4px)}
+  .wk .ev{position:absolute;left:18px;right:5px;border-radius:7px;padding:.25rem .4rem;color:var(--ink);font-weight:600;font-size:.7rem;line-height:1.25;border:2px solid var(--pc);background:color-mix(in oklab,var(--ec) 22%,var(--surface))}
+  .wk .ev small{display:block;font-weight:500;color:var(--muted)}
+  .wk .who{position:absolute;top:3px;right:3px;font-size:.55rem;font-weight:800;border-radius:7px;padding:.05rem .3rem;background:var(--pc);color:#fff}
+  .wk .sleep{position:absolute;left:18px;right:5px;border-radius:7px;background:repeating-linear-gradient(135deg,rgba(139,124,246,.18) 0 6px,rgba(139,124,246,.07) 6px 12px);border:1px solid rgba(139,124,246,.35);color:#8b7cf6;font-size:.65rem;font-weight:600;padding:.2rem .35rem}
+  .wk .hrow{grid-column:2 / -1;display:flex;gap:.3rem;flex-wrap:wrap;padding:.35rem .5rem;border-bottom:1px solid var(--line)}
+  .wk .hc{font-family:"IBM Plex Mono",monospace;font-size:.62rem;border:1px solid var(--line);border-radius:999px;padding:.05rem .4rem;color:var(--muted);background:var(--surface-2)}
+</style>
+</head>
+<body class="p-cal">
+
+<header class="nav"><div class="wrap">
+  <a class="brand" href="index.html"><span class="dot"></span> DECS&nbsp;Home&nbsp;Systems</a>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="globalguard.html">GlobalGuard</a>
+    <a href="homeassistant.html">Home&nbsp;Assistant</a>
+    <a href="wallpanel.html">Wall&nbsp;panel</a>
+    <a href="calendar.html" class="active">Calendar</a>
+    <a href="echo.html">Echo&nbsp;Voice</a>
+    <a href="energy.html">Energy</a>
+    <a href="cameras.html">Cameras</a>
+    <a href="presence.html">Presence</a>
+    <a href="roomscribe.html">Roomscribe</a>
+    <a href="traccar.html">Traccar</a>
+    <a href="fuel.html">Fuel</a>
+    <a href="gridmusic.html">Grid&nbsp;Music</a>
+    <a href="finance.html">Finance</a>
+    <a href="fan.html">Fan</a>
+    <a href="rada.html">Rada&nbsp;shower</a>
+    <a href="theme.html">HA&nbsp;Theme</a>
+    <a href="technical.html">Technical</a>
+    <a href="roadmap.html">Roadmap</a>
+    <a href="claude.html">Claude&nbsp;Code</a>
+    <button class="themebtn" id="tt" aria-label="Toggle colour theme"><span id="ttic">◐</span> theme</button>
+  </nav>
+</div></header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">Family calendar · inside Home Assistant · 1.3</span>
+        <h1 class="title">A family calendar<br>that <em>stays at home</em>.</h1>
+        <p class="lede">Kev asked for a Google-like calendar in Home&nbsp;Assistant, for three people, each with their own account and with alerts, and above all secure. So it was built from scratch as a Home&nbsp;Assistant integration. It does what you'd expect from Google Calendar, and then some: where everyone has been, health from Withings, and calendars followed from other apps. Every event, password and position lives on the Pi in the house, behind a long list of protections. This page lists all of them.</p>
+        <div class="meta-row">
+          <span class="chip">custom HA integration</span>
+          <span class="chip">own sign-in + two-step</span>
+          <span class="chip">live sync</span>
+          <span class="chip">installable app</span>
+          <span class="chip">no third-party requests</span>
+        </div>
+      </div>
+      <div class="panel" role="img" aria-label="Calendar status: three people with their own sign-ins, two-step sign-in available, live sync, followed calendars, everything stored on the home server.">
+        <div class="head"><span>Family calendar · live</span><span>v1.3</span></div>
+        <div class="rows">
+          <div class="prow"><span class="led on"></span><span class="k">People</span><span class="v">3 · own logins</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">Two-step</span><span class="v">authenticator + recovery codes</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">Sync</span><span class="v">live, about a second</span></div>
+          <div class="prow"><span class="led info"></span><span class="k">Following</span><span class="v">Stremio · read-only</span></div>
+          <div class="prow"><span class="led info"></span><span class="k">Stored</span><span class="v">on the Pi · nowhere else</span></div>
+        </div>
+        <div class="beacon">
+          <span class="lbl">SYNC</span>
+          <svg viewBox="0 0 220 30" preserveAspectRatio="none" aria-hidden="true">
+            <line x1="0" y1="15" x2="220" y2="15" stroke="#26313d" stroke-width="1"/>
+            <polyline class="trace" points="0,15 30,15 36,6 42,24 48,15 100,15 106,6 112,24 118,15 170,15 176,6 182,24 188,15 220,15" fill="none" stroke="#a78bfa" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+            <circle class="pulse-dot" cx="182" cy="24" r="2.6" style="fill:#a78bfa"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- STATS -->
+<section style="padding-block:clamp(2.2rem,5vw,3.2rem)">
+  <div class="wrap reveal">
+    <div class="stats">
+      <div class="stat"><span class="big num-strong">6</span><span class="lab">views, day to year</span></div>
+      <div class="stat"><span class="big num-strong">~1&nbsp;s</span><span class="lab">for a change to reach every screen</span></div>
+      <div class="stat"><span class="big num-strong">56</span><span class="lab">automated tests, attacks included</span></div>
+      <div class="stat"><span class="big num-strong">0</span><span class="lab">third-party requests from the app</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 01 WHAT IT DOES -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">01 · What it does</span><h2>Everything you'd expect, and a bit more</h2><p class="lede">It lives in the Home&nbsp;Assistant sidebar and on its own tab on the wall panel. It also installs on a phone like an app. Kev signs in with his Home&nbsp;Assistant account; Linda and the rest of the family have calendar-only logins, with no access to the rest of the house.</p></div>
+    <div class="feats">
+      <div class="f" style="--fc:#a78bfa"><div class="fh">Six views</div><div class="fd">Day, 3 days, week, month, year and schedule. Drag to move or resize, and swipe between days on a phone. On the wall panel the day fits the screen, and it goes back to today after a few idle minutes.</div></div>
+      <div class="f" style="--fc:#5aa9ff"><div class="fh">Type it like you'd say it</div><div class="fd">"Lunch with Mum at the Swan 1:30pm every Saturday #family" fills in the time, the place, the repeat and the label. Repeating events can be edited for this one, this and following, or all.</div></div>
+      <div class="f" style="--fc:#ff7aa8"><div class="fh">Whose is it?</div><div class="fd">Each event wears its owner's initials in a little badge, with a border in their colour. Labels such as Work or Health give it a colour of their own, and can be hidden with one tap.</div></div>
+      <div class="f" style="--fc:#46d6a6"><div class="fh">Where everyone has been</div><div class="fd">A thin strip down each day shows each person's stays and journeys. They come from the van's tracker and the phones. Name a place once and every visit there is labelled. A visit can become an event in one tap.</div></div>
+      <div class="f" style="--fc:#8b7cf6"><div class="fh">Health on the day</div><div class="fd">Weight, sleep score and steps from Withings appear under each day. Last night's sleep is drawn as a band across the hours. Each person picks what shows, and separately what the family may see.</div></div>
+      <div class="f" style="--fc:#4dd0e1"><div class="fh">Follow other calendars</div><div class="fd">Paste a webcal or https address, for example Stremio's new-episode calendar, a school's terms or a Google calendar. It stays up to date by itself and is read-only.</div></div>
+      <div class="f" style="--fc:#ffb24a"><div class="fh">Alerts that reach you</div><div class="fd">Reminders pop up in the app, arrive as notifications on installed phones, and come through the Home&nbsp;Assistant app. Snooze works straight from the notification.</div></div>
+      <div class="f" style="--fc:#ff8a5c"><div class="fh">Live sync</div><div class="fd">A change on one screen appears on every other one in about a second. Undo works for ten minutes, and deleted events wait in a bin for thirty days.</div></div>
+      <div class="f" style="--fc:#b39dff"><div class="fh">Plays well with others</div><div class="fd">Import and export standard .ics files, bank holidays from gov.uk, and a documented API ready for an Android app later.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 02 A PEEK -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="grid-2" style="align-items:center">
+      <div>
+        <div class="sec-head col" style="margin-bottom:0"><span class="eyebrow">02 · How a day reads</span><h2>Plans and what actually happened, side by side</h2><p class="lede">This is a drawn example, not real data. The events show what was planned. The strips on the left show where each person actually was: solid at home, lighter somewhere else, dashed travelling, hatched when a phone said nothing. Sleep sits behind the morning, and health sits under the date.</p></div>
+      </div>
+      <div class="wk" role="img" aria-label="Drawn example of three days with location strips, a sleep band, health chips and events with owner badges.">
+        <div class="hd"></div><div class="hd">MON 26</div><div class="hd">TUE 27</div><div class="hd">WED 28</div>
+        <div></div><div class="hrow" style="grid-column:2 / -1"><span class="hc">88.9 kg</span><span class="hc">sleep 74 · 7h12</span><span class="hc">8,904 steps</span></div>
+        <div class="tm"><span style="top:25%">06</span><span style="top:50%">12</span><span style="top:75%">18</span></div>
+        <div class="col">
+          <div class="sleep" style="top:0;height:26%">sleep 23:40 – 06:30</div>
+          <div class="strip" style="--sc:#5aa9ff;background:#5aa9ff;top:0;height:36%"></div>
+          <div class="strip trav" style="--sc:#5aa9ff;top:36%;height:3%"></div>
+          <div class="strip away" style="background:#5aa9ff;top:39%;height:32%"></div>
+          <div class="strip trav" style="--sc:#5aa9ff;top:71%;height:3%"></div>
+          <div class="strip" style="background:#5aa9ff;top:74%;height:26%"></div>
+          <div class="strip b" style="background:#ff7aa8;top:0;height:40%"></div>
+          <div class="strip b gap" style="top:40%;height:35%"></div>
+          <div class="strip b" style="background:#ff7aa8;top:75%;height:25%"></div>
+          <div class="ev" style="--pc:#5aa9ff;--ec:#46d6a6;top:39%;height:30%">At work<small>09:20 – 17:00</small><span class="who">KD</span></div>
+        </div>
+        <div class="col">
+          <div class="sleep" style="top:0;height:27%">sleep 00:10 – 06:40</div>
+          <div class="strip" style="background:#5aa9ff;top:0;height:60%"></div>
+          <div class="strip b" style="background:#ff7aa8;top:0;height:55%"></div>
+          <div class="ev" style="--pc:#ff7aa8;--ec:#ff7aa8;top:37%;height:14%">Dentist<small>09:00</small><span class="who">L</span></div>
+          <div class="ev" style="--pc:#5aa9ff;--ec:#ffb638;top:78%;height:9%;padding-top:.15rem">Bins out<span class="who">KD</span></div>
+        </div>
+        <div class="col">
+          <div class="ev" style="--pc:#46d6a6;--ec:#4dd0e1;top:81%;height:12%">Show S02E05<small>followed</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 03 THE PATH -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">03 · Security, end to end</span><h2>What a request has to get past</h2><p class="lede">The calendar can be reached from outside the house, so every request passes the same series of checks before it touches any data. Who is asking is decided once, on the server. The app is never trusted to hide anything.</p></div>
+    <div class="path">
+      <div class="hop"><div class="hn">1 · transport</div><div class="ht">HTTPS only</div><div class="hd">Signing in is refused over plain http. The real client address is only believed when the request came through the house's own tunnel.</div></div>
+      <span class="arrow">→</span>
+      <div class="hop"><div class="hn">2 · who are you</div><div class="ht">Session or HA login</div><div class="hd">A calendar session cookie, a future app's token, or Kev's own Home&nbsp;Assistant login. Nothing else gets in.</div></div>
+      <span class="arrow">→</span>
+      <div class="hop"><div class="hn">3 · is it really you</div><div class="ht">Forgery checks</div><div class="hd">Every change must carry the app's own header and come from the calendar's own site.</div></div>
+      <span class="arrow">→</span>
+      <div class="hop"><div class="hn">4 · not too fast</div><div class="ht">Rate limits</div><div class="hd">Per person, per address and per password check.</div></div>
+      <span class="arrow">→</span>
+      <div class="hop"><div class="hn">5 · may you see it</div><div class="ht">Permissions</div><div class="hd">Sharing, private events, location and health rules, applied before anything is sent.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 04 EVERY MEASURE -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">04 · Every measure</span><h2>The full list</h2><p class="lede">Grouped by what each measure protects against.</p></div>
+    <div class="guard">
+
+      <div class="g"><h3><span class="gi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M15.5 7.5a3.5 3.5 0 1 1-1 2.5"/><path d="M14.5 10L3 21.5"/><path d="M6 18.5l2.5 2.5"/><path d="M9 15.5l2 2"/></svg></span>Getting in</h3>
+        <ul>
+          <li><b>Passwords</b> are stored only as bcrypt hashes (cost 12), never readable. At least 10 characters. Common passwords and ones containing the person's name are refused.</li>
+          <li><b>Each person sets their own password</b> from an invite link. The administrator never sees or sets anyone's password.</li>
+          <li><b>Two-step sign-in</b> for calendar logins: a 6-digit authenticator code after the password (RFC&nbsp;6238). Ten single-use recovery codes are stored only as hashes. A code can never be used twice, and the code step expires after 5 minutes or 5 wrong tries.</li>
+          <li><b>Account lockout:</b> 5 wrong attempts lock the account for a minute, doubling each time up to an hour. Wrong two-step codes count too.</li>
+          <li><b>Address throttle:</b> 30 failed sign-ins from one internet address in an hour blocks that address for an hour, whatever usernames it tries.</li>
+          <li><b>No username fishing:</b> every wrong sign-in gets the same reply. Unknown usernames take the same time to answer and lock out exactly like real ones, so nothing reveals who has an account.</li>
+          <li><b>Invite and reset links</b> work once and expire after 3 days. The secret is in the part of the link after the <code>#</code>, so it never reaches a server log, and only its fingerprint is stored. A new link also clears two-step, which is how someone who lost their phone gets back in.</li>
+          <li><b>Kev uses his Home&nbsp;Assistant login</b>, so the calendar holds no separate password for him.</li>
+        </ul>
+      </div>
+
+      <div class="g"><h3><span class="gi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>Staying signed in</h3>
+        <ul>
+          <li><b>The sign-in cookie</b> (<code>__Host-</code>, HttpOnly, Secure, SameSite=Strict) can't be read by page scripts, only travels over https and isn't sent by other websites.</li>
+          <li><b>Session tokens are stored only as fingerprints</b> (SHA-256), so a copy of the database contains no usable sign-ins.</li>
+          <li><b>Sessions expire</b> after 90 days unused, or 365 for a future phone app.</li>
+          <li><b>Every signed-in device is listed</b> and can be signed out on its own.</li>
+          <li><b>Changing a password signs out every other device.</b> Switching a person off cuts them off immediately, including any live connection.</li>
+          <li><b>Signing out</b> also removes that device's alert subscription.</li>
+        </ul>
+      </div>
+
+      <div class="g"><h3><span class="gi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M8 14l2 2 4-4"/></svg></span>Attacks through the browser</h3>
+        <ul>
+          <li><b>Forged changes:</b> every change must carry a header only the calendar app sends, and is checked against a list of allowed origins. Another website can't act on your behalf.</li>
+          <li><b>The page's own rules</b> (Content-Security-Policy) mean it may only run its own code and styles, connect only to its own server, and can't be framed by other sites.</li>
+          <li><b>Protective headers</b> on everything: nosniff, no-referrer, same-origin opener and resource policies, and camera, microphone and location access switched off.</li>
+          <li><b>No third-party requests.</b> Fonts, icons and code are all served from the Pi, so no outside service sees who opens the calendar.</li>
+          <li><b>The file server</b> only hands out the app's own files (tested against <code>../</code> path tricks).</li>
+          <li><b>Text is always inserted as text</b>, never as HTML, so an event title can't run code.</li>
+        </ul>
+      </div>
+
+      <div class="g"><h3><span class="gi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 3v18"/><path d="M5 8h14"/><path d="M7 14h10"/></svg></span>Flooding and overload</h3>
+        <ul>
+          <li><b>Per person:</b> 300 requests and 60 changes a minute.</li>
+          <li><b>Password checks</b> run at most two at a time, so a flood of sign-ins can't swamp the Pi.</li>
+          <li><b>At most 20 live connections</b> per person.</li>
+          <li><b>Caps on everything:</b> request size, text lengths, date ranges, import size, how many people, calendars, labels and places, and how many calendars one person can follow.</li>
+        </ul>
+      </div>
+
+      <div class="g"><h3><span class="gi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></span>Who sees what</h3>
+        <ul>
+          <li><b>Enforced on the server, not hidden in the app:</b> the app only ever receives what its user may see.</li>
+          <li><b>Private events</b> reach others only as "Busy": no title, place, guests or labels. Search never matches inside them, export writes them as Busy, and free/busy shows only times.</li>
+          <li><b>Sharing per calendar and per person:</b> none, free/busy, all details, or can edit.</li>
+          <li><b>Followed calendars are read-only</b> for everyone, owner included.</li>
+          <li><b>Labels and named places</b> can only be changed by whoever made them, or the administrator.</li>
+        </ul>
+      </div>
+
+      <div class="g"><h3><span class="gi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 21s-7-6.1-7-11.5a7 7 0 1 1 14 0C19 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span>Location privacy</h3>
+        <ul>
+          <li><b>Coordinates never leave the Pi.</b> The app only receives times, place names and distances.</li>
+          <li><b>Only the person can hide their location</b>, or choose which of their devices show. Nobody else can change it, not even the administrator.</li>
+          <li><b>The administrator only links devices to people.</b> He can't see or change their sharing.</li>
+          <li><b>Places are named privately</b> with no outside map lookups. Home comes from Home&nbsp;Assistant itself.</li>
+          <li><b>Honest gaps:</b> when a phone goes quiet the strip says "no signal" instead of guessing where someone was.</li>
+          <li><b>Phone-app positions</b> are logged on the Pi and kept for 400 days.</li>
+        </ul>
+      </div>
+
+      <div class="g"><h3><span class="gi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8z"/></svg></span>Health privacy</h3>
+        <ul>
+          <li><b>Private by default.</b> Nobody else sees any health data until its owner switches it on.</li>
+          <li><b>Sharing is one metric at a time</b>, for example steps but not weight. "Show me" and "share with the family" are separate switches.</li>
+          <li><b>The data stays where it already was:</b> the private Withings file on the Pi, read behind the login.</li>
+        </ul>
+      </div>
+
+      <div class="g"><h3><span class="gi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg></span>Followed calendars, safely</h3>
+        <ul>
+          <li><b>The feed address is a secret.</b> Stremio's carries a private key to the account. It stays on the server: others see only the website name, and the owner a shortened form.</li>
+          <li><b>The house network can't be reached through it.</b> Anyone with a login can add an address, so the server only ever fetches public internet addresses. It refuses home and private addresses, including the number and hex tricks for writing them, names that secretly point at a home address, and redirects to any of these. Every redirect is re-checked.</li>
+          <li><b>Strict limits:</b> standard web ports only, 5&nbsp;MB, 25 seconds, five redirects.</li>
+          <li><b>In-place sync:</b> events keep the same identity from one refresh to the next, so reminders don't repeat and links don't break. Reminders are off unless the owner turns them on.</li>
+        </ul>
+      </div>
+
+      <div class="g"><h3><span class="gi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg></span>Data on the Pi</h3>
+        <ul>
+          <li><b>One database, private to Home&nbsp;Assistant:</b> its folder and file can only be opened by HA itself.</li>
+          <li><b>Backed up automatically</b> before every update, using the database's own safe online copy.</li>
+          <li><b>Upgrades never lose data:</b> each new version upgrades the database in place and keeps everything in it, and the upgrade itself is tested.</li>
+          <li><b>Kept only as long as useful:</b> bin 30 days, phone positions 400 days, security log 1 year, Undo 10 minutes (in memory only).</li>
+        </ul>
+      </div>
+
+      <div class="g"><h3><span class="gi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>Alerts and the installed app</h3>
+        <ul>
+          <li><b>Alerts to installed apps are encrypted end to end</b> (Web Push). Google or Apple only carry an envelope they can't open.</li>
+          <li><b>The app's offline copy holds the app only</b>, never any calendar data.</li>
+          <li><b>Notifications open the calendar's own page</b>, and Snooze works straight from them.</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- 05 TESTED -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">05 · Proof</span><h2>Tested like an attacker would try it</h2><p class="lede">56 automated tests are run before every update: 45 against the calendar's own logic and 11 against a real (test) Home&nbsp;Assistant over HTTP. They don't just check that features work. They try to break in.</p></div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>What the tests attack</h3>
+        <ul class="ticks"><li>Requests without the app's header, or with no sign-in.</li><li>Guessing passwords until locked out, and checking that the lock looks the same for real and made-up usernames.</li><li>Reusing a two-step code, and using a recovery code twice.</li><li>Peeking at private events in the calendar views and through search.</li><li>Seeing someone's location after they hid it, as another person and as the administrator.</li><li>Feed addresses aimed at the house: plain home addresses, number and hex forms, IPv6 tricks, and a name whose lookup points home.</li><li>Path tricks against the file server, and upgrading old databases.</li></ul>
+      </div>
+      <div class="card">
+        <h3>Caught before going live</h3>
+        <p style="color:var(--muted)">The attack tests did their job. They caught two ways to slip a home address past the feed checker in the first draft, before it went live. A review also found that the sign-in lockout hinted which usernames were real, and that was fixed too. Each of these now has a test of its own, so it can't come back.</p>
+        <p style="color:var(--muted);margin-top:.8rem">Every sign-in, failed attempt, invite, two-step change, device link and new subscription goes into a <b>security log</b> the administrator can read. It records the address each attempt came from.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- CLOSING -->
+<section>
+  <div class="wrap reveal">
+    <div class="close">
+      <span class="eyebrow" style="color:var(--violet)">Family calendar, at home</span>
+      <h2 style="margin-top:1rem">Convenient for the family, boring for an attacker.</h2>
+      <p>The goal was a calendar the family enjoys using, where none of the data is anyone else's business: not an advertiser's, not a cloud's, and not a stranger's who found the sign-in page. The data lives on the Pi, the server decides who sees what, and the tests keep trying to break in.</p>
+      <div class="sig"><span class="dot" style="background:var(--violet);box-shadow:0 0 8px var(--violet)"></span><span>Home Assistant integration</span><span>·</span><span>own sign-in + two-step</span><span>·</span><span>see it on the <a href="wallpanel.html" style="color:var(--violet)">Wall panel</a></span></div>
+    </div>
+  </div>
+</section>
+
+<footer>Family Calendar · own sign-in &amp; two-step · live sync · location &amp; health, private by design · followed calendars · <a href="wallpanel.html">Wall panel</a> · <a href="traccar.html">Traccar</a> · <a href="echo.html">Echo Voice</a> · <a href="index.html">DECS Home Systems</a></footer>
+
+<script src="app.js"></script>
+</body>
+</html>

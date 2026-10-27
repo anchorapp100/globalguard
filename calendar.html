@@ -54,6 +54,24 @@
   .wk .who{position:absolute;top:3px;right:3px;font-size:.55rem;font-weight:800;border-radius:7px;padding:.05rem .3rem;background:var(--pc);color:#fff}
   .wk .sleep{position:absolute;left:18px;right:5px;border-radius:7px;background:repeating-linear-gradient(135deg,rgba(139,124,246,.18) 0 6px,rgba(139,124,246,.07) 6px 12px);border:1px solid rgba(139,124,246,.35);color:#8b7cf6;font-size:.65rem;font-weight:600;padding:.2rem .35rem}
   .wk .hrow{grid-column:2 / -1;display:flex;gap:.3rem;flex-wrap:wrap;padding:.35rem .5rem;border-bottom:1px solid var(--line)}
+  :root{--btn-ink:#fff}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--btn-ink:#160d2a}}
+  :root[data-theme="dark"]{--btn-ink:#160d2a}
+  .btnrow{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin-top:1.4rem}
+  .btn{font-family:"IBM Plex Mono",monospace;font-size:.8rem;font-weight:600;border-radius:999px;padding:.68rem 1.15rem;border:1px solid var(--accent);
+    background:var(--accent);color:var(--btn-ink);cursor:pointer;text-decoration:none;white-space:nowrap;line-height:1.2}
+  .btn:hover{filter:brightness(1.08)}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  .btn.sm{font-size:.74rem;padding:.5rem .9rem}
+  .pcard{padding:clamp(1.1rem,3.6vw,2rem);margin-top:1.4rem}
+  .pbar{display:flex;flex-wrap:wrap;gap:.6rem 1rem;align-items:center;justify-content:space-between;padding-bottom:1rem;margin-bottom:1rem;border-bottom:1px solid var(--line)}
+  .pbar .wc{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--faint);font-variant-numeric:tabular-nums}
+  .pbox{max-height:34rem;overflow:auto;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:1rem 1.15rem}
+  .pbox.open{max-height:none}
+  #plain{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;font-family:"IBM Plex Mono",monospace;font-size:.8rem;line-height:1.62;color:var(--ink)}
+  .toast{position:fixed;left:50%;bottom:calc(1.2rem + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--surface);
+    font-family:"IBM Plex Mono",monospace;font-size:.8rem;padding:.72rem 1.05rem;border-radius:10px;max-width:calc(100% - 32px);text-align:center;box-shadow:var(--shadow)}
+  @media(max-width:560px){.pbar .acts{width:100%;display:flex;gap:.5rem}.pbar .acts .btn{flex:1}}
   .wk .hc{font-family:"IBM Plex Mono",monospace;font-size:.62rem;border:1px solid var(--line);border-radius:999px;padding:.05rem .4rem;color:var(--muted);background:var(--surface-2)}
 </style>
 </head>
@@ -101,6 +119,7 @@
           <span class="chip">installable app</span>
           <span class="chip">no third-party requests</span>
         </div>
+        <div class="btnrow"><a class="btn" href="#build">Build your own: copy the prompt</a><a class="btn ghost" href="#measures">Every security measure</a></div>
       </div>
       <div class="panel" role="img" aria-label="Calendar status: three people with their own sign-ins, two-step sign-in available, live sync, followed calendars, everything stored on the home server.">
         <div class="head"><span>Family calendar · live</span><span>v1.3</span></div>
@@ -213,7 +232,7 @@
 </section>
 
 <!-- 04 EVERY MEASURE -->
-<section style="background:var(--surface-2)">
+<section id="measures" style="background:var(--surface-2)">
   <div class="wrap reveal">
     <div class="sec-head col"><span class="eyebrow">04 · Every measure</span><h2>The full list</h2><p class="lede">Grouped by what each measure protects against.</p></div>
     <div class="guard">
@@ -339,6 +358,153 @@
   </div>
 </section>
 
+<!-- 06 BUILD YOUR OWN -->
+<section id="build" style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">06 · Build your own</span><h2>One prompt, for any Home&nbsp;Assistant</h2><p class="lede">Want the same calendar at your house? Copy this prompt into Claude (Claude Code is ideal, because it can work on your files and run the tests). Every home is set up differently, so the prompt doesn't assume anything. It makes Claude find out your setup first: how Home&nbsp;Assistant is installed, how you reach it from outside, who lives there, and which trackers and health apps you use. Then it builds to the same security and privacy rules as this page.</p></div>
+    <div class="steps">
+      <div class="step"><span class="idx">01</span><div><h3>Paste the whole prompt</h3><p>Send it as one message. It has three jobs: the questions to ask you, the rules that are not optional, and the traps we fell into so yours doesn't.</p></div></div>
+      <div class="step"><span class="idx">02</span><div><h3>Answer its questions</h3><p>It checks what it can itself (versions, installed libraries, trackers) and asks you the rest, such as who gets a login and what the family may see. Then it shows you a one-page plan to approve.</p></div></div>
+      <div class="step"><span class="idx">03</span><div><h3>Build in phases, with the tests</h3><p>Core first, then the web side, then the app, then location, health and followed calendars if you want them. Each phase arrives with tests that try to break in. Nothing is restarted without a configuration check and a backup.</p></div></div>
+    </div>
+    <div class="card pcard">
+      <div class="pbar"><span class="wc">2,573 words · copies as plain text</span><span class="acts"><button type="button" class="btn ghost sm" data-expand aria-expanded="false">Show all</button><button type="button" class="btn sm" data-copy>Copy prompt</button></span></div>
+      <div class="pbox"><pre id="plain"># Build a security- and privacy-first family calendar for Home Assistant
+
+You are going to build a Google-Calendar-style family calendar as a custom Home Assistant integration: each person has their own account, events sync live, reminders reach their phones, and it can also show where people have been, their health data, and calendars followed from other apps. Security and privacy are the first requirement, not an add-on: everything below the "Security" heading is mandatory.
+
+You don't know this household's setup yet. Find it out first, adapt the design to it, and confirm with the owner before you build.
+
+## How to work
+
+- Never guess. Look at the real system (files, versions, entities, what's installed) and say "I haven't checked" when you haven't. Ask when a decision belongs to the owner.
+- Work in phases, and show the owner a working result after each: core and tests, then the HTTP layer, then the app, then optional modules.
+- Touch nothing outside this integration without asking. Back up any file before you change it. Run Home Assistant's configuration check before every restart, and ask before restarting unless the owner has said you may.
+- Never print, log or commit secrets: tokens, passwords, feed addresses with private keys, API keys. Don't pass secrets through Home Assistant service calls; the recorder stores their data.
+- Keep a short plan and status file in the project, and write down every decision the owner makes.
+
+## Step 1: find out the setup (ask, and inspect where you can)
+
+1. Home Assistant: the version, the install type (OS, Supervised, Container or Core), the Python version, and how you can work on it (SSH add-on, Samba, shell on a Docker host, or only through the owner). Where the config folder is.
+2. Libraries already in Home Assistant's Python: check which of bcrypt, cryptography, icalendar, python-dateutil, pywebpush/py_vapid, segno (QR codes) and tzdata import, and at what versions. Prefer what's already there. If you need something missing, pin a version that doesn't conflict with that Home Assistant release.
+3. Reaching it from outside: Nabu Casa, Cloudflare Tunnel, a reverse proxy (nginx, Caddy, Traefik), a VPN (WireGuard, Tailscale) or local network only. This decides whether HTTPS is available (needed for secure cookies, sign-in and web push) and which proxy, if any, may be trusted to report the real client address. Find out what address the proxy's traffic arrives from.
+4. People: how many, who already has a Home Assistant user (they can sign in with it), who gets a calendar-only login with no access to the rest of Home Assistant, and who is the administrator.
+5. Privacy defaults: can everyone see everyone's events by default (with a per-event "Private" that shows others only "Busy"), or is everything private until shared?
+6. Alerts: the Home Assistant Companion app (which phones?), installed web app with Web Push (needs HTTPS), or both.
+7. Optional modules. For each, does the owner want it, and what's the default visibility?
+   - Location: which sources exist? Home Assistant Companion app trackers, Traccar, OwnTracks, GPSLogger, or none. Which devices belong to whom?
+   - Health: Withings, Fitbit, Garmin, Google or Apple exports, or none. Whose account is it?
+   - Followed calendars (webcal/ICS feeds such as TV, school or sports calendars).
+   - A wall panel or kiosk dashboard.
+   - Public holidays: which country or region?
+8. Time zone, first day of the week, and any calendars to import.
+
+Write a one-page summary of the setup and the plan, and get the owner's yes before building.
+
+## Architecture
+
+- A custom integration with a pure-Python core (no Home Assistant imports, so it can be tested anywhere) and a thin Home Assistant layer.
+- Storage: one SQLite file in its own folder inside the config folder. The folder is 0700 and the file 0600. Never use the `www` folder: Home Assistant serves it without any login.
+- Times: store local wall-clock time plus an IANA time zone, and expand repeats in local time, so a weekly 09:00 stays at 09:00 across daylight saving changes. Send the app local times plus UTC.
+- API: JSON under `/api/&lt;domain&gt;/v1/`, registered as Home Assistant views that do their own authentication. A request is either (a) a Home Assistant user, already validated by Home Assistant's own auth (read the current Home Assistant source to see how the authenticated user is attached to a request), linked to a calendar account; or (b) a calendar session (an HttpOnly cookie for the web app, or a bearer header for a future native app). Nothing else is accepted.
+- Live sync: Server-Sent Events with a heartbeat. The server sends "bye" both when someone signs out and when Home Assistant shuts down, so the app must check whether it's really signed out before showing the sign-in page.
+- The app: plain JavaScript and CSS served by the integration, with no build step and no CDNs. Self-host the fonts and icons. Inside Home Assistant (sidebar panel or dashboard iframe), call the API through the parent page's `hass.fetchWithAuth`, never a stored token. Note that `hass.callApi` can't send custom headers. Outside Home Assistant it's an installable PWA.
+- Features to aim for: day, 3-day, week, month, year and schedule views; drag to move and resize; natural-language quick add; repeating events with this / this-and-following / all edits; guests and responses; reminders with snooze; private events; per-calendar sharing; search; free/busy and "find a time"; labels with colours; owner initials and owner-coloured borders on events; undo; a bin; ICS import and export; public holidays; a phone layout; a kiosk mode that fits the day to the screen.
+
+## Security (mandatory)
+
+Signing in
+- Hash passwords with bcrypt (cost 12; pre-hash with SHA-256 so long passwords aren't truncated). Require at least 10 characters, and refuse common passwords and ones containing the person's name or username.
+- People set their own passwords from a one-time invite link that expires within days. Put the token after the `#` so it never reaches a server log, and store only its SHA-256. The administrator never sees or sets anyone's password. A new link for an existing person also clears their two-step setup, which is the lost-phone recovery route.
+- Two-step sign-in for calendar-only accounts: TOTP (RFC 6238) with a QR code, plus 10 single-use recovery codes stored only as hashes. Store the last accepted time step so a code can never be used twice. The half-finished sign-in expires after 5 minutes or 5 wrong codes. People with a Home Assistant login use Home Assistant's own two-step.
+- Account lockout after 5 misses (1 minute, doubling, capped at an hour); wrong two-step codes count. Throttle by client address too (for example 30 failures an hour blocks that address for an hour).
+- No username enumeration: identical replies and timing for wrong passwords and unknown usernames (verify against a dummy hash), and the lockout must behave identically for made-up usernames (count those misses in memory).
+- Sign-in only over HTTPS, unless the owner explicitly allows plain HTTP on a local-only setup.
+- Trust X-Forwarded-For or CF-Connecting-IP only when the request comes from the proxy's own address. Don't rely on Home Assistant's IP ban for app logins: behind a tunnel every request can appear to come from one address.
+
+Sessions
+- Cookie: `__Host-` prefix, HttpOnly, Secure, SameSite=Strict. Store only the SHA-256 of session tokens. Use sliding expiry. List every signed-in device so people can sign them out one by one. A password change signs out every other device, and disabling a person cuts them off at once, including their live connection. Sign-out also removes that device's push subscription.
+
+Browser attacks
+- Every request that changes something must carry a custom header that only the app sends, plus an Origin allow-list check.
+- The app page sends a strict Content-Security-Policy (`default-src 'none'`; scripts, styles, fonts and connections from 'self' only; `frame-ancestors 'self'`; `base-uri 'none'`), plus nosniff, no-referrer, same-origin opener and resource policies, and a Permissions-Policy that turns off camera, microphone and geolocation.
+- Build the DOM with text nodes only, never innerHTML with data. Beware that `append(null)` and `replaceChildren(null)` print the word "null"; filter nulls out.
+- Serve static files from an allow-list pattern only, and test it with `../` and encoded tricks.
+
+Abuse limits
+- Per account: around 300 requests and 60 changes a minute. At most two bcrypt checks running at once. Cap live connections per account. Cap request bodies, text lengths, date ranges, imports, and the number of people, calendars, labels, places and followed feeds.
+
+Who sees what (enforced on the server, never by hiding things in the app)
+- A private event reaches anyone without access as "Busy" only: no title, place, guests or labels. Search must not match inside it, export writes it as Busy, and free/busy returns times only.
+- Sharing per calendar and per person: none, free/busy, details, or can edit.
+
+Data
+- Back up the database before every update, using SQLite's online backup API. Make every schema upgrade transactional and idempotent: check whether a column exists before adding it.
+- Retention: a bin with a time limit, a security log kept for about a year, undo held in memory only, and a limit on how long location history is kept.
+- Keep a security log of sign-ins, failures with the client address, invites, two-step changes, device assignments and new feed subscriptions. The administrator can read it.
+
+Alerts
+- Web Push must be end-to-end encrypted (VAPID; RFC 8291 payloads). The PWA's offline cache holds the app shell only, never calendar data.
+
+## Privacy (mandatory)
+
+- Location: coordinates never leave the server. The app receives only times, kinds (stay, journey, no signal), place names and distances. Only the person can hide their own location or choose which of their devices show; store this in their own preferences, which only they can change. The administrator assigns devices to people but can't see or change their sharing. Name places without outside map lookups (use Home Assistant zones plus places the family names). Show "no signal" honestly rather than guessing.
+- Health: private by default, shared one metric at a time by its owner. "Show me" and "share with the family" are separate switches.
+- Followed calendars: the feed address is a secret (it often contains a private key). Keep it on the server and show only the host, plus a shortened form to its owner. Followed events are read-only for everyone, including the owner.
+- No third-party requests from the app: no analytics, no CDNs, no web fonts from elsewhere.
+
+## Optional modules: how to build them well
+
+Location
+- Work out stays, journeys and gaps yourself from raw positions. Many trackers' own "stops/trips" reports fail on phones that report only a few times a day (expect a single "trip" lasting days).
+- A workable method: cluster consecutive positions within about 150 m. A cluster lasting 8 minutes or more is a stay; two reports at the same place hours apart also count as a stay. Between stays you have a journey, unless positions there are more than about 2 hours apart, which makes it a gap. Keep the newest stay open up to "now" for a while. Merge stays at the same spot split by a few minutes of GPS jitter. Drop hopeless fixes (huge accuracy values, 0,0).
+- Compute per device and per local day, cache finished days, and refresh today every few minutes. Clip at local midnight, looking at the previous day so overnight stays are complete.
+- Home Assistant's recorder keeps only about 10 days by default, so log Companion app positions yourself from state changes, and backfill from the recorder once.
+- Show it as a thin strip per device down each day (solid = home, lighter = elsewhere, dashed = travelling, hatched = no signal), with "name this place" and "add as an event" on tap.
+
+Health
+- Show per-day chips (weight, sleep score and duration, steps and so on). Assign sleep to the morning you woke up, and draw your own sleep as a band across the night (keep the end time from the source). Others see only shared metrics.
+
+Followed calendars (feeds)
+- Accept webcal://, https:// and http://, turning webcal into https. Fetch on the server, and protect the house network (server-side request forgery), because anyone with a login can add an address:
+  - Only ports 80 and 443. No usernames or passwords inside addresses.
+  - Check the host exactly as your HTTP library will use it. Some URL libraries rewrite numeric hosts such as `3232235631` or `0x7f000001` into plain IP addresses, which then skip DNS. Refuse hosts made only of digits or hex unless they're a normal public IP.
+  - Literal IP hosts must be globally routable, and that includes IPv4-mapped IPv6.
+  - Resolve hostnames through a resolver that returns only public addresses. This also stops names that point at the home network.
+  - Follow redirects by hand (at most 5), and re-check every hop.
+  - Set a size cap (for example 5 MB) and a timeout.
+  - If your errors subclass ValueError, don't wrap your own raise in `except ValueError`, or the refusal gets swallowed.
+  - Read the body to the end: in aiohttp, `content.read(n)` can return just one chunk.
+- Sync in place by UID, so event IDs stay stable and reminders don't repeat on every refresh. Remove events that left the feed. Keep a changed single occurrence (RECURRENCE-ID) as its own event and drop that date from its series, matching by local day: a series written in UTC repeats in local wall time and can sit an hour away from the feed's RECURRENCE-ID across a clock change. Honour the feed's refresh interval (clamped to 1-24 hours). Reminders are off unless the owner turns them on.
+
+## Testing (mandatory)
+
+- Unit tests for the core, with a fake clock and fast bcrypt.
+- HTTP tests against a real test Home Assistant (pytest-homeassistant-custom-component). These run on Linux or WSL, not Windows. The socket-blocking plugin needs its enable fixture.
+- Attack tests, at least:
+  - a missing app header, and a foreign Origin;
+  - no sign-in;
+  - lockout behaving the same for real and made-up usernames;
+  - TOTP replay and recovery-code reuse;
+  - private events leaking through views, search or export;
+  - seeing someone's location after they hid it, as another person and as the administrator;
+  - health leaking unless shared;
+  - feed addresses aimed at the house: loopback, private ranges, link-local, IPv6 forms, numeric and hex forms, a name that resolves to a private address, and a redirect to one;
+  - path traversal on the static files;
+  - upgrading a database from every older schema, with real old rows in it.
+- Keep a local preview server that runs the real API code against made-up data (made-up positions and health too) so the app can be clicked through without touching real accounts.
+
+## Deployment
+
+- Package only the integration. Back up the config, the old integration and the database first. Run the configuration check, restart only when it's valid, and verify the result (version, logs, a real API call). Restore from the backup automatically if the check fails.
+- Afterwards, write an API document (for a future phone app), a short admin guide (inviting people, devices, sharing) and a list of the remaining risks for the owner, such as anything about their wider setup that weakens the calendar's security.
+
+Start with step 1: tell the owner what you can inspect yourself, then ask the rest.
+</pre></div>
+    </div>
+  </div>
+</section>
+
 <div class="wrap"><hr class="divider"></div>
 
 <!-- CLOSING -->
@@ -353,8 +519,35 @@
   </div>
 </section>
 
-<footer>Family Calendar · own sign-in &amp; two-step · live sync · location &amp; health, private by design · followed calendars · <a href="wallpanel.html">Wall panel</a> · <a href="traccar.html">Traccar</a> · <a href="echo.html">Echo Voice</a> · <a href="index.html">DECS Home Systems</a></footer>
+<footer>Family Calendar · <a href="#build">build your own</a> · own sign-in &amp; two-step · live sync · location &amp; health, private by design · followed calendars · <a href="wallpanel.html">Wall panel</a> · <a href="traccar.html">Traccar</a> · <a href="echo.html">Echo Voice</a> · <a href="index.html">DECS Home Systems</a></footer>
 
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 <script src="app.js"></script>
+<script>
+(function () {
+  "use strict";
+  var pre = document.getElementById("plain"), box = pre.parentNode, toast = document.getElementById("toast"), timer = 0;
+  function say(msg) { toast.textContent = msg; toast.hidden = false; clearTimeout(timer); timer = setTimeout(function () { toast.hidden = true; }, 2800); }
+  function selectAll() {
+    box.classList.add("open");
+    var r = document.createRange(); r.selectNodeContents(pre);
+    var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    say("Selected. Press Ctrl+C (or \u2318C on a Mac) to copy.");
+  }
+  [].forEach.call(document.querySelectorAll("[data-copy]"), function (b) {
+    b.addEventListener("click", function () {
+      try { navigator.clipboard.writeText(pre.textContent).then(function () { say("Copied. Paste it into Claude as one message."); }, selectAll); }
+      catch (e) { selectAll(); }
+    });
+  });
+  [].forEach.call(document.querySelectorAll("[data-expand]"), function (b) {
+    b.addEventListener("click", function () {
+      var open = box.classList.toggle("open");
+      b.setAttribute("aria-expanded", open ? "true" : "false");
+      b.textContent = open ? "Show less" : "Show all";
+    });
+  });
+})();
+</script>
 </body>
 </html>

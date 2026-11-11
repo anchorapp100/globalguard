@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Home Ring — DECS Home Systems</title>
+<meta name="description" content="Home Ring: the whole house as one circle on a Home Assistant dashboard. Floors, rooms, kinds and things drawn from Home Assistant's own registries, with tap, hold and slide controls. Open source, installable through HACS.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* ---- Home Ring page: local additions ---- */
+  :root{--hr:#B23A5C;--hr-soft:#FBE4EA;--btn-ink:#fff}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--hr:#FF7D9E;--hr-soft:#2A1119;--btn-ink:#22070f}}
+  :root[data-theme="dark"]{--hr:#FF7D9E;--hr-soft:#2A1119;--btn-ink:#22070f}
+  body.p-ring{--accent:var(--hr);--accent-soft:var(--hr-soft)}
+  /* hero sunburst */
+  .sb{display:block;width:100%;height:auto;max-width:15rem;margin:1.2rem auto .2rem}
+  .sb circle{fill:none}
+  .sb .r1{stroke-width:15}.sb .r2{stroke-width:17}.sb .r3{stroke-width:15}
+  .sb .spin{transform-origin:100px 100px;animation:sbspin 60s linear infinite}
+  @keyframes sbspin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){.sb .spin{animation:none}}
+  /* buttons */
+  .btnrow{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin-top:1.4rem}
+  .btn{font-family:"IBM Plex Mono",monospace;font-size:.8rem;font-weight:600;border-radius:999px;padding:.68rem 1.15rem;border:1px solid var(--accent);
+    background:var(--accent);color:var(--btn-ink);cursor:pointer;text-decoration:none;white-space:nowrap;line-height:1.2}
+  .btn:hover{filter:brightness(1.08)}
+  .btn:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+  .btn.ghost{background:transparent;color:var(--accent)}
+  /* video, demo and shots */
+  .vid{margin:0}
+  .vid video{width:100%;display:block;border:1px solid var(--line);border-radius:16px;background:#0b111a;aspect-ratio:16/9}
+  .vid figcaption,.shot figcaption{margin-top:.7rem;font-size:.86rem;color:var(--muted)}
+  .demo{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#0b111a;box-shadow:var(--shadow)}
+  .demo .bar{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.6rem 1rem;background:var(--surface);border-bottom:1px solid var(--line);font:500 .72rem/1.3 "IBM Plex Mono",monospace;color:var(--muted);flex-wrap:wrap}
+  .demo .bar a{color:var(--accent)}
+  .demo iframe{display:block;width:100%;height:680px;border:0;background:#0b111a}
+  @media(max-width:760px){.demo iframe{height:880px}}
+  .shot{margin:0;min-width:0}
+  .shot img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:12px;background:#0b111a}
+  .shots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.2rem;margin-top:1.4rem}
+  @media(max-width:760px){.shots{grid-template-columns:1fr}}
+  .withphone{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,15rem);gap:1.4rem;align-items:start;margin-top:1.4rem}
+  @media(max-width:760px){.withphone{grid-template-columns:1fr}.withphone .shot{max-width:16rem;margin:0 auto}}
+  /* ring levels diagram */
+  .levels{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.7rem;margin-top:1.4rem;counter-reset:lv}
+  @media(max-width:760px){.levels{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .lv{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:.95rem 1rem}
+  .lv .k{font:600 .66rem/1 "IBM Plex Mono",monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+  .lv b{display:block;font-size:1.02rem;margin-top:.45rem}
+  .lv span{display:block;font-size:.84rem;color:var(--muted);margin-top:.2rem}
+  /* gestures */
+  .gest{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem;margin-top:1.4rem}
+  @media(max-width:900px){.gest{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media(max-width:520px){.gest{grid-template-columns:1fr}}
+  .gest .card h3{display:flex;align-items:center;gap:.55rem}
+  .gest .card h3 i{font-style:normal;font:600 .7rem/1 "IBM Plex Mono",monospace;color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 45%,transparent);background:var(--accent-soft);border-radius:999px;padding:.28rem .5rem}
+  /* kinds chips */
+  .kinds{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:1.1rem}
+  .kinds span{font:500 .78rem/1 "IBM Plex Mono",monospace;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:.42rem .7rem;color:var(--ink)}
+  .kinds span.new{border-color:color-mix(in srgb,var(--accent) 45%,transparent);background:var(--accent-soft)}
+  /* measured */
+  .meas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;margin-top:1.4rem}
+  @media(max-width:820px){.meas{grid-template-columns:1fr}}
+  .meas .card .n{font-family:"Archivo";font-weight:800;font-size:1.9rem;letter-spacing:-.03em;font-variant-numeric:tabular-nums;color:var(--accent);line-height:1}
+  .meas .card .n small{font-size:.95rem;color:var(--muted);font-weight:600;letter-spacing:0}
+  .meas .card p{margin-top:.5rem}
+  /* install code */
+  .code{font:500 .8rem/1.6 "IBM Plex Mono",monospace;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:.9rem 1rem;overflow-x:auto;white-space:pre;color:var(--ink);margin-top:.8rem}
+  .ess{columns:2 20rem;column-gap:2rem;margin-top:1.2rem;padding:0;list-style:none;counter-reset:es}
+  .ess li{break-inside:avoid;position:relative;padding:0 0 .85rem 2rem;font-size:.93rem;color:var(--muted)}
+  .ess li::before{counter-increment:es;content:counter(es);position:absolute;left:0;top:.05rem;font:600 .72rem/1.5 "IBM Plex Mono",monospace;color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 45%,transparent);border-radius:999px;min-width:1.4rem;text-align:center}
+  .ess li b{color:var(--ink)}
+  /* ideas (same look as the roadmap) */
+  .epill{font-family:"IBM Plex Mono",monospace;font-size:.66rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;border-radius:999px;padding:.32rem .62rem;display:inline-flex;align-items:center;gap:.42rem;border:1px solid;white-space:nowrap;line-height:1}
+  .epill::before{content:"";width:.46rem;height:.46rem;border-radius:50%;background:currentColor;box-shadow:0 0 7px currentColor;flex:none}
+  .epill.quick{color:var(--live);border-color:color-mix(in srgb,var(--live) 42%,transparent);background:var(--live-soft)}
+  .epill.weekend{color:var(--amber-bright);border-color:color-mix(in srgb,var(--amber-bright) 42%,transparent);background:var(--amber-soft)}
+  .epill.ambitious{color:var(--alert);border-color:color-mix(in srgb,var(--alert) 42%,transparent);background:var(--alert-soft)}
+  .ideas{display:flex;flex-direction:column;gap:.7rem;margin-top:1.2rem}
+  .idea{display:flex;justify-content:space-between;align-items:center;gap:1rem;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:.9rem 1.15rem;box-shadow:var(--shadow)}
+  .idea .txt{min-width:0}
+  .idea h3{font-size:1rem;font-weight:700;margin:0}
+  .idea p{font-size:.87rem;color:var(--muted);margin:.16rem 0 0}
+  .idea .epill{flex:none}
+  @media(max-width:560px){.idea{flex-direction:column;align-items:flex-start}}
+</style>
+</head>
+<body class="p-ring">
+
+<header class="nav"><div class="wrap">
+  <a class="brand" href="index.html"><span class="dot"></span> DECS&nbsp;Home&nbsp;Systems</a>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="globalguard.html">GlobalGuard</a>
+    <a href="homeassistant.html">Home&nbsp;Assistant</a>
+    <a href="wallpanel.html">Wall&nbsp;panel</a>
+    <a href="ring.html" class="active">Home&nbsp;Ring</a>
+    <a href="calendar.html">Calendar</a>
+    <a href="echo.html">Echo&nbsp;Voice</a>
+    <a href="energy.html">Energy</a>
+    <a href="cameras.html">Cameras</a>
+    <a href="presence.html">Presence</a>
+    <a href="roomscribe.html">Roomscribe</a>
+    <a href="traccar.html">Traccar</a>
+    <a href="fuel.html">Fuel</a>
+    <a href="gridmusic.html">Grid&nbsp;Music</a>
+    <a href="finance.html">Finance</a>
+    <a href="fan.html">Fan</a>
+    <a href="rada.html">Rada&nbsp;shower</a>
+    <a href="theme.html">HA&nbsp;Theme</a>
+    <a href="technical.html">Technical</a>
+    <a href="roadmap.html">Roadmap</a>
+    <a href="claude.html">Claude&nbsp;Code</a>
+    <button class="themebtn" id="tt" aria-label="Toggle colour theme"><span id="ttic">◐</span> theme</button>
+  </nav>
+</div></header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">Dashboard card · open source · HACS</span>
+        <h1 class="title">The whole house,<br>in one <em>circle</em>.</h1>
+        <p class="lede">Floors in the middle, rooms around them, then the kinds of thing in each room, then the things themselves. Tap to go in, hold to switch, slide to dim. Home&nbsp;Assistant already knows where everything is, so the ring draws itself from that, and a new light in the bedroom simply turns up. Other people asked for it, so it's now a free card anyone can install.</p>
+        <div class="meta-row">
+          <span class="chip">Home Assistant</span>
+          <span class="chip">Lovelace card</span>
+          <span class="chip">MIT licence</span>
+          <span class="chip">HACS</span>
+        </div>
+        <div class="btnrow">
+          <a class="btn" href="#try">Try the live demo</a>
+          <a class="btn ghost" href="https://github.com/anchorapp100/home-ring-card">Get it on GitHub →</a>
+        </div>
+      </div>
+      <div class="panel" role="img" aria-label="Home Ring status: version 1.4.0 released 11 November 2026; 128 things on our own ring; running on the wall tablet, the Overview tab and the phone; waiting in the HACS review queue; MIT licence.">
+        <div class="head"><span>Home Ring · status</span><span>11&nbsp;Nov&nbsp;2026</span></div>
+        <svg class="sb" viewBox="0 0 200 200" aria-hidden="true">
+          <g class="spin">
+            <circle class="r3" cx="100" cy="100" r="84" stroke="#3a4f86" stroke-dasharray="40 3 22 3 30 3 18 3 46 3 26 3 34 3 20 3 38 3 28 3 44 3 36 3 26 3 52 3"/>
+            <circle class="r3" cx="100" cy="100" r="84" stroke="#c2694f" stroke-dasharray="0 68 22 260 18 160" opacity=".95"/>
+            <circle class="r2" cx="100" cy="100" r="66" stroke="#5a4a9a" stroke-dasharray="70 3 46 3 88 3 60 3 78 3 61 3"/>
+            <circle class="r2" cx="100" cy="100" r="66" stroke="#2b7a72" stroke-dasharray="0 240 61 114" />
+            <circle class="r1" cx="100" cy="100" r="48" stroke="#33508c" stroke-dasharray="120 3 98 3 77 3"/>
+            <circle class="r1" cx="100" cy="100" r="48" stroke="#245e5a" stroke-dasharray="0 224 77 4"/>
+          </g>
+          <circle cx="100" cy="100" r="36" fill="#0b111a" stroke="#26333f" stroke-width="1.4"/>
+          <text x="100" y="98" text-anchor="middle" font-family="Hanken Grotesk,sans-serif" font-weight="700" font-size="13" fill="#e7edf3">Home</text>
+          <text x="100" y="113" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="7.5" fill="#8a97a4">5 lights on</text>
+        </svg>
+        <div class="rows">
+          <div class="prow"><span class="led on"></span><span class="k">Version</span><span class="v">1.4.0 · public</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">Our house</span><span class="v">128 things on the ring</span></div>
+          <div class="prow"><span class="led on"></span><span class="k">Runs on</span><span class="v">wall tablet · Overview · phone</span></div>
+          <div class="prow"><span class="led info"></span><span class="k">HACS store</span><span class="v">in the review queue</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- STATS -->
+<section style="padding-block:clamp(2.2rem,5vw,3.2rem)">
+  <div class="wrap reveal">
+    <div class="stats">
+      <div class="stat"><span class="big num-strong">128</span><span class="lab">things on our ring</span></div>
+      <div class="stat"><span class="big num-strong">4</span><span class="lab">levels: floor, room, kind, thing</span></div>
+      <div class="stat"><span class="big num-strong">0</span><span class="lab">lines to add a new device</span></div>
+      <div class="stat"><span class="big num-strong">16</span><span class="lab">kinds of thing it knows</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 01 SEE IT -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">01 · See it move</span><h2>A minute and a half around a made-up house</h2><p class="lede">Recorded straight from the card running on a pretend twelve-room house, so nothing in it is ours. Rooms pulse when someone moves, a doorbell opens the cameras on its own, and the ring re-centres on whatever you touch.</p></div>
+    <figure class="vid">
+      <video controls loop muted playsinline preload="metadata" poster="media/home-ring-poster.jpg">
+        <source src="media/home-ring-tour.mp4" type="video/mp4">
+        Your browser can't play this video. <a href="media/home-ring-tour.mp4" style="color:var(--accent)">Download it here</a>.
+      </video>
+      <figcaption><b>The tour.</b> Rooms and floors, tapping into the Living Room, a light's card, dimming by sliding, holding to switch, the corner buttons, scenes, the doorbell, the house by system, and Customise.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- 02 TRY IT -->
+<section id="try" style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">02 · Try it</span><h2>The real card, on a pretend house</h2><p class="lede">This is the published card itself, fed by a fake Home&nbsp;Assistant. Everything works: tap a room, hold a light, slide on a lamp, press a corner, switch to By system. Nothing here is connected to anything.</p></div>
+    <div class="demo">
+      <div class="bar"><span>Live demo · made-up house · v1.4.0</span><a href="https://anchorapp100.github.io/home-ring-card/demo/">Open full screen →</a></div>
+      <iframe src="https://anchorapp100.github.io/home-ring-card/demo/?shot&amp;h=100vh" title="Home Ring live demo on a made-up house" loading="lazy"></iframe>
+    </div>
+    <div class="demo-note" style="margin-top:1.4rem"><b>On a phone?</b> <span>Below 760 pixels wide the card stacks: the ring on top, its panel underneath, and the four corner buttons in a row. It's the same card, it just rearranges itself to fit.</span></div>
+  </div>
+</section>
+
+<!-- 03 HOW IT'S BUILT -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">03 · Where it comes from</span><h2>Home Assistant already knows the house</h2><p class="lede">It started as a borrowed idea: the fan chart from our family-tree app, where generations radiate out from one person. Swap the generations for floors and rooms and you get a map of the house you can steer. There's no list of devices to keep up to date. Every ring is read from Home&nbsp;Assistant's own floors, rooms, devices and entities, and rebuilt whenever one of them changes.</p></div>
+    <div class="levels">
+      <div class="lv"><span class="k">Ring 1</span><b>Floors</b><span>Ground, upstairs, loft, outside. Rooms without a floor go in "Other rooms".</span></div>
+      <div class="lv"><span class="k">Ring 2</span><b>Rooms</b><span>Tinted by their thermostat: bluer when cold, warmer when warm.</span></div>
+      <div class="lv"><span class="k">Ring 3</span><b>Kinds</b><span>Lights, heating, TV and music, doors and motion, safety and more.</span></div>
+      <div class="lv"><span class="k">Ring 4</span><b>Things</b><span>Each light, plug or sensor, lit when it's on.</span></div>
+    </div>
+    <div class="gest">
+      <div class="card feat"><h3><i>tap</i> Go in</h3><p>Tap a floor or room and the ring zooms so it fills the circle. Tap a thing to open its card: brightness, colour, target temperature, a 24-hour graph.</p></div>
+      <div class="card feat"><h3><i>hold</i> Switch it</h3><p>Hold a light to switch it on or off, a speaker to pause it. Hold a whole room and all its lights go off, or on if they were all off.</p></div>
+      <div class="card feat"><h3><i>slide</i> Dim it</h3><p>Slide up or down on a dimmable light and a dial in the middle follows your finger. Lift off and the brightness is sent.</p></div>
+      <div class="card feat"><h3><i>centre</i> Come back</h3><p>Tap the middle to step back out a level. Scenes sit in a band around the outside at the top level, one tap each.</p></div>
+    </div>
+    <div class="shots">
+      <figure class="shot"><img src="images/ring-room.jpg" width="1600" height="960" alt="The ring zoomed into a room: kinds of thing in the inner ring and each light, speaker and sensor in the outer ring, with a list of the room's things on the right" loading="lazy"><figcaption><b>Inside a room.</b> The ring re-fits its widths to the levels left below.</figcaption></figure>
+      <figure class="shot"><img src="images/ring-by-system.jpg" width="1600" height="960" alt="The ring sorted by system instead of by room: lights, heating, energy, TV and music, security and blinds as the first ring" loading="lazy"><figcaption><b>By system.</b> The same house sorted as lights, heating, energy, security and the rest.</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- 04 DYNAMIC -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">04 · Add a device, it appears</span><h2>Dynamic, but it stays where you left it</h2><p class="lede">Two promises that pull against each other. Anything added to Home&nbsp;Assistant should show up by itself, and the kitchen should still be where your hand expects it. Both are measured on our own house.</p></div>
+    <div class="meas">
+      <div class="card feat"><span class="n">128 <small>not 771</small></span><h3 style="margin-top:.7rem">Devices, not entities</h3><p>Putting every entity on the ring would have meant 771 slices, most of them readings. Instead each device gets one slice, with its extra readings on its card. That found 18 devices that had rooms but weren't showing: the solar units, the scales, the watch, the gas detector.</p></div>
+      <div class="card feat"><span class="n">3.9° <small>not 18°</small></span><h3 style="margin-top:.7rem">The layout lock</h3><p>A new room used to shove its neighbours round by up to 18°. With the layout locked, newcomers start slim at the end of their floor and the ring turns to keep the known rooms centred. The worst move is 3.9°, and adding six devices moved nothing.</p></div>
+      <div class="card feat"><span class="n">0 <small>to 750 ms</small></span><h3 style="margin-top:.7rem">Animation speed</h3><p>A slider in Customise sets how long the zoom takes, from instant to the full glide. It's kept per screen, so a slow wall tablet can be instant while the phone keeps the animation.</p></div>
+    </div>
+    <p style="margin-top:1.6rem;color:var(--muted);font-size:.95rem">What it recognises, with the newest in colour:</p>
+    <div class="kinds">
+      <span>Lights</span><span>Heating</span><span>TV &amp; music</span><span>Doors &amp; motion</span><span>Cameras</span><span>Fans</span><span>Blinds</span><span>Plugs</span><span>Alarm</span>
+      <span class="new">Safety</span><span class="new">Locks</span><span class="new">Valves</span><span class="new">Vacuums</span><span class="new">Sirens</span><span class="new">Sensors</span><span class="new">Other</span>
+    </div>
+    <div class="demo-note" style="margin-top:1.4rem"><b>Safe by default.</b> <span>Locks and sirens need two taps, and a siren never sounds from a hold. A leak, smoke, gas or carbon-monoxide sensor that trips raises an alert on the ring. Anything else gets a "More controls" button that opens Home&nbsp;Assistant's own controls.</span></div>
+  </div>
+</section>
+
+<!-- 05 CORNERS -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">05 · The four corners</span><h2>Shortcuts you choose yourself</h2><p class="lede">Each corner of the ring is a button with a live reading: cameras, lights on, the alarm, the heating. Tap one for its card, hold it for its action, such as all lights off or a one-hour heating boost. Press <b>Customise</b>, the corners wiggle, and tapping one lets you swap it for media, scenes, doors, energy, blinds, fans, plugs or a favourite room.</p></div>
+    <div class="withphone">
+      <figure class="shot"><img src="images/ring-customise.jpg" width="1600" height="960" alt="Customise mode: the four corner buttons outlined and wiggling, and a chooser on the right listing what a corner can show" loading="lazy"><figcaption><b>Customise.</b> Pick a corner, pick what it shows. Chosen by an admin, it's saved in Home&nbsp;Assistant, so every screen in the house follows it.</figcaption></figure>
+      <figure class="shot"><img src="images/ring-phone.jpg" width="780" height="1688" alt="The card on a phone: the ring at the top, the corner buttons in a row and the room list underneath" loading="lazy"><figcaption><b>On a phone.</b></figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- 06 IN OUR HOUSE -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">06 · In our house</span><h2>On the wall, on the Overview, in the pocket</h2><p class="lede">The full ring has its own page on the wall tablet. A small version sits on the panel's Overview tab and on the phone dashboard, showing floors and rooms with a summary line. Tap it and the full ring opens.</p></div>
+    <div class="grid-3">
+      <div class="card feat"><h3>The rooms had to be right first</h3><p>The ring is only as tidy as Home&nbsp;Assistant's rooms, and ours weren't. All eight heating thermostats lived on the landing because that's where the heating hub is. Fixing it meant new rooms, a new Outside floor, and moving bulbs that had never been given a room.</p></div>
+      <div class="card feat"><h3>The doorbell opens the cameras</h3><p>When a doorbell rings, the Cameras corner opens on that door by itself and closes again after a minute if nobody touches it. A red dot shows recent motion or a person at the door.</p></div>
+      <div class="card feat"><h3>"Show me the kitchen"</h3><p>Voice is optional. Say a room or floor to the house's voice assistant and the ring on the wall flies there. It uses Home&nbsp;Assistant's built-in room and floor names, so there's no list to keep.</p></div>
+    </div>
+    <div class="shots">
+      <figure class="shot"><img src="images/ring-heating.jpg" width="1600" height="960" alt="The heating corner open: each thermostat with plus and minus buttons and the hot-water boost options" loading="lazy"><figcaption><b>The heating corner.</b> Every thermostat with plus and minus, and the hot-water boost.</figcaption></figure>
+      <figure class="shot"><img src="images/ring-mini.jpg" width="600" height="300" alt="The small version of the ring: floors and rooms only, with a summary of lights on and heating" loading="lazy" style="max-width:30rem"><figcaption><b>The mini.</b> Floors and rooms, a summary line, and a tap opens the full ring.</figcaption></figure>
+    </div>
+    <div class="demo-note" style="margin-top:1.4rem"><b>The bug Kev found.</b> <span>"I can't seem to open the circle." A small helper in the card was named <code>history</code>, which hid the browser's own <code>history</code>. Every page change from the card had been failing silently since the first release. One rename fixed it, and it shipped as 1.3.1.</span></div>
+  </div>
+</section>
+
+<!-- 07 GET IT -->
+<section id="install">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">07 · Get it</span><h2>Free, open source, one card</h2><p class="lede">Everything personal was taken out and turned into settings: the cameras, the heating, the energy readings, what to leave off the ring. It needs Home&nbsp;Assistant 2024.4 or newer, when floors arrived. From 2026.11, HACS is built in as the Marketplace.</p></div>
+    <div class="grid-3">
+      <div class="card feat"><h3>With HACS</h3><p>The repository's <b>Open in Home Assistant</b> button adds it to HACS straight away. It doesn't need to be in the HACS store first: that listing is a pull request still waiting for review, which can take months.</p></div>
+      <div class="card feat"><h3>By hand</h3><p>Download <code>home-ring-card.js</code> from the latest release, put it in <code>/config/www/</code>, and add it as a dashboard resource. Then add the card.</p></div>
+      <div class="card feat"><h3>With an AI</h3><p>Paste a template into Developer tools, give the result to any AI with the prompt in <b>AI_SETUP.md</b>, and it writes your card and lists every device that still needs a room.</p></div>
+    </div>
+    <div class="code">type: custom:home-ring-card
+height: calc(100vh - 56px)</div>
+    <div class="btnrow">
+      <a class="btn" href="https://github.com/anchorapp100/home-ring-card">anchorapp100/home-ring-card →</a>
+      <a class="btn ghost" href="https://github.com/anchorapp100/home-ring-card/blob/main/AI_SETUP.md">AI setup prompt</a>
+      <a class="btn ghost" href="https://github.com/anchorapp100/home-ring-card/releases/latest">Latest release</a>
+    </div>
+
+    <div class="todo-h" style="font:600 .74rem/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin:2.4rem 0 0">Before you install</div>
+    <ol class="ess">
+      <li><b>Every device needs a room.</b> Anything without one isn't on the ring.</li>
+      <li><b>Rooms should have a floor.</b> Otherwise they go in "Other rooms".</li>
+      <li><b>Sensors need to say what they detect.</b> A leak sensor without a type lands under Sensors, not Safety. Set <b>Show as</b> in its settings.</li>
+      <li><b>Switches that are really lights</b> need "light", "lamp" or "bulb" in the name, or <b>Show as → Light</b>.</li>
+      <li><b>Room colours come from a thermostat</b>, not from plain temperature sensors.</li>
+      <li><b>To leave something out, hide it</b> in Home&nbsp;Assistant, or use <code>exclude</code> in the card.</li>
+      <li><b>Locking the layout for every screen needs an admin.</b> Anyone else changes only their own browser.</li>
+      <li><b>Refresh after installing or updating.</b> Browsers keep the old version until they reload.</li>
+    </ol>
+  </div>
+</section>
+
+<!-- 08 NEXT -->
+<section style="background:var(--surface-2)">
+  <div class="wrap reveal">
+    <div class="sec-head col"><span class="eyebrow">08 · What's next</span><h2>Ideas on the table</h2></div>
+    <div class="ideas">
+      <div class="idea"><div class="txt"><h3>Into the HACS store</h3><p>The listing is submitted and every automatic check passes. It's now down to the reviewers.</p></div><span class="epill quick">waiting</span></div>
+      <div class="idea"><div class="txt"><h3>A ring on its own little screen</h3><p>A small round display on the wall or desk. A Pi Zero with a round screen runs the card as it is; a true ESP32 version would be a simpler ring, ideally with a turning knob to pick the room.</p></div><span class="epill weekend">a weekend</span></div>
+      <div class="idea"><div class="txt"><h3>Rooms that know who's in them</h3><p>The room-presence radar could light a room by people rather than by motion, so an occupied room glows instead of pulsing.</p></div><span class="epill ambitious">ambitious</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="divider"></div>
+
+<!-- CLOSING -->
+<section>
+  <div class="wrap reveal">
+    <div class="close">
+      <span class="eyebrow" style="color:var(--hr)">Home Ring</span>
+      <h2 style="margin-top:1rem">One circle, the whole house.</h2>
+      <p>A family-tree chart turned into a control panel, built for our wall and then handed out because people asked. It keeps nothing of its own: the house, the rooms and the devices all come from Home&nbsp;Assistant, which is why it keeps up when the house changes.</p>
+      <p style="font-size:.85rem">MIT licence. The demo house and every picture on this page are made up. Not affiliated with or endorsed by Home Assistant, the Open Home Foundation or HACS.</p>
+      <div class="sig"><span class="dot" style="background:var(--hr);box-shadow:0 0 8px var(--hr)"></span><span>Lovelace card</span><span>·</span><span><a href="https://github.com/anchorapp100/home-ring-card" style="color:var(--hr)">GitHub</a></span><span>·</span><span>see the <a href="wallpanel.html" style="color:var(--hr)">wall panel</a></span></div>
+    </div>
+  </div>
+</section>
+
+<footer>Home Ring · open-source Home Assistant card (MIT) · <a href="wallpanel.html">Wall panel</a> · <a href="homeassistant.html">Home Assistant</a> · <a href="roadmap.html">Roadmap</a> · <a href="index.html">DECS Home Systems</a></footer>
+
+<script src="app.js"></script>
+</body>
+</html>
